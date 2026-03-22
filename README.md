@@ -113,197 +113,25 @@ The Child and Anxious are excluded from the lapidary composition by default. Lap
 
 Two paths to a presentation. A direct seed runs one session. Raw input (brief, brand, notes) gets distilled into provocations, each provocation runs a full session, then all sessions are synthesised into one presentation.
 
-```mermaid
-flowchart LR
-    subgraph "INPUT"
-        SEED["💬 Direct seed"]
-        BRIEF["📄 Brief"]
-        BRAND["🏷️ Brand"]
-        NOTES["📝 Notes"]
-        AUTO["📁 Project dir"]
-    end
-
-    SEED --> GATHER["📍 Gather<br/>project context"]
-    BRIEF & BRAND & NOTES & AUTO --> PROVOKE["🔥 Generate<br/>provocations"]
-    PROVOKE --> PICK{" --pick ?"}
-    PICK -->|"select"| SELECTED["Selected<br/>provocations"]
-    PICK -->|"all"| ALL["All<br/>provocations"]
-    SELECTED & ALL --> LOOP["🔄 Run each provocation<br/>as a full session"]
-    LOOP --> SYNTH["📝 Synthesise<br/>all transcripts"]
-    SYNTH --> PRES["📊 Presentation"]
-
-    GATHER --> PREP["🌱 Fracture / Tune<br/>the seed"]
-    PREP --> SESSION["🧠 Run composition<br/>dyslexic / spiral / lapidary"]
-    SESSION --> GEN["📊 Generate<br/>presentation"]
-    GEN --> PRES
-
-    style PROVOKE fill:#ff6b35,color:#fff
-    style SESSION fill:#7b2d8e,color:#fff
-    style PRES fill:#2d6a4f,color:#fff
-```
+![Session flow - two paths converging to presentation](docs/session-flow.svg)
 
 ### 🪟 Dyslexic Composition - step by step
 
 4 rounds. Cognitions and perceivers interleave. Friction between every round. Sensory check mid-session. Bias check before convergence.
 
-```mermaid
-flowchart LR
-    FRAC["🌱 Fracture<br/>Seed"]
-
-    subgraph R1["Round 1 - First Fragments"]
-        R1A["🔍 Decomposer"] --> R1B["❤️‍🔥 Empath"]
-        R1B --> R1C["🪢 Associator"]
-        R1C --> R1D["👁️ Observer"]
-        R1D --> R1IC["🪑 Includer"]
-        R1IC --> R1E["🔍 Decomposer"]
-    end
-
-    subgraph R2["Round 2 - Scale Shift"]
-        R2A["🔭 Scaler"] --> R2B["🧒 Child"]
-        R2B --> R2C["🪢 Associator"]
-        R2C --> R2D["🔥 Provocateur"]
-        R2D --> R2E["🔭 Scaler"]
-    end
-
-    subgraph R3["Round 3 - Deep Fragments"]
-        R3A["🔍 Decomposer"] --> R3B["😰 Anxious"]
-        R3B --> R3C["🪢 Associator"]
-        R3C --> R3D["👁️ Observer"]
-        R3D --> R3E["❤️‍🔥 Empath"]
-    end
-
-    subgraph R4["Round 4 - Constellation"]
-        R4A["💎 Reifier"] --> R4B["🪢 Associator"]
-        R4B --> R4C["🔥 Provocateur"]
-    end
-
-    subgraph GR["Ground"]
-        GRA["❤️‍🔥 Empath"] --> GRB["💎 Reifier"]
-    end
-
-    FRAC --> R1
-    R1 --> F1["⚡ Friction"]
-    F1 --> R2
-    R2 --> F2["⚡ Friction"]
-    F2 --> SENS["👁️ Sensory<br/>Check"]
-    SENS --> R3
-    R3 --> F3["⚡ Friction"]
-    F3 --> BIAS["🔬 Bias<br/>Check"]
-    BIAS --> R4
-    R4 --> GR
-    GR --> PRES["📊 Presentation"]
-
-    style F1 fill:#ff6b35,color:#fff
-    style F2 fill:#ff6b35,color:#fff
-    style F3 fill:#ff6b35,color:#fff
-    style SENS fill:#4a90d9,color:#fff
-    style BIAS fill:#9b59b6,color:#fff
-    style PRES fill:#2d6a4f,color:#fff
-```
+![Dyslexic composition flow - 4 rounds with friction, sensory, and bias checks](docs/dyslexic-flow.svg)
 
 ### 🌀 Spiral Composition - step by step
 
 3 spirals. Each spiral widens then crystallises. The Integrator's insight reseeds the next spiral. Friction and bias checks in later spirals.
 
-```mermaid
-flowchart LR
-    TUNE["🌱 Tune<br/>Seed"]
-
-    subgraph S1["Spiral 1"]
-        S1A["🧭 Diverger x3"] --> S1B["🔮 Analogiser x2"]
-        S1B --> S1C["❤️‍🔥 Empath"]
-        S1C --> S1IC["🪑 Includer"]
-        S1IC --> S1D["🔥 Provocateur"]
-        S1D --> S1E["👁️ Observer"]
-        S1E --> S1F["🧐 Integrator"]
-    end
-
-    subgraph S2["Spiral 2"]
-        S2A["🧭 Diverger x2"] --> S2M["🧿 Skeptic"]
-        S2M --> S2B["🔮 Analogiser x2"]
-        S2B --> S2C["❤️‍🔥 Empath"]
-        S2C --> S2D["🔥 Provocateur"]
-        S2D --> S2F["🧐 Integrator"]
-    end
-
-    subgraph S3["Spiral 3"]
-        S3A["🧭 Diverger x2"] --> S3B["🔮 Analogiser x2"]
-        S3B --> S3C["❤️‍🔥 Empath"]
-        S3C --> S3M["🧿 Skeptic"]
-        S3M --> S3BIAS["🔬 Bias Check"]
-        S3BIAS --> S3F["🧐 Integrator"]
-    end
-
-    subgraph GR["Ground"]
-        GRA["❤️‍🔥 Empath"] --> GRB["🧐 Integrator"]
-    end
-
-    TUNE --> S1
-    S1 --> RS1["↻ Reseed"]
-    RS1 --> S2
-    S2 --> F2["⚡ Friction"]
-    F2 --> RS2["↻ Reseed"]
-    RS2 --> S3
-    S3 --> GR
-    GR --> PRES["📊 Presentation"]
-
-    style RS1 fill:#7b2d8e,color:#fff
-    style RS2 fill:#7b2d8e,color:#fff
-    style F2 fill:#ff6b35,color:#fff
-    style S3BIAS fill:#9b59b6,color:#fff
-    style PRES fill:#2d6a4f,color:#fff
-```
+![Spiral composition flow - 3 spirals converging inward with reseed connections](docs/spiral-flow.svg)
 
 ### 🏺 Lapidary Composition - step by step
 
 3 passes. Each pass works the same material with increasing precision. Polish mechanism between passes assesses what survived and what was revealed. Mature judgement only - Child and Anxious excluded by default.
 
-```mermaid
-flowchart LR
-    APPR["🌱 Appraise<br/>Seed"]
-
-    subgraph P1["Pass 1 - Rough Cut"]
-        P1A["⚖️ Appraiser"] --> P1B["📜 Historian"]
-        P1B --> P1C["❤️‍🔥 Empath"]
-        P1C --> P1D["👁️ Observer"]
-        P1D --> P1E["✂️ Editor"]
-        P1E --> P1F["🏺 Connoisseur"]
-    end
-
-    subgraph P2["Pass 2 - Shape"]
-        P2A["📜 Historian"] --> P2B["⚖️ Appraiser"]
-        P2B --> P2C["🔥 Provocateur"]
-        P2C --> P2D["✂️ Editor"]
-        P2D --> P2E["🏺 Connoisseur"]
-    end
-
-    subgraph P3["Pass 3 - Facet"]
-        P3A["⚖️ Appraiser"] --> P3B["📜 Historian"]
-        P3B --> P3C["🧿 Skeptic"]
-        P3C --> P3D["✂️ Editor"]
-        P3D --> P3E["🏺 Connoisseur"]
-    end
-
-    subgraph GR["Ground"]
-        GRA["❤️‍🔥 Empath"] --> GRB["✂️ Editor"]
-    end
-
-    APPR --> P1
-    P1 --> POL1["💎 Polish"]
-    POL1 --> P2
-    P2 --> F2["⚡ Friction"]
-    F2 --> POL2["💎 Polish"]
-    POL2 --> P3
-    P3 --> BIAS["🔬 Bias<br/>Check"]
-    BIAS --> GR
-    GR --> PRES["📊 Presentation"]
-
-    style POL1 fill:#7b2d8e,color:#fff
-    style POL2 fill:#7b2d8e,color:#fff
-    style F2 fill:#ff6b35,color:#fff
-    style BIAS fill:#9b59b6,color:#fff
-    style PRES fill:#2d6a4f,color:#fff
-```
+![Lapidary composition flow - 3 passes with polish, friction, and bias checks](docs/lapidary-flow.svg)
 
 ## Usage
 

@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 290">
+  <style>
+    text { font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; }
+    .node { font-size: 11px; font-weight: 500; fill: #1e293b; }
+    .accent { font-size: 11px; font-weight: 600; fill: #fff; }
+    .track { font-size: 9.5px; fill: #94a3b8; font-style: italic; letter-spacing: 0.3px; }
+    .note { font-size: 9px; fill: #94a3b8; }
+  </style>
+
+  <defs>
+    <marker id="arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M1,1 L7,4 L1,7" fill="none" stroke="#94a3b8" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <!-- Track labels -->
+  <text class="track" x="18" y="42">DIRECT SEED</text>
+  <text class="track" x="18" y="182">DISTILLATION</text>
+
+  <!-- ═══ TOP TRACK ═══ -->
+
+  <!-- Direct seed -->
+  <rect x="18" y="55" width="106" height="30" rx="15" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
+  <text class="node" x="71" y="70" text-anchor="middle" dominant-baseline="central">Direct seed</text>
+
+  <line x1="128" y1="70" x2="165" y2="70" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Gather context -->
+  <rect x="170" y="55" width="120" height="30" rx="15" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
+  <text class="node" x="230" y="70" text-anchor="middle" dominant-baseline="central">Gather context</text>
+
+  <line x1="294" y1="70" x2="331" y2="70" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Fracture / Tune -->
+  <rect x="336" y="55" width="120" height="30" rx="15" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
+  <text class="node" x="396" y="70" text-anchor="middle" dominant-baseline="central">Fracture / Tune</text>
+
+  <line x1="460" y1="70" x2="497" y2="70" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Run composition (purple) -->
+  <rect x="502" y="55" width="136" height="30" rx="15" fill="#7b2d8e"/>
+  <text class="accent" x="570" y="70" text-anchor="middle" dominant-baseline="central">Run composition</text>
+
+  <line x1="642" y1="70" x2="679" y2="70" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Generate -->
+  <rect x="684" y="55" width="86" height="30" rx="15" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
+  <text class="node" x="727" y="70" text-anchor="middle" dominant-baseline="central">Generate</text>
+
+  <!-- Converge arrow top -->
+  <path d="M774,70 Q810,70 830,105" fill="none" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ═══ BOTTOM TRACK ═══ -->
+
+  <!-- Brief / Brand / Notes -->
+  <rect x="18" y="195" width="162" height="30" rx="15" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
+  <text class="node" x="99" y="210" text-anchor="middle" dominant-baseline="central">Brief / Brand / Notes</text>
+
+  <line x1="184" y1="210" x2="221" y2="210" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Generate provocations (orange) -->
+  <rect x="226" y="195" width="170" height="30" rx="15" fill="#ff6b35"/>
+  <text class="accent" x="311" y="210" text-anchor="middle" dominant-baseline="central">Generate provocations</text>
+
+  <line x1="400" y1="210" x2="437" y2="210" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- --pick? -->
+  <rect x="442" y="195" width="72" height="30" rx="15" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 2"/>
+  <text class="node" x="478" y="210" text-anchor="middle" dominant-baseline="central">--pick?</text>
+  <text class="note" x="478" y="237">optional selection</text>
+
+  <line x1="518" y1="210" x2="555" y2="210" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Run each session -->
+  <rect x="560" y="195" width="134" height="30" rx="15" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
+  <text class="node" x="627" y="210" text-anchor="middle" dominant-baseline="central">Run each session</text>
+
+  <line x1="698" y1="210" x2="735" y2="210" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Synthesise -->
+  <rect x="740" y="195" width="90" height="30" rx="15" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
+  <text class="node" x="785" y="210" text-anchor="middle" dominant-baseline="central">Synthesise</text>
+
+  <!-- Converge arrow bottom -->
+  <path d="M834,210 Q860,210 870,175" fill="none" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ═══ PRESENTATION (convergence) ═══ -->
+  <rect x="840" y="115" width="86" height="50" rx="25" fill="#2d6a4f"/>
+  <text class="accent" x="883" y="140" text-anchor="middle" dominant-baseline="central">Presentation</text>
+</svg>

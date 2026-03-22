@@ -9,9 +9,9 @@
   </style>
 
   <!-- Ring guides -->
-  <circle cx="500" cy="500" r="110" fill="none" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="5 3"/>
-  <circle cx="500" cy="500" r="260" fill="none" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="5 3"/>
-  <circle cx="500" cy="500" r="400" fill="none" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="5 3"/>
+  <circle cx="500" cy="500" r="110" fill="none" stroke="#cbd5e1" stroke-width="2.5" stroke-dasharray="6 4"/>
+  <circle cx="500" cy="500" r="260" fill="none" stroke="#cbd5e1" stroke-width="2.5" stroke-dasharray="6 4"/>
+  <circle cx="500" cy="500" r="400" fill="none" stroke="#cbd5e1" stroke-width="2.5" stroke-dasharray="6 4"/>
 
   <!-- Connection curves -->
   <g fill="none" stroke-width="2.5" stroke-linecap="round">
