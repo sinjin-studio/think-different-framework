@@ -143,7 +143,7 @@ Two paths to a presentation. A direct seed runs one session. Raw input (brief, b
 ./think.sh "Your seed topic" --mode lapidary --words 500
 ```
 
-### From raw input (distillation mode)
+### From raw input (distillation phase)
 
 The framework meets you wherever you are. Give it a brief, a brand name, or some notes. It generates provocations, runs each as a separate session, then synthesises into one presentation.
 

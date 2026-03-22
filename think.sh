@@ -58,11 +58,9 @@ show_help() {
   echo "  🪟 THINK DIFFERENT FRAMEWORK"
   echo "  ─────────────────────────────"
   echo ""
-  echo "  Direct seed (single session):"
+  echo "  From any input (distil into provocations, run sessions, present):"
   echo "    ./think.sh \"Your seed topic or question\""
   echo "    ./think.sh \"topic\" --mode spiral --words 1500"
-  echo ""
-  echo "  From raw input (auto-provoke, run all, synthesise):"
   echo "    ./think.sh --brief ./client-brief.pdf"
   echo "    ./think.sh --brand \"Nike\""
   echo "    ./think.sh --notes \"luxury wellness, Gen Z, sustainability\""
@@ -230,17 +228,16 @@ case "$MODE" in
     ;;
 esac
 
-# Determine which branch we're in
-HAS_RAW_INPUT=""
-if [ -n "$BRIEF_FILE" ] || [ -n "$BRAND_NAME" ] || [ -n "$NOTES_TEXT" ]; then
-  HAS_RAW_INPUT="true"
+# Need at least one of: seed, raw input, presentation-only, synthesise, or project context
+HAS_INPUT=""
+if [ -n "$SEED_TOPIC" ] || [ -n "$BRIEF_FILE" ] || [ -n "$BRAND_NAME" ] || [ -n "$NOTES_TEXT" ]; then
+  HAS_INPUT="true"
 fi
 
-# Need at least one of: seed, raw input, presentation-only, synthesise, or project context
-if [ -z "$PRES_ONLY" ] && [ -z "$SYNTHESISE_MODE" ] && [ -z "$SEED_TOPIC" ] && [ -z "$HAS_RAW_INPUT" ]; then
+if [ -z "$PRES_ONLY" ] && [ -z "$SYNTHESISE_MODE" ] && [ -z "$HAS_INPUT" ]; then
   # Try project auto-detect
   if [ -f "package.json" ] || [ -f "README.md" ] || [ -f "CLAUDE.md" ] || [ -d "src" ] || [ -d "app" ] || [ -f "Cargo.toml" ] || [ -f "pyproject.toml" ]; then
-    HAS_RAW_INPUT="true"
+    HAS_INPUT="true"
   else
     show_help
   fi
@@ -337,144 +334,14 @@ if [ -n "$PRES_ONLY" ]; then
 fi
 
 # ══════════════════════════════════════════════
-#  DISTILLATION BRANCH (raw input -> provocations -> sessions -> synthesis)
+#  MAIN PIPELINE
+#  Input -> Distil -> Seeds -> [pick?] -> Session(s) -> Generate/Synthesise -> Presentation
 # ══════════════════════════════════════════════
 
-if [ -n "$HAS_RAW_INPUT" ] && [ -z "$SEED_TOPIC" ]; then
-  source "${SCRIPT_DIR}/context/provoke.sh"
-  source "${SCRIPT_DIR}/context/gather.sh"
-  source "${SCRIPT_DIR}/report/synthesise.sh"
+source "${SCRIPT_DIR}/context/provoke.sh"
+source "${SCRIPT_DIR}/context/gather.sh"
+source "${SCRIPT_DIR}/report/synthesise.sh"
 
-  echo ""
-  echo "  🪟 THINK DIFFERENT - Distillation Mode"
-  echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo "  Mode: $MODE"
-  echo "  Words: $WORD_COUNT"
-
-  # Gather project context first (used by provocation generation)
-  PROJECT_CONTEXT=""
-  if [ -n "$CONTEXT_FILE" ]; then
-    if [ -f "$CONTEXT_FILE" ]; then
-      PROJECT_CONTEXT=$(cat "$CONTEXT_FILE")
-      echo "  Context: $CONTEXT_FILE"
-    fi
-  fi
-
-  # Read input material
-  local_input_type=""
-  local_input_material=""
-
-  if [ -n "$BRIEF_FILE" ]; then
-    local_input_type="brief"
-    echo "  Brief: $BRIEF_FILE"
-    local_input_material=$(read_input_material "brief" "$BRIEF_FILE") || {
-      echo "Error: could not read brief file"
-      exit 1
-    }
-  elif [ -n "$BRAND_NAME" ]; then
-    local_input_type="brand"
-    echo "  Brand: $BRAND_NAME"
-    local_input_material=$(read_input_material "brand" "$BRAND_NAME")
-  elif [ -n "$NOTES_TEXT" ]; then
-    local_input_type="notes"
-    echo "  Notes: ${NOTES_TEXT:0:60}..."
-    local_input_material=$(read_input_material "notes" "$NOTES_TEXT")
-  else
-    local_input_type="project"
-    echo "  Input: auto-detect from project"
-    # Gather context if not already done
-    if [ -z "$PROJECT_CONTEXT" ]; then
-      gather_project_context
-    fi
-    local_input_material=$(read_input_material "project" "")
-  fi
-
-  echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo ""
-
-  # Generate provocations
-  generate_provocations "$local_input_material" "$local_input_type"
-
-  if [ ${#PROVOCATIONS[@]} -eq 0 ]; then
-    echo "  No provocations generated. Exiting."
-    exit 1
-  fi
-
-  # Interactive selection if --pick
-  if [ -n "$PICK_MODE" ]; then
-    pick_provocations
-  fi
-
-  # Run each provocation as a separate session
-  TRANSCRIPT_FILES=()
-  local prov_num=1
-  for provocation in "${PROVOCATIONS[@]}"; do
-    echo ""
-    echo "  ━━━ PROVOCATION ${prov_num}/${#PROVOCATIONS[@]} ━━━━━━━━━━━━━"
-    echo "  ${provocation}"
-    echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-    # Set up session state for this provocation
-    SEED_TOPIC="$provocation"
-    CONVERSATION=""
-    TURN_COUNT=0
-    TRANSCRIPT_MD="$OUTPUT_DIR/session_${TIMESTAMP}_p${prov_num}.md"
-    TRANSCRIPT_JSON="$OUTPUT_DIR/session_${TIMESTAMP}_p${prov_num}.json"
-
-    md_init_header "Think Different Session (Provocation ${prov_num})" "$SEED_TOPIC"
-    json_open
-
-    # Source and run the mode
-    source "${SCRIPT_DIR}/modes/${MODE}.sh"
-    run_session
-
-    # Close JSON
-    json_close
-
-    TRANSCRIPT_FILES+=("$TRANSCRIPT_MD")
-    prov_num=$((prov_num + 1))
-  done
-
-  # Synthesise all transcripts into one presentation
-  echo ""
-  PRES_FILE="$OUTPUT_DIR/presentation_${TIMESTAMP}.pptx"
-
-  local seed_summary=""
-  if [ -n "$BRIEF_FILE" ]; then
-    seed_summary="Distilled from brief: $(basename "$BRIEF_FILE")"
-  elif [ -n "$BRAND_NAME" ]; then
-    seed_summary="Distilled from brand: $BRAND_NAME"
-  elif [ -n "$NOTES_TEXT" ]; then
-    seed_summary="Distilled from notes: ${NOTES_TEXT:0:100}"
-  else
-    seed_summary="Distilled from project context"
-  fi
-
-  synthesise_presentations "$WORD_COUNT" "$PRES_FILE" "$seed_summary" "${TRANSCRIPT_FILES[@]}" > /dev/null
-
-  echo ""
-  echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo "  ✦ Distillation complete"
-  echo "    ${#PROVOCATIONS[@]} provocations, ${MODE} composition"
-  echo ""
-  echo "  📝 Presentation: $PRES_FILE"
-  for tf in "${TRANSCRIPT_FILES[@]}"; do
-    echo "  📄 Transcript:  $tf"
-  done
-  echo ""
-  echo "  Re-run presentation at different length:"
-  echo "    ./think.sh --synthesise ${TRANSCRIPT_FILES[*]} --words 1500"
-  echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo ""
-  exit 0
-fi
-
-# ══════════════════════════════════════════════
-#  DIRECT SEED SESSION
-# ══════════════════════════════════════════════
-
-TRANSCRIPT_MD="$OUTPUT_DIR/session_${TIMESTAMP}.md"
-TRANSCRIPT_JSON="$OUTPUT_DIR/session_${TIMESTAMP}.json"
 CONVERSATION=""
 TURN_COUNT=0
 PROJECT_CONTEXT=""
@@ -495,16 +362,55 @@ done
 [ -n "$PASS_COUNT" ] && EXPERIMENT_LINES+=("    ~ passes: ${PASS_COUNT} (via --passes)")
 [ "$SHUFFLE_ENABLED" = "true" ] && EXPERIMENT_LINES+=("    ~ shuffle (agent order randomized)")
 
+# ── 1. Read input material ──
+# All paths produce INPUT_MATERIAL for distillation
+
+if [ -n "$CONTEXT_FILE" ] && [ -f "$CONTEXT_FILE" ]; then
+  PROJECT_CONTEXT=$(cat "$CONTEXT_FILE")
+fi
+
+input_type=""
+INPUT_MATERIAL=""
+
+if [ -n "$BRIEF_FILE" ]; then
+  input_type="brief"
+  INPUT_MATERIAL=$(read_input_material "brief" "$BRIEF_FILE") || {
+    echo "Error: could not read brief file"
+    exit 1
+  }
+elif [ -n "$BRAND_NAME" ]; then
+  input_type="brand"
+  INPUT_MATERIAL=$(read_input_material "brand" "$BRAND_NAME")
+elif [ -n "$NOTES_TEXT" ]; then
+  input_type="notes"
+  INPUT_MATERIAL=$(read_input_material "notes" "$NOTES_TEXT")
+elif [ -n "$SEED_TOPIC" ]; then
+  input_type="seed"
+  INPUT_MATERIAL=$(read_input_material "seed" "$SEED_TOPIC")
+else
+  input_type="project"
+  if [ -z "$PROJECT_CONTEXT" ]; then
+    gather_project_context
+  fi
+  INPUT_MATERIAL=$(read_input_material "project" "")
+fi
+
+# ── Banner ──
 echo ""
 echo "  🪟 THINK DIFFERENT FRAMEWORK"
 echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  Seed: ${SEED_TOPIC:0:80}"
+echo "  Input: ${input_type}"
+case "$input_type" in
+  seed)  echo "  Seed: ${SEED_TOPIC:0:80}" ;;
+  brief) echo "  Brief: $BRIEF_FILE" ;;
+  brand) echo "  Brand: $BRAND_NAME" ;;
+  notes) echo "  Notes: ${NOTES_TEXT:0:60}..." ;;
+  project) echo "  Source: auto-detect from project" ;;
+esac
 echo "  Mode: $MODE"
 echo "  Presentation: ~${WORD_COUNT} words"
 if [ -n "$CONTEXT_FILE" ]; then
   echo "  Context: $CONTEXT_FILE"
-else
-  echo "  Context: auto-detect from project"
 fi
 echo "  Output: $OUTPUT_DIR"
 if [ ${#EXPERIMENT_LINES[@]} -gt 0 ]; then
@@ -516,39 +422,110 @@ fi
 echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-# Init outputs
-md_init_header "Think Different Session ($MODE)" "$SEED_TOPIC"
-json_open
+# ── 2. Distil into seeds (always) ──
+generate_provocations "$INPUT_MATERIAL" "$input_type"
 
-# Source and run the mode
-source "${SCRIPT_DIR}/modes/${MODE}.sh"
-run_session
-
-# Close JSON
-json_close
-
-# ── Generate presentation ──
-
-PRES_FILE="$OUTPUT_DIR/presentation_${TIMESTAMP}.pptx"
-PRES_CONTENT=$(generate_presentation "$CONVERSATION" "$SEED_TOPIC" "$WORD_COUNT" "$PRES_FILE" "${TURN_COUNT} turns, ${MODE} composition")
-
-printf "\n\n---\n\n## Presentation\n\n" >> "$TRANSCRIPT_MD"
-echo "$PRES_CONTENT" >> "$TRANSCRIPT_MD"
-
-# ── Done ──
-echo ""
-echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  ✦ Session complete"
-echo "    ${TURN_COUNT} turns, ${MODE} composition"
-echo ""
-echo "  📝 Presentation: $PRES_FILE"
-echo "  📄 Transcript:   $TRANSCRIPT_MD"
-echo "  📊 JSON:         $TRANSCRIPT_JSON"
-if [ -f "$OUTPUT_DIR/context_${TIMESTAMP}.md" ]; then
-  echo "  📍 Context:      $OUTPUT_DIR/context_${TIMESTAMP}.md"
+if [ ${#PROVOCATIONS[@]} -eq 0 ]; then
+  echo "  No provocations generated. Exiting."
+  exit 1
 fi
-echo ""
-echo "  Re-run presentation at different length:"
-echo "    ./think.sh --report-only $TRANSCRIPT_MD --words 1500"
-echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
+
+SEEDS=("${PROVOCATIONS[@]}")
+
+# ── 3. Pick (optional, any input type) ──
+if [ -n "$PICK_MODE" ]; then
+  pick_provocations
+  SEEDS=("${PROVOCATIONS[@]}")
+fi
+
+# ── 4. Run sessions ──
+TRANSCRIPT_FILES=()
+seed_num=1
+for seed in "${SEEDS[@]}"; do
+  echo ""
+  echo "  ━━━ SEED ${seed_num}/${#SEEDS[@]} ━━━━━━━━━━━━━━━━━━━━━"
+  echo "  ${seed}"
+  echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+  # Set up session state
+  SEED_TOPIC="$seed"
+  CONVERSATION=""
+  TURN_COUNT=0
+
+  # Suffix for multiple sessions, clean for single
+  if [ ${#SEEDS[@]} -gt 1 ]; then
+    TRANSCRIPT_MD="$OUTPUT_DIR/session_${TIMESTAMP}_s${seed_num}.md"
+    TRANSCRIPT_JSON="$OUTPUT_DIR/session_${TIMESTAMP}_s${seed_num}.json"
+  else
+    TRANSCRIPT_MD="$OUTPUT_DIR/session_${TIMESTAMP}.md"
+    TRANSCRIPT_JSON="$OUTPUT_DIR/session_${TIMESTAMP}.json"
+  fi
+
+  md_init_header "Think Different Session (Seed ${seed_num})" "$SEED_TOPIC"
+  json_open
+
+  # Source and run the mode
+  source "${SCRIPT_DIR}/modes/${MODE}.sh"
+  run_session
+
+  # Close JSON
+  json_close
+
+  TRANSCRIPT_FILES+=("$TRANSCRIPT_MD")
+  seed_num=$((seed_num + 1))
+done
+
+# ── 5. Output ──
+PRES_FILE="$OUTPUT_DIR/presentation_${TIMESTAMP}.pptx"
+
+if [ ${#TRANSCRIPT_FILES[@]} -eq 1 ]; then
+  # Single session - generate presentation directly from transcript
+  PRES_CONTENT=$(generate_presentation "$CONVERSATION" "$SEED_TOPIC" "$WORD_COUNT" "$PRES_FILE" "${TURN_COUNT} turns, ${MODE} composition")
+
+  printf "\n\n---\n\n## Presentation\n\n" >> "$TRANSCRIPT_MD"
+  echo "$PRES_CONTENT" >> "$TRANSCRIPT_MD"
+
+  echo ""
+  echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "  ✦ Session complete"
+  echo "    ${#SEEDS[@]} seed, ${TURN_COUNT} turns, ${MODE} composition"
+  echo ""
+  echo "  📝 Presentation: $PRES_FILE"
+  echo "  📄 Transcript:   $TRANSCRIPT_MD"
+  echo "  📊 JSON:         $TRANSCRIPT_JSON"
+  if [ -f "$OUTPUT_DIR/context_${TIMESTAMP}.md" ]; then
+    echo "  📍 Context:      $OUTPUT_DIR/context_${TIMESTAMP}.md"
+  fi
+  echo ""
+  echo "  Re-run presentation at different length:"
+  echo "    ./think.sh --report-only $TRANSCRIPT_MD --words 1500"
+  echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+else
+  # Multiple sessions - synthesise into one presentation
+  seed_summary=""
+  case "$input_type" in
+    brief)   seed_summary="Distilled from brief: $(basename "$BRIEF_FILE")" ;;
+    brand)   seed_summary="Distilled from brand: $BRAND_NAME" ;;
+    notes)   seed_summary="Distilled from notes: ${NOTES_TEXT:0:100}" ;;
+    seed)    seed_summary="Distilled from seed: ${SEEDS[0]:0:100}" ;;
+    project) seed_summary="Distilled from project context" ;;
+  esac
+
+  synthesise_presentations "$WORD_COUNT" "$PRES_FILE" "$seed_summary" "${TRANSCRIPT_FILES[@]}" > /dev/null
+
+  echo ""
+  echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "  ✦ Session complete"
+  echo "    ${#SEEDS[@]} seeds, ${MODE} composition"
+  echo ""
+  echo "  📝 Presentation: $PRES_FILE"
+  for tf in "${TRANSCRIPT_FILES[@]}"; do
+    echo "  📄 Transcript:  $tf"
+  done
+  echo ""
+  echo "  Re-run presentation at different length:"
+  echo "    ./think.sh --synthesise ${TRANSCRIPT_FILES[*]} --words 1500"
+  echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+fi

@@ -124,6 +124,9 @@ read_input_material() {
     notes)
       echo "Working notes: ${input_value}"
       ;;
+    seed)
+      echo "Seed topic for creative thinking: ${input_value}. This is a direct starting point. Generate provocations that fracture, challenge, and reframe this seed from multiple uncomfortable angles."
+      ;;
     project)
       echo "Project directory context. No specific seed provided. Generate provocations from the project context alone."
       ;;
