@@ -325,4 +325,4 @@ report/
 
 ## Credits
 
-Inspired by the cognitive science of dyslexic thinking (Made By Dyslexia, GCHQ), predictive processing (Andy Clark), behavioural science (Rory Sutherland), and the philosophy that the people who are crazy enough to think they can change the world are the ones who do.
+Inspired by the cognitive science of dyslexic thinking (Made By Dyslexia, GCHQ), predictive processing  ('The Experience Machine' Andy Clark), behavioural science (Rory Sutherland), and the philosophy that the people who are crazy enough to think they can change the world are the ones who do (Apple).
