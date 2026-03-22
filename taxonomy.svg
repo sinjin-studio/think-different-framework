@@ -1,0 +1,164 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-80 -60 1160 1100">
+  <style>
+    text { font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; }
+    .comp-text { font-size: 13px; font-weight: 600; fill: #fff; }
+    .node-text { font-size: 11.5px; font-weight: 500; fill: #1e293b; }
+    .group-label { font-size: 11px; font-style: italic; fill: #94a3b8; }
+    .legend-text { font-size: 11px; fill: #64748b; }
+    .ring-label { font-size: 10px; fill: #94a3b8; letter-spacing: 0.5px; }
+  </style>
+
+  <!-- Ring guides -->
+  <circle cx="500" cy="500" r="110" fill="none" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="5 3"/>
+  <circle cx="500" cy="500" r="260" fill="none" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="5 3"/>
+  <circle cx="500" cy="500" r="400" fill="none" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="5 3"/>
+
+  <!-- Connection curves -->
+  <g fill="none" stroke-width="2.5" stroke-linecap="round">
+
+    <!-- Dyslexic connections (orange) -->
+    <g stroke="#ff6b35" opacity="0.4">
+      <!-- To Fragmentary cognitions -->
+      <path d="M500,420 Q420,340 370,275"/>
+      <path d="M500,420 Q560,330 600,265"/>
+      <path d="M500,420 Q630,410 730,430"/>
+      <path d="M500,420 Q620,530 700,610"/>
+      <!-- To perceivers: Empath, Provocateur, Observer, Anxious, Child, Includer -->
+      <path d="M500,420 Q500,260 500,105"/>
+      <path d="M500,420 Q680,310 830,240"/>
+      <path d="M500,420 Q710,470 890,545"/>
+      <path d="M500,420 Q530,660 540,890"/>
+      <path d="M500,420 Q350,650 250,850"/>
+      <path d="M500,420 Q290,470 105,530"/>
+      <!-- Skeptic: excluded by default, available via include flag -->
+      <path d="M500,420 Q340,320 195,235" stroke-dasharray="6 4"/>
+    </g>
+
+    <!-- Spiral connections (purple) -->
+    <g stroke="#7b2d8e" opacity="0.4">
+      <!-- To Deepening cognitions -->
+      <path d="M405,555 Q330,610 270,655"/>
+      <path d="M405,555 Q320,510 250,470"/>
+      <path d="M405,555 Q340,430 290,320"/>
+      <!-- To perceivers: Empath, Provocateur, Observer, Skeptic, Includer -->
+      <path d="M405,555 Q460,320 500,105"/>
+      <path d="M405,555 Q630,380 830,240"/>
+      <path d="M405,555 Q660,540 890,545"/>
+      <path d="M405,555 Q290,390 195,235"/>
+      <path d="M405,555 Q250,540 105,530"/>
+    </g>
+
+    <!-- Lapidary connections (amber/bronze) -->
+    <g stroke="#b07d2e" opacity="0.4">
+      <!-- To Evaluative cognitions -->
+      <path d="M595,555 Q650,650 680,730"/>
+      <path d="M595,555 Q560,670 520,770"/>
+      <path d="M595,555 Q470,660 360,740"/>
+      <!-- To perceivers: Empath, Connoisseur, Provocateur, Observer, Skeptic -->
+      <path d="M595,555 Q550,320 500,105"/>
+      <path d="M595,555 Q700,700 780,830"/>
+      <path d="M595,555 Q730,380 830,240"/>
+      <path d="M595,555 Q750,540 890,545"/>
+      <path d="M595,555 Q390,380 195,235"/>
+    </g>
+  </g>
+
+  <!-- Cognition group labels -->
+  <text class="group-label" x="560" y="360" text-anchor="middle">Fragmentary</text>
+  <text class="group-label" x="340" y="565" text-anchor="middle">Deepening</text>
+  <text class="group-label" x="530" y="700" text-anchor="middle">Evaluative</text>
+
+  <!-- Perceiver nodes (outer ring) -->
+  <g>
+    <rect x="466" y="92" width="68" height="26" rx="13" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text class="node-text" x="500" y="105" text-anchor="middle" dominant-baseline="central">Empath</text>
+
+    <rect x="779" y="227" width="102" height="26" rx="13" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text class="node-text" x="830" y="240" text-anchor="middle" dominant-baseline="central">Provocateur</text>
+
+    <rect x="851" y="532" width="78" height="26" rx="13" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text class="node-text" x="890" y="545" text-anchor="middle" dominant-baseline="central">Observer</text>
+
+    <rect x="729" y="817" width="102" height="26" rx="13" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text class="node-text" x="780" y="830" text-anchor="middle" dominant-baseline="central">Connoisseur</text>
+
+    <rect x="504" y="877" width="72" height="26" rx="13" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text class="node-text" x="540" y="890" text-anchor="middle" dominant-baseline="central">Anxious</text>
+
+    <rect x="222" y="837" width="56" height="26" rx="13" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text class="node-text" x="250" y="850" text-anchor="middle" dominant-baseline="central">Child</text>
+
+    <rect x="67" y="517" width="76" height="26" rx="13" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text class="node-text" x="105" y="530" text-anchor="middle" dominant-baseline="central">Includer</text>
+
+    <rect x="161" y="222" width="68" height="26" rx="13" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text class="node-text" x="195" y="235" text-anchor="middle" dominant-baseline="central">Skeptic</text>
+  </g>
+
+  <!-- Cognition nodes - Fragmentary -->
+  <g>
+    <rect x="322" y="262" width="96" height="26" rx="13" fill="#eef2ff" stroke="#6366f1" stroke-width="1.5"/>
+    <text class="node-text" x="370" y="275" text-anchor="middle" dominant-baseline="central">Decomposer</text>
+
+    <rect x="554" y="252" width="92" height="26" rx="13" fill="#eef2ff" stroke="#6366f1" stroke-width="1.5"/>
+    <text class="node-text" x="600" y="265" text-anchor="middle" dominant-baseline="central">Associator</text>
+
+    <rect x="699" y="417" width="62" height="26" rx="13" fill="#eef2ff" stroke="#6366f1" stroke-width="1.5"/>
+    <text class="node-text" x="730" y="430" text-anchor="middle" dominant-baseline="central">Scaler</text>
+
+    <rect x="667" y="597" width="66" height="26" rx="13" fill="#eef2ff" stroke="#6366f1" stroke-width="1.5"/>
+    <text class="node-text" x="700" y="610" text-anchor="middle" dominant-baseline="central">Reifier</text>
+  </g>
+
+  <!-- Cognition nodes - Deepening -->
+  <g>
+    <rect x="232" y="642" width="76" height="26" rx="13" fill="#faf5ff" stroke="#a855f7" stroke-width="1.5"/>
+    <text class="node-text" x="270" y="655" text-anchor="middle" dominant-baseline="central">Diverger</text>
+
+    <rect x="203" y="457" width="94" height="26" rx="13" fill="#faf5ff" stroke="#a855f7" stroke-width="1.5"/>
+    <text class="node-text" x="250" y="470" text-anchor="middle" dominant-baseline="central">Analogiser</text>
+
+    <rect x="247" y="307" width="86" height="26" rx="13" fill="#faf5ff" stroke="#a855f7" stroke-width="1.5"/>
+    <text class="node-text" x="290" y="320" text-anchor="middle" dominant-baseline="central">Integrator</text>
+  </g>
+
+  <!-- Cognition nodes - Evaluative -->
+  <g>
+    <rect x="649" y="717" width="62" height="26" rx="13" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+    <text class="node-text" x="680" y="730" text-anchor="middle" dominant-baseline="central">Editor</text>
+
+    <rect x="477" y="757" width="86" height="26" rx="13" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+    <text class="node-text" x="520" y="770" text-anchor="middle" dominant-baseline="central">Appraiser</text>
+
+    <rect x="320" y="727" width="80" height="26" rx="13" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+    <text class="node-text" x="360" y="740" text-anchor="middle" dominant-baseline="central">Historian</text>
+  </g>
+
+  <!-- Composition nodes (inner ring) -->
+  <g>
+    <rect x="459" y="404" width="82" height="32" rx="16" fill="#ff6b35"/>
+    <text class="comp-text" x="500" y="420" text-anchor="middle" dominant-baseline="central">Dyslexic</text>
+
+    <rect x="372" y="539" width="66" height="32" rx="16" fill="#7b2d8e"/>
+    <text class="comp-text" x="405" y="555" text-anchor="middle" dominant-baseline="central">Spiral</text>
+
+    <rect x="554" y="539" width="82" height="32" rx="16" fill="#b07d2e"/>
+    <text class="comp-text" x="595" y="555" text-anchor="middle" dominant-baseline="central">Lapidary</text>
+  </g>
+
+  <!-- Legend -->
+  <g>
+    <line x1="175" y1="975" x2="205" y2="975" stroke="#ff6b35" stroke-width="2.5"/>
+    <text class="legend-text" x="213" y="979">Dyslexic</text>
+
+    <line x1="300" y1="975" x2="330" y2="975" stroke="#7b2d8e" stroke-width="2.5"/>
+    <text class="legend-text" x="338" y="979">Spiral</text>
+
+    <line x1="400" y1="975" x2="430" y2="975" stroke="#b07d2e" stroke-width="2.5"/>
+    <text class="legend-text" x="438" y="979">Lapidary</text>
+
+    <text class="legend-text" x="540" y="979">All perceivers optional per composition</text>
+
+    <text class="ring-label" x="500" y="1005" text-anchor="middle">INNER: COMPOSITIONS · MIDDLE: COGNITIONS · OUTER: PERCEIVERS</text>
+  </g>
+</svg>

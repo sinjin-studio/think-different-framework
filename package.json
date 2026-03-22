@@ -1,0 +1,40 @@
+{
+  "name": "@sinjin-studio/think-different-framework",
+  "version": "0.1.0",
+  "description": "Multi-agent structured divergence framework for Claude Code CLI. Multiple AI agents with different cognitive modes think together, then distil their collisions into insight.",
+  "bin": {
+    "think-different": "./think.sh",
+    "td": "./think.sh"
+  },
+  "files": [
+    "think.sh",
+    "lib/",
+    "agents/",
+    "context/",
+    "mechanisms/",
+    "modes/",
+    "report/",
+    "taxonomy.svg",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "claude",
+    "ai",
+    "divergent-thinking",
+    "multi-agent",
+    "dyslexic-thinking",
+    "creative-framework",
+    "claude-code"
+  ],
+  "author": "Sinjin Studio",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sinjin-studio/think-different-framework.git"
+  },
+  "homepage": "https://github.com/sinjin-studio/think-different-framework#readme",
+  "bugs": {
+    "url": "https://github.com/sinjin-studio/think-different-framework/issues"
+  }
+}
