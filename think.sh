@@ -348,12 +348,16 @@ PROJECT_CONTEXT=""
 
 # ── Build experiment banner lines ──
 EXPERIMENT_LINES=()
+if [ ${#INCLUDE_AGENTS[@]} -gt 0 ]; then
 for inc in "${INCLUDE_AGENTS[@]}"; do
   EXPERIMENT_LINES+=("    + ${inc} (included via --include)")
 done
+fi
+if [ ${#EXCLUDE_AGENTS[@]} -gt 0 ]; then
 for exc in "${EXCLUDE_AGENTS[@]}"; do
   EXPERIMENT_LINES+=("    - ${exc} (excluded via --exclude)")
 done
+fi
 [ "$FRICTION_ENABLED" != "true" ] && EXPERIMENT_LINES+=("    - friction (disabled via --no-friction)")
 [ "$BIAS_ENABLED" != "true" ] && EXPERIMENT_LINES+=("    - bias (disabled via --no-bias)")
 [ "$SENSORY_ENABLED" != "true" ] && EXPERIMENT_LINES+=("    - sensory (disabled via --no-sensory)")
