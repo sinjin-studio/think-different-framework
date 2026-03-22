@@ -1,10 +1,10 @@
 {
-  "name": "@sinjin-studio/think-different-framework",
-  "version": "0.1.0",
+  "name": "@sinjin/think-different-framework",
+  "version": "0.1.1",
   "description": "Multi-agent structured divergence framework for Claude Code CLI. Multiple AI agents with different cognitive modes think together, then distil their collisions into insight.",
   "bin": {
-    "think-different": "./bin/think-different",
-    "td": "./bin/think-different"
+    "think-different": "./bin/think-different.js",
+    "td": "./bin/think-different.js"
   },
   "files": [
     "think.sh",

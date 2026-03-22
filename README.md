@@ -21,7 +21,7 @@ No single agent is thinking differently. The system is. The divergent thinking i
 ### Install via npm
 
 ```bash
-npm install -g @sinjin-studio/think-different-framework
+npm install -g @sinjin/think-different-framework
 
 # Then run from anywhere
 think-different "Your seed topic or question"
