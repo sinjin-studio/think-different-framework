@@ -3,11 +3,12 @@
   "version": "0.1.0",
   "description": "Multi-agent structured divergence framework for Claude Code CLI. Multiple AI agents with different cognitive modes think together, then distil their collisions into insight.",
   "bin": {
-    "think-different": "./think.sh",
-    "td": "./think.sh"
+    "think-different": "./bin/think-different",
+    "td": "./bin/think-different"
   },
   "files": [
     "think.sh",
+    "bin/",
     "lib/",
     "agents/",
     "context/",
