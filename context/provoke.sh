@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ── Provocation generation ──
 # Distills raw input (brief, brand, notes, project context) into
-# 3-5 seed provocations that drive separate thinking sessions.
-# Expects globals: $PROJECT_CONTEXT (optional)
+# seed provocations that drive separate thinking sessions.
+# Expects globals: $SEED_COUNT (default 3), $PROJECT_CONTEXT (optional)
 # Sets: $PROVOCATIONS (array)
 
 generate_provocations() {
@@ -18,7 +18,7 @@ PROJECT CONTEXT (ground truth about the actual situation):
 ${PROJECT_CONTEXT}"
   fi
 
-  local provoke_prompt="You are a provocateur preparing a creative thinking session. You have been given some input material. Your job is to digest it and produce 3-5 SEED PROVOCATIONS.
+  local provoke_prompt="You are a provocateur preparing a creative thinking session. You have been given some input material. Your job is to digest it and produce exactly ${SEED_COUNT} SEED PROVOCATIONS.
 
 Each provocation should be:
 - Uncomfortable, not safe
@@ -32,7 +32,7 @@ Do NOT produce:
 - Obvious angles that any brief would generate
 - Questions that invite agreement rather than friction
 
-Format: Output ONLY the provocations, one per line, numbered 1-5. No preamble, no explanation, no meta-commentary. Each provocation should be a single sentence.
+Format: Output ONLY the provocations, one per line, numbered 1-${SEED_COUNT}. No preamble, no explanation, no meta-commentary. Each provocation should be a single sentence.
 
 INPUT TYPE: ${input_type}
 

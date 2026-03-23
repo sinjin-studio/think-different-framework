@@ -26,6 +26,13 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Detect invocation name for user-facing output
+if [[ "${BASH_SOURCE[0]}" == */node_modules/* ]] || [[ "$0" == *think-different* ]] || [[ "$0" == *"/td" ]]; then
+  CMD_NAME="td"
+else
+  CMD_NAME="./think.sh"
+fi
+
 # ── Parse arguments ──
 
 SEED_TOPIC=""
@@ -49,6 +56,10 @@ FRICTION_ENABLED="true"
 BIAS_ENABLED="true"
 SENSORY_ENABLED="true"
 SHUFFLE_ENABLED="false"
+GROUND_ENABLED="true"
+GROUND_ONLY=""
+SEED_COUNT=""
+SEEDS_SET_BY_USER=""
 ROUND_COUNT=""
 SPIRAL_COUNT=""
 PASS_COUNT=""
@@ -59,23 +70,23 @@ show_help() {
   echo "  ─────────────────────────────"
   echo ""
   echo "  From any input (distil into provocations, run sessions, present):"
-  echo "    ./think.sh \"Your seed topic or question\""
-  echo "    ./think.sh \"topic\" --mode spiral --words 1500"
-  echo "    ./think.sh --brief ./client-brief.pdf"
-  echo "    ./think.sh --brand \"Nike\""
-  echo "    ./think.sh --notes \"luxury wellness, Gen Z, sustainability\""
-  echo "    ./think.sh --brief ./brief.pdf --pick    # interactive selection"
-  echo "    ./think.sh --brief ./brief.pdf --mode spiral"
+  echo "    $CMD_NAME \"Your seed topic or question\""
+  echo "    $CMD_NAME \"topic\" --mode spiral --words 1500"
+  echo "    $CMD_NAME --brief ./client-brief.pdf"
+  echo "    $CMD_NAME --brand \"Nike\""
+  echo "    $CMD_NAME --notes \"luxury wellness, Gen Z, sustainability\""
+  echo "    $CMD_NAME --brief ./brief.pdf --pick    # interactive selection"
+  echo "    $CMD_NAME --brief ./brief.pdf --mode spiral"
   echo ""
   echo "  With project context:"
-  echo "    cd ~/projects/my-project && ~/think.sh \"seed topic\""
-  echo "    ./think.sh \"seed topic\" --context ./brief.md"
+  echo "    cd ~/projects/my-project && $CMD_NAME \"seed topic\""
+  echo "    $CMD_NAME \"seed topic\" --context ./brief.md"
   echo ""
   echo "  Manual synthesis of existing transcripts:"
-  echo "    ./think.sh --synthesise ./run1/*.md ./run2/*.md --words 1500"
+  echo "    $CMD_NAME --synthesise ./run1/*.md ./run2/*.md --words 1500"
   echo ""
   echo "  Re-run presentation from existing transcript:"
-  echo "    ./think.sh --report-only ./transcript.md --words 2000"
+  echo "    $CMD_NAME --report-only ./transcript.md --words 2000"
   echo ""
   echo "  Options:"
   echo "    --mode MODE      Composition: dyslexic (default), spiral, lapidary"
@@ -85,6 +96,7 @@ show_help() {
   echo "    --brief FILE     Generate provocations from a brief file"
   echo "    --brand NAME     Generate provocations from a brand name"
   echo "    --notes TEXT     Generate provocations from working notes"
+  echo "    --seeds N        Number of provocations to generate (default: 3, max: 12)"
   echo "    --pick           Interactively select which provocations to run"
   echo "    --synthesise     Synthesise existing transcript files into one presentation"
   echo "    --report-only F  Regenerate presentation from existing transcript"
@@ -100,6 +112,8 @@ show_help() {
   echo "    --spirals N      Number of spirals (spiral default: 3)"
   echo "    --passes N       Number of passes (lapidary default: 3)"
   echo "    --shuffle        Randomize agent order within each round/phase"
+  echo "    --no-ground      Skip assumption grounding step before session"
+  echo "    --ground-only    Run only the grounding step, then exit"
   echo ""
   exit 0
 }
@@ -189,6 +203,27 @@ while [ $# -gt 0 ]; do
       SHUFFLE_ENABLED="true"
       shift
       ;;
+    --no-ground)
+      GROUND_ENABLED="false"
+      shift
+      ;;
+    --ground-only)
+      GROUND_ONLY="true"
+      shift
+      ;;
+    --seeds)
+      shift
+      SEED_COUNT="$1"
+      SEEDS_SET_BY_USER="true"
+      if [ "$SEED_COUNT" -lt 1 ] 2>/dev/null; then
+        SEED_COUNT=1
+      fi
+      if [ "$SEED_COUNT" -gt 12 ] 2>/dev/null; then
+        echo "Error: max 12 seeds (requested $SEED_COUNT). Each seed runs a full session."
+        exit 1
+      fi
+      shift
+      ;;
     --report-only|-r)
       PRES_ONLY="true"
       shift
@@ -264,6 +299,28 @@ if ! command -v claude &> /dev/null; then
   exit 1
 fi
 
+# ── Detect Claude plan for default seed count ──
+CLAUDE_PLAN=""
+if auth_json=$(claude auth status 2>/dev/null); then
+  CLAUDE_PLAN=$(echo "$auth_json" | grep -o '"subscriptionType":"[^"]*"' | cut -d'"' -f4)
+fi
+
+if [ -z "$SEEDS_SET_BY_USER" ]; then
+  case "$CLAUDE_PLAN" in
+    max|enterprise|team)
+      SEED_COUNT="${SEED_COUNT:-3}"
+      ;;
+    *)
+      SEED_COUNT="${SEED_COUNT:-1}"
+      # Only show info when in distillation mode (brief/brand/notes generate multiple provocations)
+      if [ -n "$BRIEF_FILE" ] || [ -n "$BRAND_NAME" ] || [ -n "$NOTES_TEXT" ]; then
+        echo "  ℹ  Pro plan detected - defaulting to 1 provocation (use --seeds N to override)."
+        echo "     Max plan recommended for multi-provocation sessions. See README for details."
+      fi
+      ;;
+  esac
+fi
+
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 mkdir -p "$OUTPUT_DIR"
 
@@ -274,6 +331,15 @@ source "${SCRIPT_DIR}/lib/md.sh"
 source "${SCRIPT_DIR}/lib/markers.sh"
 source "${SCRIPT_DIR}/lib/call_agent.sh"
 source "${SCRIPT_DIR}/report/generate.sh"
+
+# ── Convert markdown presentation to .pptx ──
+convert_to_pptx() {
+  local md_file="$1"
+  local pptx_file="$2"
+  python3 "${SCRIPT_DIR}/report/md-to-pptx.py" "$md_file" "$pptx_file" 2>/dev/null || {
+    echo "  (python-pptx not available - .pptx skipped. Install with: pip3 install python-pptx)"
+  }
+}
 
 # ══════════════════════════════════════════════
 #  SYNTHESISE MODE
@@ -289,14 +355,17 @@ if [ -n "$SYNTHESISE_MODE" ]; then
   echo "  Words: $WORD_COUNT"
   echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-  PRES_FILE="$OUTPUT_DIR/presentation_${TIMESTAMP}.pptx"
+  PRES_FILE="$OUTPUT_DIR/presentation_${TIMESTAMP}.md"
+  PPTX_FILE="$OUTPUT_DIR/presentation_${TIMESTAMP}.pptx"
   synthesise_presentations "$WORD_COUNT" "$PRES_FILE" "Cross-session synthesis" "${SYNTHESISE_FILES[@]}" > /dev/null
+  convert_to_pptx "$PRES_FILE" "$PPTX_FILE"
 
   echo ""
   echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo "  ✦ Synthesis complete"
   echo ""
   echo "  📝 Presentation: $PRES_FILE"
+  echo "  📊 Slides:       $PPTX_FILE"
   echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo ""
   exit 0
@@ -320,14 +389,17 @@ if [ -n "$PRES_ONLY" ]; then
   fi
 
   CONVERSATION=$(cat "$PRES_SOURCE")
-  PRES_FILE="$OUTPUT_DIR/presentation_${TIMESTAMP}.pptx"
+  PRES_FILE="$OUTPUT_DIR/presentation_${TIMESTAMP}.md"
+  PPTX_FILE="$OUTPUT_DIR/presentation_${TIMESTAMP}.pptx"
   generate_presentation "$CONVERSATION" "$SEED_TOPIC" "$WORD_COUNT" "$PRES_FILE" > /dev/null
+  convert_to_pptx "$PRES_FILE" "$PPTX_FILE"
 
   echo ""
   echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo "  ✦ Presentation generated"
   echo ""
   echo "  📝 Presentation: $PRES_FILE"
+  echo "  📊 Slides:       $PPTX_FILE"
   echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo ""
   exit 0
@@ -365,6 +437,7 @@ fi
 [ -n "$SPIRAL_COUNT" ] && EXPERIMENT_LINES+=("    ~ spirals: ${SPIRAL_COUNT} (via --spirals)")
 [ -n "$PASS_COUNT" ] && EXPERIMENT_LINES+=("    ~ passes: ${PASS_COUNT} (via --passes)")
 [ "$SHUFFLE_ENABLED" = "true" ] && EXPERIMENT_LINES+=("    ~ shuffle (agent order randomized)")
+[ "$GROUND_ENABLED" != "true" ] && EXPERIMENT_LINES+=("    - ground (disabled via --no-ground)")
 
 # ── 1. Read input material ──
 # All paths produce INPUT_MATERIAL for distillation
@@ -426,6 +499,39 @@ fi
 echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
+# ── Ground-only mode ──
+if [ -n "$GROUND_ONLY" ]; then
+  source "${SCRIPT_DIR}/context/gather.sh"
+  source "${SCRIPT_DIR}/context/ground.sh"
+  source "${SCRIPT_DIR}/lib/json.sh"
+  source "${SCRIPT_DIR}/lib/md.sh"
+
+  # Use seed or first line of input as the seed topic
+  if [ -z "$SEED_TOPIC" ]; then
+    SEED_TOPIC=$(echo "$INPUT_MATERIAL" | head -1)
+  fi
+
+  TRANSCRIPT_MD="$OUTPUT_DIR/ground_${TIMESTAMP}.md"
+  TRANSCRIPT_JSON="$OUTPUT_DIR/ground_${TIMESTAMP}.json"
+  md_init_header "Ground Check" "$SEED_TOPIC"
+  json_open
+
+  gather_project_context
+  ground_seed
+
+  json_close
+
+  echo ""
+  echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "  ✦ Ground check complete"
+  echo ""
+  echo "  📄 Transcript: $TRANSCRIPT_MD"
+  echo "  📊 JSON:       $TRANSCRIPT_JSON"
+  echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+  exit 0
+fi
+
 # ── 2. Distil into seeds (always) ──
 generate_provocations "$INPUT_MATERIAL" "$input_type"
 
@@ -442,7 +548,19 @@ if [ -n "$PICK_MODE" ]; then
   SEEDS=("${PROVOCATIONS[@]}")
 fi
 
-# ── 4. Run sessions ──
+# ── 4. Warn if many seeds ──
+if [ ${#SEEDS[@]} -gt 5 ]; then
+  est_hours=$(( ${#SEEDS[@]} * 15 / 60 ))
+  echo "  Warning: ${#SEEDS[@]} seeds will run ~${est_hours}+ hours (each seed is a full session)."
+  echo -n "  Continue? [y/N] "
+  read -r confirm
+  if [ "$confirm" != "y" ] && [ "$confirm" != "Y" ]; then
+    echo "  Aborted. Use --pick to select fewer, or --seeds N to generate fewer."
+    exit 0
+  fi
+fi
+
+# ── 5. Run sessions ──
 TRANSCRIPT_FILES=()
 seed_num=1
 for seed in "${SEEDS[@]}"; do
@@ -479,8 +597,9 @@ for seed in "${SEEDS[@]}"; do
   seed_num=$((seed_num + 1))
 done
 
-# ── 5. Output ──
-PRES_FILE="$OUTPUT_DIR/presentation_${TIMESTAMP}.pptx"
+# ── 6. Output ──
+PRES_FILE="$OUTPUT_DIR/presentation_${TIMESTAMP}.md"
+PPTX_FILE="$OUTPUT_DIR/presentation_${TIMESTAMP}.pptx"
 
 if [ ${#TRANSCRIPT_FILES[@]} -eq 1 ]; then
   # Single session - generate presentation directly from transcript
@@ -489,12 +608,15 @@ if [ ${#TRANSCRIPT_FILES[@]} -eq 1 ]; then
   printf "\n\n---\n\n## Presentation\n\n" >> "$TRANSCRIPT_MD"
   echo "$PRES_CONTENT" >> "$TRANSCRIPT_MD"
 
+  convert_to_pptx "$PRES_FILE" "$PPTX_FILE"
+
   echo ""
   echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo "  ✦ Session complete"
   echo "    ${#SEEDS[@]} seed, ${TURN_COUNT} turns, ${MODE} composition"
   echo ""
   echo "  📝 Presentation: $PRES_FILE"
+  echo "  📊 Slides:       $PPTX_FILE"
   echo "  📄 Transcript:   $TRANSCRIPT_MD"
   echo "  📊 JSON:         $TRANSCRIPT_JSON"
   if [ -f "$OUTPUT_DIR/context_${TIMESTAMP}.md" ]; then
@@ -502,7 +624,7 @@ if [ ${#TRANSCRIPT_FILES[@]} -eq 1 ]; then
   fi
   echo ""
   echo "  Re-run presentation at different length:"
-  echo "    ./think.sh --report-only $TRANSCRIPT_MD --words 1500"
+  echo "    $CMD_NAME --report-only $TRANSCRIPT_MD --words 1500"
   echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo ""
 else
@@ -517,6 +639,7 @@ else
   esac
 
   synthesise_presentations "$WORD_COUNT" "$PRES_FILE" "$seed_summary" "${TRANSCRIPT_FILES[@]}" > /dev/null
+  convert_to_pptx "$PRES_FILE" "$PPTX_FILE"
 
   echo ""
   echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -524,12 +647,13 @@ else
   echo "    ${#SEEDS[@]} seeds, ${MODE} composition"
   echo ""
   echo "  📝 Presentation: $PRES_FILE"
+  echo "  📊 Slides:       $PPTX_FILE"
   for tf in "${TRANSCRIPT_FILES[@]}"; do
     echo "  📄 Transcript:  $tf"
   done
   echo ""
   echo "  Re-run presentation at different length:"
-  echo "    ./think.sh --synthesise ${TRANSCRIPT_FILES[*]} --words 1500"
+  echo "    $CMD_NAME --synthesise ${TRANSCRIPT_FILES[*]} --words 1500"
   echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo ""
 fi
