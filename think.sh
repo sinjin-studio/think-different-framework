@@ -36,7 +36,7 @@ fi
 # ── Parse arguments ──
 
 SEED_TOPIC=""
-OUTPUT_DIR="./think_output"
+OUTPUT_DIR="./think-different-output"
 WORD_COUNT="500-800"
 MODE="dyslexic"
 PRES_ONLY=""
@@ -48,6 +48,7 @@ BRIEF_FILE=""
 BRAND_NAME=""
 NOTES_TEXT=""
 PICK_MODE=""
+RESUME_FILE=""
 
 # ── Experimental composition flags ──
 INCLUDE_AGENTS=()
@@ -91,7 +92,7 @@ show_help() {
   echo "  Options:"
   echo "    --mode MODE      Composition: dyslexic (default), spiral, lapidary"
   echo "    --words N        Target word count for presentation (default: 500-800)"
-  echo "    --output DIR     Output directory (default: ./think_output)"
+  echo "    --output DIR     Output directory (default: ./think-different-output)"
   echo "    --context FILE   Explicit context file to ground the session"
   echo "    --brief FILE     Generate provocations from a brief file"
   echo "    --brand NAME     Generate provocations from a brand name"
@@ -100,6 +101,7 @@ show_help() {
   echo "    --pick           Interactively select which provocations to run"
   echo "    --synthesise     Synthesise existing transcript files into one presentation"
   echo "    --report-only F  Regenerate presentation from existing transcript"
+  echo "    --resume FILE    Resume an interrupted session from state file"
   echo "    --help           Show this help"
   echo ""
   echo "  Experimental:"
@@ -239,6 +241,11 @@ while [ $# -gt 0 ]; do
         shift
       done
       ;;
+    --resume)
+      shift
+      RESUME_FILE="$1"
+      shift
+      ;;
     -*)
       echo "Unknown option: $1"
       show_help
@@ -269,7 +276,7 @@ if [ -n "$SEED_TOPIC" ] || [ -n "$BRIEF_FILE" ] || [ -n "$BRAND_NAME" ] || [ -n 
   HAS_INPUT="true"
 fi
 
-if [ -z "$PRES_ONLY" ] && [ -z "$SYNTHESISE_MODE" ] && [ -z "$HAS_INPUT" ]; then
+if [ -z "$PRES_ONLY" ] && [ -z "$SYNTHESISE_MODE" ] && [ -z "$RESUME_FILE" ] && [ -z "$HAS_INPUT" ]; then
   # Try project auto-detect
   if [ -f "package.json" ] || [ -f "README.md" ] || [ -f "CLAUDE.md" ] || [ -d "src" ] || [ -d "app" ] || [ -f "Cargo.toml" ] || [ -f "pyproject.toml" ]; then
     HAS_INPUT="true"
@@ -324,13 +331,32 @@ fi
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 mkdir -p "$OUTPUT_DIR"
 
+# ── Slugify seed text for folder names ──
+slugify_seed() {
+  local slug
+  slug=$(echo "$1" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9 -]//g' | tr ' ' '-' | sed 's/--*/-/g' | sed 's/^-//' | sed 's/-$//')
+  # Truncate to ~50 chars on a word boundary
+  if [ ${#slug} -gt 50 ]; then
+    slug=$(echo "$slug" | cut -c1-50 | sed 's/-[^-]*$//')
+  fi
+  # Fallback for empty input
+  if [ -z "$slug" ]; then
+    slug="session"
+  fi
+  echo "$slug"
+}
+
 # ── Source libraries ──
 
 source "${SCRIPT_DIR}/lib/json.sh"
 source "${SCRIPT_DIR}/lib/md.sh"
 source "${SCRIPT_DIR}/lib/markers.sh"
+source "${SCRIPT_DIR}/lib/cap_check.sh"
 source "${SCRIPT_DIR}/lib/call_agent.sh"
 source "${SCRIPT_DIR}/report/generate.sh"
+
+# ── Register cleanup trap for cap limit hits ──
+trap cap_limit_cleanup EXIT
 
 # ── Convert markdown presentation to .pptx ──
 convert_to_pptx() {
@@ -355,8 +381,10 @@ if [ -n "$SYNTHESISE_MODE" ]; then
   echo "  Words: $WORD_COUNT"
   echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-  PRES_FILE="$OUTPUT_DIR/presentation_${TIMESTAMP}.md"
-  PPTX_FILE="$OUTPUT_DIR/presentation_${TIMESTAMP}.pptx"
+  SESSION_DIR="$OUTPUT_DIR/synthesis_${TIMESTAMP}"
+  mkdir -p "$SESSION_DIR"
+  PRES_FILE="$SESSION_DIR/presentation.md"
+  PPTX_FILE="$SESSION_DIR/presentation.pptx"
   synthesise_presentations "$WORD_COUNT" "$PRES_FILE" "Cross-session synthesis" "${SYNTHESISE_FILES[@]}" > /dev/null
   convert_to_pptx "$PRES_FILE" "$PPTX_FILE"
 
@@ -389,8 +417,10 @@ if [ -n "$PRES_ONLY" ]; then
   fi
 
   CONVERSATION=$(cat "$PRES_SOURCE")
-  PRES_FILE="$OUTPUT_DIR/presentation_${TIMESTAMP}.md"
-  PPTX_FILE="$OUTPUT_DIR/presentation_${TIMESTAMP}.pptx"
+  SESSION_DIR="$(dirname "$PRES_SOURCE")"
+  pres_suffix=$(date +%H%M%S)
+  PRES_FILE="$SESSION_DIR/presentation_${pres_suffix}.md"
+  PPTX_FILE="$SESSION_DIR/presentation_${pres_suffix}.pptx"
   generate_presentation "$CONVERSATION" "$SEED_TOPIC" "$WORD_COUNT" "$PRES_FILE" > /dev/null
   convert_to_pptx "$PRES_FILE" "$PPTX_FILE"
 
@@ -400,6 +430,103 @@ if [ -n "$PRES_ONLY" ]; then
   echo ""
   echo "  📝 Presentation: $PRES_FILE"
   echo "  📊 Slides:       $PPTX_FILE"
+  echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+  exit 0
+fi
+
+# ══════════════════════════════════════════════
+#  RESUME MODE
+# ══════════════════════════════════════════════
+
+if [ -n "$RESUME_FILE" ]; then
+  load_state "$RESUME_FILE"
+
+  source "${SCRIPT_DIR}/report/synthesise.sh"
+
+  # Derive file paths - resume into same folder as the state file
+  SESSION_DIR="$(dirname "$RESUME_FILE")"
+  TRANSCRIPT_MD="$SESSION_DIR/session.md"
+  TRANSCRIPT_JSON="$SESSION_DIR/session.json"
+  STATE_FILE="$SESSION_DIR/session.state.json"
+
+  # Restore JSON buffer from existing file if present
+  if [ -f "$TRANSCRIPT_JSON" ]; then
+    # Re-populate JSON_ENTRIES from existing file
+    local_count=0
+    while IFS= read -r entry; do
+      JSON_ENTRIES+=("$entry")
+      local_count=$((local_count + 1))
+    done < <(python3 -c "
+import json
+with open('${TRANSCRIPT_JSON}', 'r') as f:
+    data = json.load(f)
+for entry in data:
+    print(json.dumps(entry))
+")
+    echo "  Restored ${local_count} entries from existing JSON transcript"
+  fi
+
+  # Restore MD buffer from existing file if present
+  if [ -f "$TRANSCRIPT_MD" ]; then
+    md_content=$(cat "$TRANSCRIPT_MD")
+    # Split on first --- to separate header from body
+    MD_HEADER=$(echo "$md_content" | sed '/^---$/q')
+    MD_HEADER="${MD_HEADER}
+"
+    MD_BUFFER=$(echo "$md_content" | sed '1,/^---$/d')
+    echo "  Restored markdown transcript"
+  else
+    md_init_header "Think Different Session (Resumed)" "$SEED_TOPIC"
+  fi
+
+  echo ""
+  echo "  🪟 THINK DIFFERENT FRAMEWORK - Resuming"
+  echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "  Seed: ${SEED_TOPIC:0:80}"
+  echo "  Mode: $MODE"
+  echo "  Resuming from turn: $RESUME_FROM_TURN"
+  echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+  # Source and run the mode (skip logic handled by call_agent)
+  source "${SCRIPT_DIR}/modes/${MODE}.sh"
+  run_session || true
+
+  if [ "$CAP_LIMIT_HIT" = "true" ]; then
+    exit 1
+  fi
+
+  # Final flush and mark complete
+  json_flush
+  md_flush
+  complete_state
+
+  PRES_FILE="$SESSION_DIR/presentation.md"
+  PPTX_FILE="$SESSION_DIR/presentation.pptx"
+  PRES_CONTENT=$(generate_presentation "$CONVERSATION" "$SEED_TOPIC" "$WORD_COUNT" "$PRES_FILE" "${TURN_COUNT} turns, ${MODE} composition (resumed)")
+
+  # Append presentation to transcript
+  MD_BUFFER="${MD_BUFFER}
+
+---
+
+## Presentation
+
+${PRES_CONTENT}
+"
+  md_flush
+
+  convert_to_pptx "$PRES_FILE" "$PPTX_FILE"
+
+  echo ""
+  echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "  ✦ Resumed session complete"
+  echo "    ${TURN_COUNT} turns, ${MODE} composition"
+  echo ""
+  echo "  📝 Presentation: $PRES_FILE"
+  echo "  📊 Slides:       $PPTX_FILE"
+  echo "  📄 Transcript:   $TRANSCRIPT_MD"
+  echo "  📊 JSON:         $TRANSCRIPT_JSON"
   echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo ""
   exit 0
@@ -503,23 +630,24 @@ echo ""
 if [ -n "$GROUND_ONLY" ]; then
   source "${SCRIPT_DIR}/context/gather.sh"
   source "${SCRIPT_DIR}/context/ground.sh"
-  source "${SCRIPT_DIR}/lib/json.sh"
-  source "${SCRIPT_DIR}/lib/md.sh"
 
   # Use seed or first line of input as the seed topic
   if [ -z "$SEED_TOPIC" ]; then
     SEED_TOPIC=$(echo "$INPUT_MATERIAL" | head -1)
   fi
 
-  TRANSCRIPT_MD="$OUTPUT_DIR/ground_${TIMESTAMP}.md"
-  TRANSCRIPT_JSON="$OUTPUT_DIR/ground_${TIMESTAMP}.json"
+  SESSION_DIR="$OUTPUT_DIR/$(slugify_seed "$SEED_TOPIC")_${TIMESTAMP}"
+  mkdir -p "$SESSION_DIR"
+  TRANSCRIPT_MD="$SESSION_DIR/session.md"
+  TRANSCRIPT_JSON="$SESSION_DIR/session.json"
   md_init_header "Ground Check" "$SEED_TOPIC"
   json_open
 
   gather_project_context
   ground_seed
 
-  json_close
+  json_flush
+  md_flush
 
   echo ""
   echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -561,6 +689,14 @@ if [ ${#SEEDS[@]} -gt 5 ]; then
 fi
 
 # ── 5. Run sessions ──
+SESSION_DIR="$OUTPUT_DIR/$(slugify_seed "${SEEDS[0]}")_${TIMESTAMP}"
+mkdir -p "$SESSION_DIR"
+
+# Copy deferred context into session folder
+if [ -n "$PROJECT_CONTEXT" ] && [ ! -f "$SESSION_DIR/context.md" ]; then
+  echo "$PROJECT_CONTEXT" > "$SESSION_DIR/context.md"
+fi
+
 TRANSCRIPT_FILES=()
 seed_num=1
 for seed in "${SEEDS[@]}"; do
@@ -576,11 +712,13 @@ for seed in "${SEEDS[@]}"; do
 
   # Suffix for multiple sessions, clean for single
   if [ ${#SEEDS[@]} -gt 1 ]; then
-    TRANSCRIPT_MD="$OUTPUT_DIR/session_${TIMESTAMP}_s${seed_num}.md"
-    TRANSCRIPT_JSON="$OUTPUT_DIR/session_${TIMESTAMP}_s${seed_num}.json"
+    TRANSCRIPT_MD="$SESSION_DIR/session_s${seed_num}.md"
+    TRANSCRIPT_JSON="$SESSION_DIR/session_s${seed_num}.json"
+    STATE_FILE="$SESSION_DIR/session_s${seed_num}.state.json"
   else
-    TRANSCRIPT_MD="$OUTPUT_DIR/session_${TIMESTAMP}.md"
-    TRANSCRIPT_JSON="$OUTPUT_DIR/session_${TIMESTAMP}.json"
+    TRANSCRIPT_MD="$SESSION_DIR/session.md"
+    TRANSCRIPT_JSON="$SESSION_DIR/session.json"
+    STATE_FILE="$SESSION_DIR/session.state.json"
   fi
 
   md_init_header "Think Different Session (Seed ${seed_num})" "$SEED_TOPIC"
@@ -588,25 +726,45 @@ for seed in "${SEEDS[@]}"; do
 
   # Source and run the mode
   source "${SCRIPT_DIR}/modes/${MODE}.sh"
-  run_session
+  run_session || true
 
-  # Close JSON
-  json_close
+  # Final flush (always valid, even on cap hit)
+  json_flush
+  md_flush
+
+  if [ "$CAP_LIMIT_HIT" = "true" ]; then
+    break
+  fi
+
+  # Mark session complete
+  complete_state
 
   TRANSCRIPT_FILES+=("$TRANSCRIPT_MD")
   seed_num=$((seed_num + 1))
 done
 
 # ── 6. Output ──
-PRES_FILE="$OUTPUT_DIR/presentation_${TIMESTAMP}.md"
-PPTX_FILE="$OUTPUT_DIR/presentation_${TIMESTAMP}.pptx"
+# Skip presentation if cap was hit - transcript is saved, user can --report-only later
+if [ "$CAP_LIMIT_HIT" = "true" ]; then
+  exit 1
+fi
+
+PRES_FILE="$SESSION_DIR/presentation.md"
+PPTX_FILE="$SESSION_DIR/presentation.pptx"
 
 if [ ${#TRANSCRIPT_FILES[@]} -eq 1 ]; then
   # Single session - generate presentation directly from transcript
   PRES_CONTENT=$(generate_presentation "$CONVERSATION" "$SEED_TOPIC" "$WORD_COUNT" "$PRES_FILE" "${TURN_COUNT} turns, ${MODE} composition")
 
-  printf "\n\n---\n\n## Presentation\n\n" >> "$TRANSCRIPT_MD"
-  echo "$PRES_CONTENT" >> "$TRANSCRIPT_MD"
+  MD_BUFFER="${MD_BUFFER}
+
+---
+
+## Presentation
+
+${PRES_CONTENT}
+"
+  md_flush
 
   convert_to_pptx "$PRES_FILE" "$PPTX_FILE"
 
@@ -619,8 +777,8 @@ if [ ${#TRANSCRIPT_FILES[@]} -eq 1 ]; then
   echo "  📊 Slides:       $PPTX_FILE"
   echo "  📄 Transcript:   $TRANSCRIPT_MD"
   echo "  📊 JSON:         $TRANSCRIPT_JSON"
-  if [ -f "$OUTPUT_DIR/context_${TIMESTAMP}.md" ]; then
-    echo "  📍 Context:      $OUTPUT_DIR/context_${TIMESTAMP}.md"
+  if [ -f "$SESSION_DIR/context.md" ]; then
+    echo "  📍 Context:      $SESSION_DIR/context.md"
   fi
   echo ""
   echo "  Re-run presentation at different length:"

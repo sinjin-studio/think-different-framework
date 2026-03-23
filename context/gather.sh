@@ -2,7 +2,7 @@
 # ── Project context gathering ──
 # Shared by all compositions. Runs Claude to understand the project
 # from a human-experience perspective.
-# Expects globals: $CONTEXT_FILE, $OUTPUT_DIR, $TIMESTAMP
+# Expects globals: $CONTEXT_FILE, $SESSION_DIR (optional - copies context there if set)
 # Sets: $PROJECT_CONTEXT
 
 gather_project_context() {
@@ -11,7 +11,9 @@ gather_project_context() {
   if [ -n "$CONTEXT_FILE" ]; then
     if [ -f "$CONTEXT_FILE" ]; then
       PROJECT_CONTEXT=$(cat "$CONTEXT_FILE")
-      cp "$CONTEXT_FILE" "$OUTPUT_DIR/context_${TIMESTAMP}.md"
+      if [ -n "${SESSION_DIR:-}" ]; then
+        cp "$CONTEXT_FILE" "$SESSION_DIR/context.md"
+      fi
       echo " done (from file)"
       return
     else
@@ -47,7 +49,9 @@ gather_project_context() {
     cached_commit=$(cat "$cache_commit_file")
     if [ "$cached_commit" = "$current_commit" ]; then
       PROJECT_CONTEXT=$(cat "$cache_file")
-      cp "$cache_file" "$OUTPUT_DIR/context_${TIMESTAMP}.md"
+      if [ -n "${SESSION_DIR:-}" ]; then
+        cp "$cache_file" "$SESSION_DIR/context.md"
+      fi
       echo " done (cached, commit ${current_commit:0:7})"
       return
     else
@@ -71,11 +75,22 @@ Answer these questions in plain, concrete language:
 
 Keep the brief under 500 words. Concrete and specific."
 
-  PROJECT_CONTEXT=$(echo "$gather_prompt" | claude -p 2>/dev/null) || {
+  local gather_tmpfile
+  gather_tmpfile=$(mktemp)
+  echo "$gather_prompt" > "$gather_tmpfile"
+  if claude_call "$gather_tmpfile"; then
+    PROJECT_CONTEXT="$CLAUDE_RESPONSE"
+  else
     PROJECT_CONTEXT=""
+    rm -f "$gather_tmpfile"
+    if [ "$CAP_LIMIT_HIT" = "true" ]; then
+      echo " cap limit reached"
+      return 1
+    fi
     echo " failed (continuing without context)"
     return
-  }
+  fi
+  rm -f "$gather_tmpfile"
 
   mkdir -p "$cache_dir"
   echo "$PROJECT_CONTEXT" > "$cache_file"
@@ -87,6 +102,8 @@ Keep the brief under 500 words. Concrete and specific."
     echo " done (cached, no git)"
   fi
 
-  echo "$PROJECT_CONTEXT" > "$OUTPUT_DIR/context_${TIMESTAMP}.md"
-  echo "  📍 Context saved: $OUTPUT_DIR/context_${TIMESTAMP}.md"
+  if [ -n "${SESSION_DIR:-}" ]; then
+    echo "$PROJECT_CONTEXT" > "$SESSION_DIR/context.md"
+    echo "  📍 Context saved: $SESSION_DIR/context.md"
+  fi
 }
