@@ -309,7 +309,7 @@ fi
 # ── Detect Claude plan for default seed count ──
 CLAUDE_PLAN=""
 if auth_json=$(claude auth status 2>/dev/null); then
-  CLAUDE_PLAN=$(echo "$auth_json" | grep -o '"subscriptionType":"[^"]*"' | cut -d'"' -f4)
+  CLAUDE_PLAN=$(echo "$auth_json" | grep -o '"subscriptionType":"[^"]*"' | cut -d'"' -f4) || true
 fi
 
 if [ -z "$SEEDS_SET_BY_USER" ]; then
@@ -661,10 +661,18 @@ if [ -n "$GROUND_ONLY" ]; then
 fi
 
 # ── 2. Distil into seeds (always) ──
-generate_provocations "$INPUT_MATERIAL" "$input_type"
+if ! generate_provocations "$INPUT_MATERIAL" "$input_type"; then
+  if [ -n "$SEED_TOPIC" ]; then
+    echo "  Using seed topic directly."
+    PROVOCATIONS=("$SEED_TOPIC")
+  elif [ -n "$INPUT_MATERIAL" ]; then
+    echo "  Using input material as seed."
+    PROVOCATIONS=("$(echo "$INPUT_MATERIAL" | head -1)")
+  fi
+fi
 
 if [ ${#PROVOCATIONS[@]} -eq 0 ]; then
-  echo "  No provocations generated. Exiting."
+  echo "  No provocations generated and no fallback available. Exiting."
   exit 1
 fi
 

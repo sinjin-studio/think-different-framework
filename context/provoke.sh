@@ -55,7 +55,7 @@ ${context_block}"
       return 1
     fi
     echo " failed"
-    echo "  Warning: could not generate provocations. Using input as direct seed."
+    echo "  Warning: could not generate provocations."
     PROVOCATIONS=()
     return 1
   fi
