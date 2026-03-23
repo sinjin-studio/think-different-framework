@@ -37,9 +37,16 @@ SEED TOPIC: ${SEED_TOPIC}"
   tmpfile=$(mktemp)
   echo "$fracture_prompt" > "$tmpfile"
 
-  FRACTURE_CONTEXT=$(cat "$tmpfile" | claude -p 2>/dev/null) || {
+  if claude_call "$tmpfile"; then
+    FRACTURE_CONTEXT="$CLAUDE_RESPONSE"
+  else
+    rm -f "$tmpfile"
+    if [ "$CAP_LIMIT_HIT" = "true" ]; then
+      echo " cap limit reached"
+      return 1
+    fi
     FRACTURE_CONTEXT="No fracture context available. Agents should follow their own instincts."
-  }
+  fi
   rm -f "$tmpfile"
 
   echo " done"
@@ -74,16 +81,16 @@ SEED FRACTURE (fragments, adjacencies, and entry points - use what pulls you, ig
 ${FRACTURE_CONTEXT}"
 
   if [ -n "$PROJECT_CONTEXT" ]; then
-    echo "### Project Context" >> "$TRANSCRIPT_MD"
-    echo "" >> "$TRANSCRIPT_MD"
-    echo "${PROJECT_CONTEXT}" >> "$TRANSCRIPT_MD"
-    echo "" >> "$TRANSCRIPT_MD"
+    md_append_section 3 "Project Context"
+    MD_BUFFER="${MD_BUFFER}
+${PROJECT_CONTEXT}
+"
   fi
 
-  echo "### Seed Fracture" >> "$TRANSCRIPT_MD"
-  echo "" >> "$TRANSCRIPT_MD"
-  echo "${FRACTURE_CONTEXT}" >> "$TRANSCRIPT_MD"
-  echo "" >> "$TRANSCRIPT_MD"
+  md_append_section 3 "Seed Fracture"
+  MD_BUFFER="${MD_BUFFER}
+${FRACTURE_CONTEXT}
+"
 
   if [ -n "$PROJECT_CONTEXT" ]; then
     json_append_entry "context" "Context Gatherer" "📍" "Ground Truth" "context" 0 0 "$PROJECT_CONTEXT"

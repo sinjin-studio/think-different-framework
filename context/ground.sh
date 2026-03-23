@@ -47,12 +47,18 @@ SEED TOPIC: ${SEED_TOPIC}"
   tmpfile=$(mktemp)
   echo "$ground_prompt" > "$tmpfile"
 
-  GROUND_CONTEXT=$(cat "$tmpfile" | claude -p 2>/dev/null) || {
+  if claude_call "$tmpfile"; then
+    GROUND_CONTEXT="$CLAUDE_RESPONSE"
+  else
     GROUND_CONTEXT=""
     rm -f "$tmpfile"
+    if [ "$CAP_LIMIT_HIT" = "true" ]; then
+      echo " cap limit reached"
+      return 1
+    fi
     echo " skipped (could not reach model)"
     return
-  }
+  fi
   rm -f "$tmpfile"
 
   echo " done"
@@ -62,11 +68,11 @@ SEED TOPIC: ${SEED_TOPIC}"
   echo "$GROUND_CONTEXT"
   echo ""
 
-  # Write to transcript
-  echo "### Ground Check" >> "$TRANSCRIPT_MD"
-  echo "" >> "$TRANSCRIPT_MD"
-  echo "${GROUND_CONTEXT}" >> "$TRANSCRIPT_MD"
-  echo "" >> "$TRANSCRIPT_MD"
+  # Write to transcript buffer
+  md_append_section 3 "Ground Check"
+  MD_BUFFER="${MD_BUFFER}
+${GROUND_CONTEXT}
+"
 
   # Write to JSON
   json_append_entry "ground" "Ground Check" "🔍" "Assumption Surfacing" "ground" 0 0 "$GROUND_CONTEXT"
@@ -129,11 +135,11 @@ ${num}. CORRECTED: ${correction}"
     done
     echo ""
 
-    # Append corrections to transcript
-    echo "### Corrections" >> "$TRANSCRIPT_MD"
-    echo "" >> "$TRANSCRIPT_MD"
-    echo "${CORRECTIONS}" >> "$TRANSCRIPT_MD"
-    echo "" >> "$TRANSCRIPT_MD"
+    # Append corrections to transcript buffer
+    md_append_section 3 "Corrections"
+    MD_BUFFER="${MD_BUFFER}
+${CORRECTIONS}
+"
 
     # Append corrections to JSON
     json_append_entry "ground" "Ground Check" "🔍" "Corrections" "corrections" 0 0 "$CORRECTIONS"

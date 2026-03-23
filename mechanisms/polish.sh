@@ -29,10 +29,25 @@ ${CONVERSATION}"
   tmpfile=$(mktemp)
   echo "$polish_prompt" > "$tmpfile"
 
+  # Resume skip
+  if [ "$TURN_COUNT" -lt "$RESUME_FROM_TURN" ]; then
+    rm -f "$tmpfile"
+    echo " skipped (resuming)"
+    TURN_COUNT=$((TURN_COUNT + 1))
+    return
+  fi
+
   local assessment
-  assessment=$(cat "$tmpfile" | claude -p 2>/dev/null) || {
+  if claude_call "$tmpfile"; then
+    assessment="$CLAUDE_RESPONSE"
+  else
+    rm -f "$tmpfile"
+    if [ "$CAP_LIMIT_HIT" = "true" ]; then
+      echo " cap limit reached"
+      return 1
+    fi
     assessment="The material is taking shape. Continue working."
-  }
+  fi
   rm -f "$tmpfile"
 
   echo " done"
@@ -43,8 +58,15 @@ ${CONVERSATION}"
 Assessment between passes. What survived, what was revealed, what is the quality trajectory. Work with these signals - they tell you where the density is.
 ${assessment}"
 
-  printf "\n### 💎 Polish (%s %s)\n\n%s\n" "$UNIT_LABEL" "$pass_num" "$assessment" >> "$TRANSCRIPT_MD"
+  md_append_section 3 "💎 Polish (${UNIT_LABEL} ${pass_num})"
+  MD_BUFFER="${MD_BUFFER}
+${assessment}
+"
 
   json_append_entry "polish" "Polish" "💎" "Quality Assessment" "polish" "$pass_num" "$TURN_COUNT" "$assessment"
   TURN_COUNT=$((TURN_COUNT + 1))
+
+  json_flush
+  md_flush
+  save_state
 }

@@ -4,8 +4,8 @@
 # agent_bias_${key}, agent_system_${key} for the given agent key.
 # Appends COMMON_RULES + PHASE INSTRUCTION to the system prompt.
 # Expects globals: $SEED_TOPIC, $CONVERSATION, $UNIT_LABEL, $TURN_COUNT,
-#                  $TRANSCRIPT_MD, $TRANSCRIPT_JSON
-# Depends on: lib/json.sh, lib/md.sh
+#                  $TRANSCRIPT_MD, $TRANSCRIPT_JSON, $RESUME_FROM_TURN
+# Depends on: lib/json.sh, lib/md.sh, lib/cap_check.sh
 
 # ── Agent inclusion/exclusion ──
 # Checks INCLUDE_AGENTS and EXCLUDE_AGENTS arrays.
@@ -60,7 +60,10 @@ dispatch_round() {
     phase="${entry%%:*}"; entry="${entry#*:}"
     unit_num="${entry%%:*}"; instruction="${entry#*:}"
     if is_agent_active "$key"; then
-      call_agent "$key" "$phase" "$unit_num" "$instruction"
+      call_agent "$key" "$phase" "$unit_num" "$instruction" || true
+      if [ "$CAP_LIMIT_HIT" = "true" ]; then
+        return 1
+      fi
     fi
   done
 }
@@ -83,6 +86,13 @@ call_agent() {
   local phase="$2"
   local unit_num="$3"
   local instruction="$4"
+
+  # Resume skip: if this turn was already completed, skip the Claude call
+  if [ "$TURN_COUNT" -lt "$RESUME_FROM_TURN" ]; then
+    echo "  ↩ Turn $((TURN_COUNT + 1)) skipped (resuming)"
+    TURN_COUNT=$((TURN_COUNT + 1))
+    return 0
+  fi
 
   local emoji name bias system_prompt
   emoji=$(agent_emoji_${agent_key})
@@ -111,9 +121,16 @@ It is now your turn. See differently. Add something new."
   echo "$user_message" > "$tmpfile"
 
   local response
-  response=$(cat "$tmpfile" | claude -p --system-prompt "$system_prompt" 2>/dev/null) || {
+  if claude_call "$tmpfile" "$system_prompt"; then
+    response="$CLAUDE_RESPONSE"
+  else
+    rm -f "$tmpfile"
+    if [ "$CAP_LIMIT_HIT" = "true" ]; then
+      echo " cap limit reached"
+      return 1
+    fi
     response="[Agent could not respond]"
-  }
+  fi
   rm -f "$tmpfile"
 
   echo " done"
@@ -127,4 +144,9 @@ ${response}"
   json_append_entry "$agent_key" "$name" "$emoji" "$bias" "$phase" "$unit_num" "$TURN_COUNT" "$response"
 
   TURN_COUNT=$((TURN_COUNT + 1))
+
+  # Atomic flush + save state after each successful turn
+  json_flush
+  md_flush
+  save_state
 }

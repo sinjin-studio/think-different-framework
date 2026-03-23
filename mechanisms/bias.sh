@@ -32,10 +32,25 @@ ${CONVERSATION}"
   tmpfile=$(mktemp)
   echo "$bias_prompt" > "$tmpfile"
 
+  # Resume skip
+  if [ "$TURN_COUNT" -lt "$RESUME_FROM_TURN" ]; then
+    rm -f "$tmpfile"
+    echo " skipped (resuming)"
+    TURN_COUNT=$((TURN_COUNT + 1))
+    return
+  fi
+
   local biases
-  biases=$(cat "$tmpfile" | claude -p 2>/dev/null) || {
+  if claude_call "$tmpfile"; then
+    biases="$CLAUDE_RESPONSE"
+  else
+    rm -f "$tmpfile"
+    if [ "$CAP_LIMIT_HIT" = "true" ]; then
+      echo " cap limit reached"
+      return 1
+    fi
     biases="No significant cognitive biases detected."
-  }
+  fi
   rm -f "$tmpfile"
 
   echo " done"
@@ -46,8 +61,15 @@ ${CONVERSATION}"
 These biases have been detected in the thinking so far. They are signals, not corrections. Be aware of them but do not overcorrect.
 ${biases}"
 
-  printf "\n### 🔬 Bias Check (%s %s)\n\n%s\n" "$UNIT_LABEL" "$unit_num" "$biases" >> "$TRANSCRIPT_MD"
+  md_append_section 3 "🔬 Bias Check (${UNIT_LABEL} ${unit_num})"
+  MD_BUFFER="${MD_BUFFER}
+${biases}
+"
 
   json_append_entry "bias_detector" "Bias Check" "🔬" "Metacognitive Signal" "bias" "$unit_num" "$TURN_COUNT" "$biases"
   TURN_COUNT=$((TURN_COUNT + 1))
+
+  json_flush
+  md_flush
+  save_state
 }

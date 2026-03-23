@@ -118,9 +118,12 @@ Write one cohesive article. ${length_guidance} Six sections. First person voice.
   echo "$synth_prompt" > "$tmpfile"
 
   local synth_content
-  synth_content=$(cat "$tmpfile" | claude -p --system-prompt "$SYNTH_SYSTEM" 2>/dev/null) || {
+  if claude_call "$tmpfile" "$SYNTH_SYSTEM"; then
+    synth_content="$CLAUDE_RESPONSE"
+  else
+    rm -f "$tmpfile"
     synth_content="[Synthesis failed. Individual transcripts are available for manual review.]"
-  }
+  fi
   rm -f "$tmpfile"
 
   echo " done"

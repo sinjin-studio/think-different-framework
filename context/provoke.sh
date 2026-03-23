@@ -45,13 +45,20 @@ ${context_block}"
   echo "$provoke_prompt" > "$tmpfile"
 
   local raw_provocations
-  raw_provocations=$(cat "$tmpfile" | claude -p 2>/dev/null) || {
+  if claude_call "$tmpfile"; then
+    raw_provocations="$CLAUDE_RESPONSE"
+  else
     rm -f "$tmpfile"
+    if [ "$CAP_LIMIT_HIT" = "true" ]; then
+      echo " cap limit reached"
+      PROVOCATIONS=()
+      return 1
+    fi
     echo " failed"
     echo "  Warning: could not generate provocations. Using input as direct seed."
     PROVOCATIONS=()
     return 1
-  }
+  fi
   rm -f "$tmpfile"
 
   # Parse numbered lines into array (bash 3.2 compatible)

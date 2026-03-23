@@ -24,10 +24,25 @@ ${CONVERSATION}"
   tmpfile=$(mktemp)
   echo "$error_prompt" > "$tmpfile"
 
+  # Resume skip
+  if [ "$TURN_COUNT" -lt "$RESUME_FROM_TURN" ]; then
+    rm -f "$tmpfile"
+    echo " skipped (resuming)"
+    TURN_COUNT=$((TURN_COUNT + 1))
+    return
+  fi
+
   local errors
-  errors=$(cat "$tmpfile" | claude -p 2>/dev/null) || {
+  if claude_call "$tmpfile"; then
+    errors="$CLAUDE_RESPONSE"
+  else
+    rm -f "$tmpfile"
+    if [ "$CAP_LIMIT_HIT" = "true" ]; then
+      echo " cap limit reached"
+      return 1
+    fi
     errors="No prediction errors detected."
-  }
+  fi
   rm -f "$tmpfile"
 
   echo " done"
@@ -38,8 +53,15 @@ ${CONVERSATION}"
 These are the snags, the catches, the places where the conversation doesn't quite fit together. Follow the friction. Do not smooth it out.
 ${errors}"
 
-  printf "\n### ⚡ Friction (%s %s)\n\n%s\n" "$UNIT_LABEL" "$unit_num" "$errors" >> "$TRANSCRIPT_MD"
+  md_append_section 3 "⚡ Friction (${UNIT_LABEL} ${unit_num})"
+  MD_BUFFER="${MD_BUFFER}
+${errors}
+"
 
   json_append_entry "error_detector" "Prediction Error" "⚡" "Mismatch Signal" "error" "$unit_num" "$TURN_COUNT" "$errors"
   TURN_COUNT=$((TURN_COUNT + 1))
+
+  json_flush
+  md_flush
+  save_state
 }

@@ -15,7 +15,9 @@ reseed() {
 === SPIRAL ${spiral_num} RE-SEED ===
 The session pivots. The most surprising insight from the previous spiral: ${reseed_text}
 Let this pull the conversation somewhere unexpected."
-  printf "\n> **Re-seed:** %s\n" "${reseed_text:0:300}" >> "$TRANSCRIPT_MD"
+  MD_BUFFER="${MD_BUFFER}
+> **Re-seed:** ${reseed_text:0:300}
+"
 }
 
 extract_reseed() {

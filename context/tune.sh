@@ -33,9 +33,16 @@ SEED TOPIC: ${SEED_TOPIC}"
   tmpfile=$(mktemp)
   echo "$tuning_prompt" > "$tmpfile"
 
-  LENS_CONTEXT=$(cat "$tmpfile" | claude -p 2>/dev/null) || {
+  if claude_call "$tmpfile"; then
+    LENS_CONTEXT="$CLAUDE_RESPONSE"
+  else
+    rm -f "$tmpfile"
+    if [ "$CAP_LIMIT_HIT" = "true" ]; then
+      echo " cap limit reached"
+      return 1
+    fi
     LENS_CONTEXT="No lens context available. Agents should follow their own instincts."
-  }
+  fi
   rm -f "$tmpfile"
 
   echo " done"
@@ -70,16 +77,16 @@ LENS CONTEXT (optional starting points for the agents, not constraints):
 ${LENS_CONTEXT}"
 
   if [ -n "$PROJECT_CONTEXT" ]; then
-    echo "### Project Context" >> "$TRANSCRIPT_MD"
-    echo "" >> "$TRANSCRIPT_MD"
-    echo "${PROJECT_CONTEXT}" >> "$TRANSCRIPT_MD"
-    echo "" >> "$TRANSCRIPT_MD"
+    md_append_section 3 "Project Context"
+    MD_BUFFER="${MD_BUFFER}
+${PROJECT_CONTEXT}
+"
   fi
 
-  echo "### Lens Context" >> "$TRANSCRIPT_MD"
-  echo "" >> "$TRANSCRIPT_MD"
-  echo "${LENS_CONTEXT}" >> "$TRANSCRIPT_MD"
-  echo "" >> "$TRANSCRIPT_MD"
+  md_append_section 3 "Lens Context"
+  MD_BUFFER="${MD_BUFFER}
+${LENS_CONTEXT}
+"
 
   if [ -n "$PROJECT_CONTEXT" ]; then
     json_append_entry "context" "Context Gatherer" "📍" "Ground Truth" "context" 0 0 "$PROJECT_CONTEXT"

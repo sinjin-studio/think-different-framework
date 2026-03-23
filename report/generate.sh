@@ -108,9 +108,12 @@ Write the article. ${length_guidance} Six sections. First person voice. No lists
   echo "$pres_prompt" > "$tmpfile"
 
   local pres_content
-  pres_content=$(cat "$tmpfile" | claude -p --system-prompt "$PRES_SYSTEM" 2>/dev/null) || {
+  if claude_call "$tmpfile" "$PRES_SYSTEM"; then
+    pres_content="$CLAUDE_RESPONSE"
+  else
+    rm -f "$tmpfile"
     pres_content="[Presentation generation failed. The transcript is available for manual review.]"
-  }
+  fi
   rm -f "$tmpfile"
 
   echo " done"

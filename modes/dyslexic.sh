@@ -49,9 +49,12 @@ run_session() {
   source "${SCRIPT_DIR}/mechanisms/bias.sh"
 
   # Gather, ground, then fracture
-  gather_project_context
-  ground_seed
-  fracture_seed
+  gather_project_context || true
+  [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+  ground_seed || true
+  [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+  fracture_seed || true
+  [ "$CAP_LIMIT_HIT" = "true" ] && return 0
 
   # Determine round count (default 4)
   local total_rounds="${ROUND_COUNT:-4}"
@@ -67,9 +70,11 @@ run_session() {
       "observer:observe:1:Look at what has actually been said. Not the interpretations. What specific words were chosen? What was described but not named? What is literally happening that the metaphors are obscuring?" \
       "includer:include:1:The conversation has started framing the problem. Before it sets, look at who has been placed at the centre and notice who has not. Who is affected by this seed but has not been imagined yet? Who did the framing forget?" \
       "decomposer:decompose:1:Grab a DIFFERENT fragment from the seed. A piece that nobody would think is important. Look at the problem from inside it. What's visible from here that's invisible from the centre?"
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
 
     # Friction between rounds 1 and 2
-    detect_prediction_errors 1
+    detect_prediction_errors 1 || true
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
   fi
 
   # ── ROUND 2: Scale Shift ──
@@ -83,9 +88,11 @@ run_session() {
       "provocateur:provoke:2:The conversation has been building something. Strip it. What is the uncomfortable simplification? What is everyone avoiding saying because it is too direct? Say it in as few words as possible." \
       "logician:trace:2:The Scaler just shifted altitude twice. At this new scale, what causal chains are visible that were hidden before? Trace one forward - if this is true, what necessarily follows? Trace one backward - what is the structural root cause that nobody has named yet?" \
       "scaler:scale:2:Zoom again. The other direction. If you zoomed out last time, zoom in to the microscopic. If you zoomed in, pull up to the cosmic. The problem should look completely different from here."
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
 
     # Friction + sensory check
-    detect_prediction_errors 2
+    detect_prediction_errors 2 || true
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
     sensory_check
   fi
 
@@ -109,10 +116,13 @@ run_session() {
     fi
 
     dispatch_round "${round3_agents[@]}"
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
 
     # Friction + bias check
-    detect_prediction_errors 3
-    detect_cognitive_bias 3
+    detect_prediction_errors 3 || true
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    detect_cognitive_bias 3 || true
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
   fi
 
   # ── Additional middle rounds if --rounds > 4 ──
@@ -125,8 +135,10 @@ run_session() {
       "associator:associate:${r}:Round ${r}. Connect across all previous rounds. Find the most unexpected link." \
       "scaler:scale:${r}:Round ${r}. Change altitude again. Show the problem from a distance nobody has tried." \
       "empath:empathise:${r}:Round ${r}. Reality check. What does the person at the centre actually need right now?"
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
 
-    detect_prediction_errors "$r"
+    detect_prediction_errors "$r" || true
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
     r=$((r + 1))
   done
 
@@ -139,6 +151,7 @@ run_session() {
     "reifier:reify:${final_round}:This is your moment. Multiple rounds of fragments, connections, scale shifts, and reality checks. The mismatches between agents' views are the most important signal. Step back and look at all of it. What is the constellation? What shape connects the most surprising CONTRADICTIONS, not just the agreements? Name the thing." \
     "associator:associate:${final_round}:The Reifier just drew a constellation. What adjacent thing does that constellation look like? What else in the world has this same shape? One final connection that makes the named insight feel inevitable rather than invented." \
     "provocateur:provoke:${final_round}:The constellation has been named and connected. Now compress it. What is the five-word version? The version that makes the room go quiet? Not a tagline. The truth, compressed."
+  [ "$CAP_LIMIT_HIT" = "true" ] && return 0
 
   # ── GROUND ──
   echo ""
@@ -147,9 +160,11 @@ run_session() {
 
   mark_phase "Ground" "Landing the Insight"
   if is_agent_active "empath"; then
-    call_agent "empath" "ground" "$final_round" "This is the end. Deliver the verdict. What is new here? What would actually change behaviour, create value, solve a real problem? Strip away the metaphors. Say what remains. Identify the 1-3 ideas that pass the simplicity test. For each one: what is the smallest experiment someone could take tomorrow?"
+    call_agent "empath" "ground" "$final_round" "This is the end. Deliver the verdict. What is new here? What would actually change behaviour, create value, solve a real problem? Strip away the metaphors. Say what remains. Identify the 1-3 ideas that pass the simplicity test. For each one: what is the smallest experiment someone could take tomorrow?" || true
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
   fi
   if is_agent_active "reifier"; then
-    call_agent "reifier" "ground" "$final_round" "Final word. State the single most important insight from this entire session. State it once with nuance. Then state it again in one sentence a child could understand. Both versions should be true. Make it portable enough to carry into real work."
+    call_agent "reifier" "ground" "$final_round" "Final word. State the single most important insight from this entire session. State it once with nuance. Then state it again in one sentence a child could understand. Both versions should be true. Make it portable enough to carry into real work." || true
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
   fi
 }

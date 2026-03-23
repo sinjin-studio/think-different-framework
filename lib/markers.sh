@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ── Console + transcript markers ──
 # Unified markers for rounds, spirals, and phases.
-# Expects globals: $TRANSCRIPT_MD
+# Uses MD_BUFFER (from lib/md.sh) instead of direct file writes.
 
 mark_round() {
   local num="$1"
@@ -9,7 +9,7 @@ mark_round() {
 
   echo ""
   echo "  ━━━ ROUND ${num}: ${label} ━━━━━━━━━━━━━━━━━━━━━━━"
-  printf "\n---\n\n## Round %s: %s\n" "$num" "$label" >> "$TRANSCRIPT_MD"
+  md_append_section 2 "Round ${num}: ${label}"
 }
 
 mark_spiral() {
@@ -17,7 +17,7 @@ mark_spiral() {
 
   echo ""
   echo "  ━━━ SPIRAL ${num} ━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  printf "\n---\n\n## Spiral %s\n" "$num" >> "$TRANSCRIPT_MD"
+  md_append_section 2 "Spiral ${num}"
 }
 
 mark_pass() {
@@ -26,7 +26,7 @@ mark_pass() {
 
   echo ""
   echo "  ━━━ PASS ${num}: ${label} ━━━━━━━━━━━━━━━━━━━━━━━"
-  printf "\n---\n\n## Pass %s: %s\n" "$num" "$label" >> "$TRANSCRIPT_MD"
+  md_append_section 2 "Pass ${num}: ${label}"
 }
 
 mark_phase() {
@@ -35,5 +35,5 @@ mark_phase() {
 
   echo ""
   echo "  ── ${label}: ${subtitle} ──"
-  printf "\n### %s - %s\n" "$label" "$subtitle" >> "$TRANSCRIPT_MD"
+  md_append_section 3 "${label} - ${subtitle}"
 }
