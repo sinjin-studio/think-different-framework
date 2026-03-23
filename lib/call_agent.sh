@@ -13,13 +13,17 @@
 is_agent_active() {
   local key="$1"
   # Explicit exclude wins
+  if [ ${#EXCLUDE_AGENTS[@]} -gt 0 ]; then
   for ex in "${EXCLUDE_AGENTS[@]}"; do
     [ "$ex" = "$key" ] && return 1
   done
+  fi
   # Explicit include wins over mode defaults
+  if [ ${#INCLUDE_AGENTS[@]} -gt 0 ]; then
   for inc in "${INCLUDE_AGENTS[@]}"; do
     [ "$inc" = "$key" ] && return 0
   done
+  fi
   # Fall through to mode default (return 0 = active)
   return 0
 }

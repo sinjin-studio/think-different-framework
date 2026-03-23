@@ -29,9 +29,11 @@ run_session() {
 
   # Skeptic: excluded by default in dyslexic, but --include skeptic overrides
   local skeptic_included="false"
+  if [ ${#INCLUDE_AGENTS[@]} -gt 0 ]; then
   for inc in "${INCLUDE_AGENTS[@]}"; do
     [ "$inc" = "skeptic" ] && skeptic_included="true"
   done
+  fi
   if [ "$skeptic_included" = "true" ]; then
     source "${SCRIPT_DIR}/agents/perceivers/skeptic.sh"
   fi
