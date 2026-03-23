@@ -43,6 +43,18 @@ chmod +x think.sh
 
 **Works with:** bash 3.2+ (macOS and Linux).
 
+## Token Usage
+
+This framework is optimised for unique thinking, not token efficiency. Each session dispatches 19+ AI agents sequentially, each reading the full conversation history. A single provocation typically uses the equivalent of several long conversations.
+
+**Plan recommendations:**
+
+- **Pro plan** - Framework defaults to 1 provocation. Enough for single-seed exploration. Multi-provocation sessions will likely hit rate limits.
+- **Max plan** (recommended) - Defaults to 3 provocations. Best for brief/brand/notes input where multiple angles matter.
+- **Enterprise/Team** - Defaults to 3 provocations. Higher rate limits for intensive use.
+
+The framework detects your Claude plan automatically via `claude auth status` and sets the default seed count. Override with `--seeds N`. Use `--pick` to generate provocations then select which to run.
+
 ## How It Works
 
 The framework has three levels, like colour theory. **Perceivers** are pigments - how you see. **Cognitions** are operations - what you do with what you see. **Compositions** are palettes - how you sequence perceivers and cognitions together to produce a particular kind of thinking.
@@ -95,19 +107,46 @@ Two sets of cognitive operations. Compositions choose which set to use.
 | 📜 The Historian | Contextualise in tradition, culture, precedent |
 | ✂️ The Editor | Refine toward economy, remove everything that is not the thing |
 
+### Hybrids - agents that break the boundary
+
+Some cognitive traits do not fit neatly into perceiver or cognition. They fuse perception with reasoning in a single operation. Hybrid agents intentionally break the perceiver/cognition boundary - a framework about thinking differently should think differently about its own rules.
+
+| Agent | Bias | What it rebels against |
+|-------|------|----------------------|
+| 🧩 The Logician | Structure, Causation & First Principles | Accepting "how" without understanding "why", correlation as causation |
+
 ### Compositions - HOW you sequence them
 
 Each composition pairs a cognition set with a selection of perceivers and defines the rhythm - how many rounds, which agents speak when, where friction and bias checks fall.
 
 | Mode | Cognitions | Perceivers | Character | Steps |
 |------|------------|------------|-----------|-------|
-| 🪟 `dyslexic` | Fragmentary | All except Skeptic | Leaping, collision-driven. 4 rounds of decompose-associate-scale-reify with perceivers woven between. | ~28 |
+| 🪟 `dyslexic` | Fragmentary + Logician (rounds 2-3) | All except Skeptic | Leaping, collision-driven. 4 rounds of decompose-associate-scale-reify with perceivers woven between. | ~30 |
 | 🌀 `spiral` | Deepening | Empath, Provocateur, Observer, Skeptic, Includer | 3 spirals of diverge-analogise-integrate, each reseeding the next. | ~34 |
-| 🏺 `lapidary` | Evaluative | Empath, Connoisseur, Provocateur, Observer, Skeptic | Iterative refinement. 3 passes of weigh-root-pare, each more precise than the last. | ~22 |
+| 🏺 `lapidary` | Evaluative + Logician (pass 2) | Empath, Connoisseur, Provocateur, Observer, Skeptic | Iterative refinement. 3 passes of weigh-root-pare, each more precise than the last. | ~23 |
 
 The Skeptic is excluded from the dyslexic composition by default. Dyslexic thinking naturally produces incongruence detection as a perceptual byproduct - adding an explicit Skeptic agent can over-anchor on what doesn't fit before the leaps have had space to form. Use `--include skeptic` to override this and place it in Round 3.
 
 The Child and Anxious are excluded from the lapidary composition by default. Lapidary thinking requires mature judgement - the discernment of a craftsperson, not wild generation. The Connoisseur takes the evaluative seat that neither Child nor Anxious can occupy.
+
+### Assumption Grounding
+
+Before the session begins - before fracturing, tuning, or appraising - the framework runs a ground check. It classifies everything in the seed as:
+
+- **STATED** - things explicitly said in the seed or project context
+- **INFERRED** - assumptions an AI would naturally make, with alternative realities for each
+- **UNKNOWN** - questions a good interviewer would ask before proceeding
+
+The user then corrects any wrong assumptions interactively. Corrections become ground truth that all agents respect throughout the session.
+
+This matters because assumptions form during seed preparation, BEFORE any of the existing checking mechanisms fire (friction, bias, sensory, Observer, Skeptic all run DURING composition rounds). Without grounding, contaminated assumptions bake into the conversation that every agent builds on.
+
+You can test grounding in isolation without running a full session:
+
+```bash
+./think.sh "your seed topic" --ground-only
+./think.sh "your seed topic" --context ./brief.md --ground-only
+```
 
 ### Session Flow
 
@@ -186,6 +225,7 @@ cd ~/projects/my-project && ~/think.sh "seed topic"
 | `--brief FILE` | Generate provocations from a brief file |
 | `--brand NAME` | Generate provocations from a brand name |
 | `--notes TEXT` | Generate provocations from working notes |
+| `--seeds N` | Number of provocations to generate (default: 3, max: 12) |
 | `--pick` | Interactively select which provocations to run |
 | `--synthesise` | Synthesise existing transcript files into one presentation |
 | `--report-only` | Regenerate presentation from existing transcript |
@@ -202,7 +242,7 @@ The framework is experimental. These flags let you test different configurations
 ./think.sh "seed" --mode spiral --exclude skeptic  # Spiral without Skeptic
 ```
 
-Agent key names: `empath`, `provocateur`, `observer`, `anxious`, `child`, `skeptic`, `includer`, `connoisseur`, `decomposer`, `associator`, `scaler`, `reifier`, `diverger`, `analogiser`, `integrator`, `appraiser`, `historian`, `editor`.
+Agent key names: `empath`, `provocateur`, `observer`, `anxious`, `child`, `skeptic`, `includer`, `connoisseur`, `decomposer`, `associator`, `scaler`, `reifier`, `diverger`, `analogiser`, `integrator`, `appraiser`, `historian`, `editor`, `logician`.
 
 Explicit `--exclude` wins over `--include`. `--include` overrides mode defaults (e.g. Skeptic excluded from dyslexic by default).
 
@@ -267,11 +307,14 @@ When experimental flags are active, the session banner shows what's different:
 | `--spirals N` | Number of spirals (spiral default: 3) |
 | `--passes N` | Number of passes (lapidary default: 3) |
 | `--shuffle` | Randomize agent order within each round/phase |
+| `--no-ground` | Skip assumption grounding step before session |
+| `--ground-only` | Run only the grounding step, then exit |
 
 ## Mechanisms
 
-Beyond agents, the framework uses several between-round mechanisms:
+Beyond agents, the framework uses several mechanisms:
 
+- **Assumption grounding** - Pre-session step that surfaces what is stated vs inferred in the seed. Interactive correction ensures wrong assumptions don't contaminate the entire session.
 - **Friction detection** - Clark-inspired prediction error detection. Finds where agents contradict each other. The signal is in the mismatch, not the agreement.
 - **Sensory check** - Re-injects project context mid-session so abstract thinking collides with ground truth.
 - **Cognitive bias detection** - Metacognitive layer that flags anchoring, confirmation bias, groupthink, and other patterns shaping the conversation. Signals, not corrections.
@@ -302,8 +345,11 @@ agents/
     fragmentary/                 # Break, leap, shift, name (4 agents)
     deepening/                   # Open, rhyme, integrate (3 agents)
     evaluative/                  # Weigh, root, pare (3 agents)
+  hybrids/                       # Agents that break the perceiver/cognition boundary
+    logician.sh                  # Fused structural perception + causal reasoning
 context/
   gather.sh                      # Project context gathering
+  ground.sh                      # Assumption grounding (stated vs inferred)
   provoke.sh                     # Provocation generation from raw input
   fracture.sh                    # Seed fracturing (dyslexic)
   tune.sh                        # Seed tuning (spiral)
