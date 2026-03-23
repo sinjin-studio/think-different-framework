@@ -208,7 +208,7 @@ cd ~/projects/my-project && ~/think.sh "seed topic"
 
 ```bash
 # Re-run presentation at different length
-./think.sh --report-only ./think_output/session_*.md --words 2000
+./think.sh --report-only ./think-different-output/my-session/session.md --words 2000
 
 # Manual synthesis of existing transcripts
 ./think.sh --synthesise ./run1/*.md ./run2/*.md --words 1500
@@ -220,7 +220,7 @@ cd ~/projects/my-project && ~/think.sh "seed topic"
 |------|-------------|
 | `--mode MODE` | Composition: `dyslexic` (default), `spiral`, `lapidary` |
 | `--words N` | Target word count for presentation (default: 500-800) |
-| `--output DIR` | Output directory (default: ./think_output) |
+| `--output DIR` | Output directory (default: ./think-different-output) |
 | `--context FILE` | Explicit context file to ground the session |
 | `--brief FILE` | Generate provocations from a brief file |
 | `--brand NAME` | Generate provocations from a brand name |

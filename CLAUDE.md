@@ -35,7 +35,7 @@ A multi-agent structured divergence framework for Claude Code CLI. It runs creat
 
 - `--mode {dyslexic|spiral|lapidary}` - Composition mode (default: dyslexic)
 - `--words N` - Target word count (default: 500-800)
-- `--output DIR` - Output directory (default: ./think_output)
+- `--output DIR` - Output directory (default: ./think-different-output)
 - `--context FILE` - Explicit context file
 - `--rounds N`, `--spirals N`, `--passes N` - Customize phase counts
 - `--include/--exclude agents` - Force agent inclusion/exclusion
@@ -94,11 +94,12 @@ A global `$CONVERSATION` string accumulates all agent responses. Each agent read
 
 ### Output
 
-Sessions produce files in `./think_output/`:
-- `presentation_*.md` - Structured article (Provocation, Landscape, Insight, Tension, Experiment, Sources)
-- `presentation_*.pptx` - PowerPoint slides (if python-pptx available)
-- `session_*.md` / `session_*.json` - Full transcript (markdown + machine-readable)
-- `context_*.md` - Project context brief (if gathered)
+Sessions produce files in `./think-different-output/<slug>_<timestamp>/`:
+- `presentation.md` - Structured article (Provocation, Landscape, Insight, Tension, Experiment, Sources)
+- `presentation.pptx` - PowerPoint slides (if python-pptx available)
+- `session.md` / `session.json` - Full transcript (markdown + machine-readable)
+- `session.state.json` - Session state for resume capability
+- `context.md` - Project context brief (if gathered)
 
 ## Dependencies
 
