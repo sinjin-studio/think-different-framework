@@ -25,13 +25,15 @@ run_session() {
 
   # Source context and mechanisms
   source "${SCRIPT_DIR}/context/gather.sh"
+  source "${SCRIPT_DIR}/context/ground.sh"
   source "${SCRIPT_DIR}/context/tune.sh"
   source "${SCRIPT_DIR}/mechanisms/friction.sh"
   source "${SCRIPT_DIR}/mechanisms/reseed.sh"
   source "${SCRIPT_DIR}/mechanisms/bias.sh"
 
-  # Gather and tune
+  # Gather, ground, then tune
   gather_project_context
+  ground_seed
   tune_seed
 
   # Determine spiral count (default 3)

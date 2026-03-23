@@ -26,6 +26,12 @@ WHAT COULD BE REMOVED: [What is already unnecessary in how this seed is framed? 
 ${PROJECT_CONTEXT:+PROJECT CONTEXT (ground truth about the actual situation):
 ${PROJECT_CONTEXT}}
 
+${GROUND_CONTEXT:+GROUND CHECK (what is stated vs inferred about this seed):
+${GROUND_CONTEXT}}
+
+${CORRECTIONS:+CORRECTIONS (treat these as ground truth - do not re-assume what has been corrected):
+${CORRECTIONS}}
+
 SEED TOPIC: ${SEED_TOPIC}"
 
   local tmpfile
@@ -47,6 +53,20 @@ SEED TOPIC: ${SEED_TOPIC}"
 
 PROJECT CONTEXT (ground truth about the actual project, business, or situation):
 ${PROJECT_CONTEXT}"
+  fi
+
+  if [ -n "$GROUND_CONTEXT" ]; then
+    CONVERSATION="${CONVERSATION}
+
+GROUND CHECK (what is stated vs inferred about this seed):
+${GROUND_CONTEXT}"
+  fi
+
+  if [ -n "$CORRECTIONS" ]; then
+    CONVERSATION="${CONVERSATION}
+
+CORRECTIONS (ground truth - do not re-assume what has been corrected):
+${CORRECTIONS}"
   fi
 
   CONVERSATION="${CONVERSATION}

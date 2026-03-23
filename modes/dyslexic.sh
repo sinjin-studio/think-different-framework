@@ -3,10 +3,11 @@
 # Fragmentary thinking: decompose, associate, scale, reify
 # Perceivers: empath, provocateur, observer, anxious, child, includer
 # Skeptic excluded by default but can be force-included (placed in Round 3)
-# ~23 agent turns + 3 friction + 1 sensory + 1 bias = ~28 steps
+# ~25 agent turns + 3 friction + 1 sensory + 1 bias = ~30 steps
 #
 # Depends on:
 #   agents/cognitions/fragmentary/*.sh
+#   agents/hybrids/logician.sh
 #   agents/perceivers/empath.sh, provocateur.sh, observer.sh, anxious.sh, child.sh
 #   context/gather.sh, context/fracture.sh
 #   mechanisms/friction.sh, mechanisms/sensory.sh, mechanisms/bias.sh
@@ -26,6 +27,7 @@ run_session() {
   is_agent_active "anxious" && source "${SCRIPT_DIR}/agents/perceivers/anxious.sh"
   is_agent_active "child" && source "${SCRIPT_DIR}/agents/perceivers/child.sh"
   is_agent_active "includer" && source "${SCRIPT_DIR}/agents/perceivers/includer.sh"
+  is_agent_active "logician" && source "${SCRIPT_DIR}/agents/hybrids/logician.sh"
 
   # Skeptic: excluded by default in dyslexic, but --include skeptic overrides
   local skeptic_included="false"
@@ -40,13 +42,15 @@ run_session() {
 
   # Source context and mechanisms
   source "${SCRIPT_DIR}/context/gather.sh"
+  source "${SCRIPT_DIR}/context/ground.sh"
   source "${SCRIPT_DIR}/context/fracture.sh"
   source "${SCRIPT_DIR}/mechanisms/friction.sh"
   source "${SCRIPT_DIR}/mechanisms/sensory.sh"
   source "${SCRIPT_DIR}/mechanisms/bias.sh"
 
-  # Gather and fracture
+  # Gather, ground, then fracture
   gather_project_context
+  ground_seed
   fracture_seed
 
   # Determine round count (default 4)
@@ -77,6 +81,7 @@ run_session() {
       "child:naivety:2:Look at everything the conversation has assumed so far. Ask the question nobody is asking because they think the answer is obvious. Why can't you just...? What if you didn't? What would happen if you did it backwards?" \
       "associator:associate:2:The Scaler just showed us the problem at a new altitude. What connections are visible now that were invisible before, especially connections that work with the contradictions?" \
       "provocateur:provoke:2:The conversation has been building something. Strip it. What is the uncomfortable simplification? What is everyone avoiding saying because it is too direct? Say it in as few words as possible." \
+      "logician:trace:2:The Scaler just shifted altitude twice. At this new scale, what causal chains are visible that were hidden before? Trace one forward - if this is true, what necessarily follows? Trace one backward - what is the structural root cause that nobody has named yet?" \
       "scaler:scale:2:Zoom again. The other direction. If you zoomed out last time, zoom in to the microscopic. If you zoomed in, pull up to the cosmic. The problem should look completely different from here."
 
     # Friction + sensory check
@@ -95,6 +100,7 @@ run_session() {
       "associator:associate:3:Three rounds of fragments, scale shifts, and reality checks. Two rounds of friction. What is the most daring connection you can make? Connect something from round 1 to something from round 3 through a domain nobody has mentioned."
       "observer:observe:3:Three rounds in. What has been said repeatedly that nobody has questioned? What specific claim was made that might not be literally true? What gap exists between how the situation was described and how it would actually look if you were standing there watching?"
       "empath:empathise:3:Third and most important reality check. Three rounds of fragmenting, connecting, and scaling. Two rounds of friction. Forget the cleverness. What does the person at the centre of this actually need? What's the one-sentence reframe that would make them say 'yes, that is it'?"
+      "logician:trace:3:Three rounds of fragments, connections, and collisions. What is the causal structure underneath all of it? Trace the consequences of what has been uncovered - if the key insights from this session are true, what must necessarily follow that nobody has said yet? What prediction can you make?"
     )
 
     # Insert skeptic in Round 3 if force-included

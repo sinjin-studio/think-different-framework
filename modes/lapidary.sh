@@ -7,10 +7,11 @@
 # Cognitions: Evaluative (appraiser, historian, editor)
 # Perceivers: empath, connoisseur, provocateur, observer, skeptic
 # Child and Anxious excluded by default (mature judgement, not wild generation)
-# 3 passes + ground = ~22 steps
+# 3 passes + ground = ~23 steps
 #
 # Depends on:
 #   agents/cognitions/evaluative/*.sh
+#   agents/hybrids/logician.sh
 #   agents/perceivers/empath.sh, connoisseur.sh, provocateur.sh, observer.sh, skeptic.sh
 #   context/gather.sh, context/appraise.sh
 #   mechanisms/friction.sh, mechanisms/polish.sh, mechanisms/bias.sh
@@ -30,16 +31,19 @@ run_session() {
   is_agent_active "provocateur" && source "${SCRIPT_DIR}/agents/perceivers/provocateur.sh"
   is_agent_active "observer" && source "${SCRIPT_DIR}/agents/perceivers/observer.sh"
   is_agent_active "skeptic" && source "${SCRIPT_DIR}/agents/perceivers/skeptic.sh"
+  is_agent_active "logician" && source "${SCRIPT_DIR}/agents/hybrids/logician.sh"
 
   # Source context and mechanisms
   source "${SCRIPT_DIR}/context/gather.sh"
+  source "${SCRIPT_DIR}/context/ground.sh"
   source "${SCRIPT_DIR}/context/appraise.sh"
   source "${SCRIPT_DIR}/mechanisms/friction.sh"
   source "${SCRIPT_DIR}/mechanisms/polish.sh"
   source "${SCRIPT_DIR}/mechanisms/bias.sh"
 
-  # Gather and appraise
+  # Gather, ground, then appraise
   gather_project_context
+  ground_seed
   appraise_seed
 
   # Determine pass count (default 3)
@@ -71,6 +75,7 @@ run_session() {
       "historian:root:2:Deeper now. The first pass revealed the material. What precedent exists for what is emerging? What has been tried before in this tradition and what was learned? See the lineage more precisely - not the obvious ancestors but the hidden ones." \
       "appraiser:weigh:2:Re-assess proportion after the first cut. Has the weight shifted? Is the material finding its natural shape or is something forcing it into a shape that does not fit? What needs more density? What is still too heavy?" \
       "provocateur:provoke:2:The material has been cut once and shaped. Challenge the politeness. What is everyone avoiding saying because they are being too careful with the material? What is the uncomfortable truth about this seed that two passes of refinement have been too gentle to state?" \
+      "logician:trace:2:The material has been cut and provoked. Now trace the structure. Which elements are genuinely load-bearing and which are ornamental? If you removed each piece, what would collapse and what would stand? Follow the causal chain: what is the first-principles reason this material matters?" \
       "editor:pare:2:Second cut, sharper. The rough cut removed the obvious clutter. Now remove the less obvious. The qualification that hedges. The second example that weakens the first. The structural element that is decorative. Cut until every remaining element is load-bearing." \
       "connoisseur:evaluate:2:Is this getting better? Not just different - better. Has the shaping improved the proportions or distorted them? Is the material finding its voice or losing it? Be precise about the quality trajectory."
 
