@@ -37,7 +37,7 @@ fi
 
 SEED_TOPIC=""
 OUTPUT_DIR="./think-different-output"
-WORD_COUNT="500-800"
+WORD_COUNT="1500"
 MODE="dyslexic"
 PRES_ONLY=""
 PRES_SOURCE=""
@@ -47,6 +47,7 @@ SYNTHESISE_FILES=()
 BRIEF_FILE=""
 BRAND_NAME=""
 NOTES_TEXT=""
+AUDIENCE_TEXT=""
 PICK_MODE=""
 RESUME_FILE=""
 
@@ -64,6 +65,14 @@ SEEDS_SET_BY_USER=""
 ROUND_COUNT=""
 SPIRAL_COUNT=""
 PASS_COUNT=""
+ALLOWED_TOOLS=""
+PROVOCATION_TONE="provocative"
+OUTPUT_TYPE="insight,brief,manifesto"
+TYPE_EXPLICIT=""
+LINE_COUNT=3
+LINE_PRACTITIONERS=""
+HTML_ENABLED="true"
+REPORT_FORMATS="all"
 
 show_help() {
   echo ""
@@ -91,13 +100,24 @@ show_help() {
   echo ""
   echo "  Options:"
   echo "    --mode MODE      Composition: dyslexic (default), spiral, lapidary"
-  echo "    --words N        Target word count for presentation (default: 500-800)"
+  echo "    --words N        Total word budget across all sections (default: 1500)"
   echo "    --output DIR     Output directory (default: ./think-different-output)"
   echo "    --context FILE   Explicit context file to ground the session"
   echo "    --brief FILE     Generate provocations from a brief file"
   echo "    --brand NAME     Generate provocations from a brand name"
   echo "    --notes TEXT     Generate provocations from working notes"
+  echo "    --audience TEXT  Target audience (auto-inferred from input if not set)"
   echo "    --seeds N        Number of provocations to generate (default: 3, max: 12)"
+  echo "    --tone TONE      Provocation tone: provocative (default), generous, intimate,"
+  echo "                     absurd, daydream, mixed. Comma-separated for custom mix"
+  echo "    --type TYPES     Output types: insight,brief,manifesto (default: all three)"
+  echo "                     Comma-separated list. Each type is a section in the output"
+  echo "    --lines N        Number of rallying lines to generate (default: 3, max: 7)"
+  echo "    --practitioners  Comma-separated list of creative practitioners as quality bar"
+  echo "                     (default: random 3 from built-in pool)"
+  echo "    --no-html        Skip HTML presentation generation"
+  echo "    --formats LIST   Output formats for --report-only: all, md, doc, html"
+  echo "                     (comma-separated. doc/html skip token usage if .md exists)"
   echo "    --pick           Interactively select which provocations to run"
   echo "    --synthesise     Synthesise existing transcript files into one presentation"
   echo "    --report-only F  Regenerate presentation from existing transcript"
@@ -116,6 +136,7 @@ show_help() {
   echo "    --shuffle        Randomize agent order within each round/phase"
   echo "    --no-ground      Skip assumption grounding step before session"
   echo "    --ground-only    Run only the grounding step, then exit"
+  echo "    --allowedTools T Pass allowed tools to Claude CLI (e.g. \"WebSearch,WebFetch\")"
   echo ""
   exit 0
 }
@@ -158,6 +179,11 @@ while [ $# -gt 0 ]; do
     --notes|-n)
       shift
       NOTES_TEXT="$1"
+      shift
+      ;;
+    --audience)
+      shift
+      AUDIENCE_TEXT="$1"
       shift
       ;;
     --pick)
@@ -241,6 +267,41 @@ while [ $# -gt 0 ]; do
         shift
       done
       ;;
+    --allowedTools|--allowed-tools)
+      shift
+      ALLOWED_TOOLS="$1"
+      shift
+      ;;
+    --tone|-t)
+      shift
+      PROVOCATION_TONE="$1"
+      shift
+      ;;
+    --type)
+      shift
+      OUTPUT_TYPE="$1"
+      TYPE_EXPLICIT="true"
+      shift
+      ;;
+    --lines)
+      shift
+      LINE_COUNT="$1"
+      shift
+      ;;
+    --practitioners)
+      shift
+      LINE_PRACTITIONERS="$1"
+      shift
+      ;;
+    --no-html)
+      HTML_ENABLED="false"
+      shift
+      ;;
+    --formats)
+      shift
+      REPORT_FORMATS="$1"
+      shift
+      ;;
     --resume)
       shift
       RESUME_FILE="$1"
@@ -269,6 +330,42 @@ case "$MODE" in
     exit 1
     ;;
 esac
+
+# Validate output types
+IFS=',' read -ra _TYPE_CHECK <<< "$OUTPUT_TYPE"
+for _ot in "${_TYPE_CHECK[@]}"; do
+  case "$_ot" in
+    insight|brief|manifesto) ;;
+    *)
+      echo "Error: unknown output type '$_ot'. Use: insight, brief, or manifesto (comma-separated)"
+      exit 1
+      ;;
+  esac
+done
+
+# Validate line count
+if [ "$LINE_COUNT" -lt 1 ] 2>/dev/null; then
+  LINE_COUNT=1
+fi
+if [ "$LINE_COUNT" -gt 7 ] 2>/dev/null; then
+  echo "Error: max 7 lines (requested $LINE_COUNT)"
+  exit 1
+fi
+
+# Expand "mixed" shorthand and validate tone(s)
+if [ "$PROVOCATION_TONE" = "mixed" ]; then
+  PROVOCATION_TONE="provocative,generous,intimate,absurd,daydream"
+fi
+IFS=',' read -ra _TONE_CHECK <<< "$PROVOCATION_TONE"
+for _t in "${_TONE_CHECK[@]}"; do
+  case "$_t" in
+    provocative|generous|intimate|absurd|daydream) ;;
+    *)
+      echo "Error: unknown tone '$_t'. Use: provocative, generous, intimate, absurd, daydream, or mixed"
+      exit 1
+      ;;
+  esac
+done
 
 # Need at least one of: seed, raw input, presentation-only, synthesise, or project context
 HAS_INPUT=""
@@ -309,7 +406,14 @@ fi
 # ── Detect Claude plan for default seed count ──
 CLAUDE_PLAN=""
 if auth_json=$(claude auth status 2>/dev/null); then
-  CLAUDE_PLAN=$(echo "$auth_json" | grep -o '"subscriptionType":"[^"]*"' | cut -d'"' -f4) || true
+  CLAUDE_PLAN=$(echo "$auth_json" | grep -o '"subscriptionType":[[:space:]]*"[^"]*"' | cut -d'"' -f4) || true
+fi
+
+if [ -n "$CLAUDE_PLAN" ]; then
+  echo "  ℹ  Detected plan: $CLAUDE_PLAN"
+else
+  echo "  ℹ  Could not detect Claude plan (defaulting to 1 seed)."
+  echo "     Run 'claude auth status' to check your subscription."
 fi
 
 if [ -z "$SEEDS_SET_BY_USER" ]; then
@@ -353,19 +457,43 @@ source "${SCRIPT_DIR}/lib/md.sh"
 source "${SCRIPT_DIR}/lib/markers.sh"
 source "${SCRIPT_DIR}/lib/cap_check.sh"
 source "${SCRIPT_DIR}/lib/call_agent.sh"
+source "${SCRIPT_DIR}/lib/spinner.sh"
 source "${SCRIPT_DIR}/report/generate.sh"
 
-# ── Register cleanup trap for cap limit hits ──
-trap cap_limit_cleanup EXIT
+# ── Build tool flags from parsed arguments ──
+build_tools_flag
 
-# ── Convert markdown presentation to .pptx ──
-convert_to_pptx() {
+# ── Convert markdown presentation to .docx ──
+convert_to_docx() {
   local md_file="$1"
-  local pptx_file="$2"
-  python3 "${SCRIPT_DIR}/report/md-to-pptx.py" "$md_file" "$pptx_file" 2>/dev/null || {
-    echo "  (python-pptx not available - .pptx skipped. Install with: pip3 install python-pptx)"
+  local docx_file="$2"
+  python3 "${SCRIPT_DIR}/report/md-to-docx.py" "$md_file" "$docx_file" 2>/dev/null || {
+    echo "  (python-docx not available - .docx skipped. Install with: pip3 install python-docx)"
   }
 }
+
+# ── Convert markdown presentation to .html ──
+convert_to_html() {
+  local md_file="$1"
+  local html_file="$2"
+  local template="${SCRIPT_DIR}/report/template.html"
+  if [ ! -f "$template" ]; then
+    echo "  (HTML template not found - .html skipped. Run: cd report/html-template && npm run export)"
+    return
+  fi
+  python3 "${SCRIPT_DIR}/report/md-to-html.py" "$md_file" "$html_file" "$template" 2>/dev/null || {
+    echo "  (HTML conversion failed - .html skipped)"
+  }
+}
+
+# ── Register cleanup traps ──
+cleanup_all() {
+  spinner_cleanup
+  cap_limit_cleanup
+}
+trap cleanup_all EXIT
+trap 'spinner_cleanup; exit 130' INT
+
 
 # ══════════════════════════════════════════════
 #  SYNTHESISE MODE
@@ -384,16 +512,23 @@ if [ -n "$SYNTHESISE_MODE" ]; then
   SESSION_DIR="$OUTPUT_DIR/synthesis_${TIMESTAMP}"
   mkdir -p "$SESSION_DIR"
   PRES_FILE="$SESSION_DIR/presentation.md"
-  PPTX_FILE="$SESSION_DIR/presentation.pptx"
+  DOCX_FILE="$SESSION_DIR/presentation.docx"
+  HTML_FILE="$SESSION_DIR/presentation.html"
   synthesise_presentations "$WORD_COUNT" "$PRES_FILE" "Cross-session synthesis" "${SYNTHESISE_FILES[@]}" > /dev/null
-  convert_to_pptx "$PRES_FILE" "$PPTX_FILE"
+  convert_to_docx "$PRES_FILE" "$DOCX_FILE"
+  if [ "$HTML_ENABLED" = "true" ]; then
+    convert_to_html "$PRES_FILE" "$HTML_FILE"
+  fi
 
   echo ""
   echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo "  ✦ Synthesis complete"
   echo ""
   echo "  📝 Presentation: $PRES_FILE"
-  echo "  📊 Slides:       $PPTX_FILE"
+  echo "  📄 Document:     $DOCX_FILE"
+  if [ "$HTML_ENABLED" = "true" ]; then
+    echo "  🌐 HTML:         $HTML_FILE"
+  fi
   echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo ""
   exit 0
@@ -408,28 +543,84 @@ if [ -n "$PRES_ONLY" ]; then
   echo "  🪟 THINK DIFFERENT - Presentation Mode"
   echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo "  Source: $PRES_SOURCE"
-  echo "  Words: $WORD_COUNT"
+  echo "  Formats: $REPORT_FORMATS"
   echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-  SEED_TOPIC=$(grep -m1 "Seed:" "$PRES_SOURCE" | sed 's/.*Seed:\*\* *//' | sed 's/^> \*\*Seed:\*\* //' | sed 's/^.*Seed: //')
-  if [ -z "$SEED_TOPIC" ]; then
-    SEED_TOPIC="[Seed not found in transcript]"
-  fi
-
-  CONVERSATION=$(cat "$PRES_SOURCE")
   SESSION_DIR="$(dirname "$PRES_SOURCE")"
   pres_suffix=$(date +%H%M%S)
-  PRES_FILE="$SESSION_DIR/presentation_${pres_suffix}.md"
-  PPTX_FILE="$SESSION_DIR/presentation_${pres_suffix}.pptx"
-  generate_presentation "$CONVERSATION" "$SEED_TOPIC" "$WORD_COUNT" "$PRES_FILE" > /dev/null
-  convert_to_pptx "$PRES_FILE" "$PPTX_FILE"
+
+  # Determine which formats to generate
+  needs_md="false"
+  needs_doc="false"
+  needs_html="false"
+
+  case "$REPORT_FORMATS" in
+    all)
+      needs_md="true"
+      needs_doc="true"
+      needs_html="true"
+      ;;
+    *)
+      IFS=',' read -ra _fmts <<< "$REPORT_FORMATS"
+      for _f in "${_fmts[@]}"; do
+        case "$_f" in
+          md) needs_md="true" ;;
+          doc) needs_doc="true" ;;
+          html) needs_html="true" ;;
+          *) echo "Error: unknown format '$_f'. Use: all, md, doc, html"; exit 1 ;;
+        esac
+      done
+      ;;
+  esac
+
+  # If only doc/html requested, look for existing presentation.md
+  if [ "$needs_md" = "true" ]; then
+    # Generate new .md from transcript (uses tokens)
+    SEED_TOPIC=$(grep -m1 "Seed:" "$PRES_SOURCE" | sed 's/.*Seed:\*\* *//' | sed 's/^> \*\*Seed:\*\* //' | sed 's/^.*Seed: //')
+    if [ -z "$SEED_TOPIC" ]; then
+      SEED_TOPIC="[Seed not found in transcript]"
+    fi
+    CONVERSATION=$(cat "$PRES_SOURCE")
+    PRES_FILE="$SESSION_DIR/presentation_${pres_suffix}.md"
+    echo "  Words: $WORD_COUNT"
+    generate_presentation "$CONVERSATION" "$SEED_TOPIC" "$WORD_COUNT" "$PRES_FILE" > /dev/null
+  else
+    # Use existing presentation.md (no tokens)
+    # Check if source IS a presentation.md or if we need to find one
+    if echo "$PRES_SOURCE" | grep -q "presentation"; then
+      PRES_FILE="$PRES_SOURCE"
+    else
+      # Look for presentation.md in same directory
+      PRES_FILE=$(ls -t "$SESSION_DIR"/presentation*.md 2>/dev/null | head -1)
+    fi
+    if [ -z "$PRES_FILE" ] || [ ! -f "$PRES_FILE" ]; then
+      echo ""
+      echo "  Error: No presentation.md found in $SESSION_DIR"
+      echo "  Run with --formats md first, or run a full session to generate one."
+      exit 1
+    fi
+    echo "  Using existing: $PRES_FILE"
+  fi
 
   echo ""
   echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo "  ✦ Presentation generated"
   echo ""
-  echo "  📝 Presentation: $PRES_FILE"
-  echo "  📊 Slides:       $PPTX_FILE"
+
+  if [ "$needs_md" = "true" ]; then
+    echo "  📝 Presentation: $PRES_FILE"
+  fi
+  if [ "$needs_doc" = "true" ]; then
+    DOCX_FILE="${PRES_FILE%.md}.docx"
+    convert_to_docx "$PRES_FILE" "$DOCX_FILE"
+    echo "  📄 Document:     $DOCX_FILE"
+  fi
+  if [ "$needs_html" = "true" ]; then
+    HTML_FILE="${PRES_FILE%.md}.html"
+    convert_to_html "$PRES_FILE" "$HTML_FILE"
+    echo "  🌐 HTML:         $HTML_FILE"
+  fi
+
   echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo ""
   exit 0
@@ -502,7 +693,8 @@ for entry in data:
   complete_state
 
   PRES_FILE="$SESSION_DIR/presentation.md"
-  PPTX_FILE="$SESSION_DIR/presentation.pptx"
+  DOCX_FILE="$SESSION_DIR/presentation.docx"
+  HTML_FILE="$SESSION_DIR/presentation.html"
   PRES_CONTENT=$(generate_presentation "$CONVERSATION" "$SEED_TOPIC" "$WORD_COUNT" "$PRES_FILE" "${TURN_COUNT} turns, ${MODE} composition (resumed)")
 
   # Append presentation to transcript
@@ -516,7 +708,10 @@ ${PRES_CONTENT}
 "
   md_flush
 
-  convert_to_pptx "$PRES_FILE" "$PPTX_FILE"
+  convert_to_docx "$PRES_FILE" "$DOCX_FILE"
+  if [ "$HTML_ENABLED" = "true" ]; then
+    convert_to_html "$PRES_FILE" "$HTML_FILE"
+  fi
 
   echo ""
   echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -524,7 +719,10 @@ ${PRES_CONTENT}
   echo "    ${TURN_COUNT} turns, ${MODE} composition"
   echo ""
   echo "  📝 Presentation: $PRES_FILE"
-  echo "  📊 Slides:       $PPTX_FILE"
+  echo "  📄 Document:     $DOCX_FILE"
+  if [ "$HTML_ENABLED" = "true" ]; then
+    echo "  🌐 HTML:         $HTML_FILE"
+  fi
   echo "  📄 Transcript:   $TRANSCRIPT_MD"
   echo "  📊 JSON:         $TRANSCRIPT_JSON"
   echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -565,6 +763,8 @@ fi
 [ -n "$PASS_COUNT" ] && EXPERIMENT_LINES+=("    ~ passes: ${PASS_COUNT} (via --passes)")
 [ "$SHUFFLE_ENABLED" = "true" ] && EXPERIMENT_LINES+=("    ~ shuffle (agent order randomized)")
 [ "$GROUND_ENABLED" != "true" ] && EXPERIMENT_LINES+=("    - ground (disabled via --no-ground)")
+[ -n "$ALLOWED_TOOLS" ] && EXPERIMENT_LINES+=("    + tools: ${ALLOWED_TOOLS}")
+[ "$PROVOCATION_TONE" != "provocative" ] && EXPERIMENT_LINES+=("    ~ tone: ${PROVOCATION_TONE}")
 
 # ── 1. Read input material ──
 # All paths produce INPUT_MATERIAL for distillation
@@ -599,6 +799,30 @@ else
   INPUT_MATERIAL=$(read_input_material "project" "")
 fi
 
+# ── Auto-infer audience if not set ──
+if [ -z "$AUDIENCE_TEXT" ] && [ -n "$INPUT_MATERIAL" ]; then
+  start_spinner "👥 Inferring target audience"
+  infer_tmp=$(mktemp)
+  cat > "$infer_tmp" << INFER_EOF
+From the following input, identify the target audience in one sentence. Who is this work ultimately trying to reach or move? Be specific - name the human beings, not demographics. If you genuinely cannot determine an audience, respond with exactly: UNKNOWN
+
+INPUT TYPE: ${input_type}
+INPUT: ${INPUT_MATERIAL}
+${PROJECT_CONTEXT:+CONTEXT: ${PROJECT_CONTEXT}}
+INFER_EOF
+  if claude_call "$infer_tmp"; then
+    if [ "$CLAUDE_RESPONSE" != "UNKNOWN" ] && [ -n "$CLAUDE_RESPONSE" ]; then
+      AUDIENCE_TEXT="$CLAUDE_RESPONSE"
+    fi
+  fi
+  rm -f "$infer_tmp"
+  if [ -n "$AUDIENCE_TEXT" ]; then
+    stop_spinner "done"
+  else
+    stop_spinner "skipped"
+  fi
+fi
+
 # ── Banner ──
 echo ""
 echo "  🪟 THINK DIFFERENT FRAMEWORK"
@@ -612,6 +836,15 @@ case "$input_type" in
   project) echo "  Source: auto-detect from project" ;;
 esac
 echo "  Mode: $MODE"
+if [ -n "$AUDIENCE_TEXT" ]; then
+  echo "  Audience: ${AUDIENCE_TEXT:0:80}"
+fi
+if [ "$PROVOCATION_TONE" != "provocative" ]; then
+  echo "  Tone: $PROVOCATION_TONE"
+fi
+if [ "$OUTPUT_TYPE" != "insight,brief,manifesto" ]; then
+  echo "  Output types: $OUTPUT_TYPE"
+fi
 echo "  Presentation: ~${WORD_COUNT} words"
 if [ -n "$CONTEXT_FILE" ]; then
   echo "  Context: $CONTEXT_FILE"
@@ -758,7 +991,8 @@ if [ "$CAP_LIMIT_HIT" = "true" ]; then
 fi
 
 PRES_FILE="$SESSION_DIR/presentation.md"
-PPTX_FILE="$SESSION_DIR/presentation.pptx"
+DOCX_FILE="$SESSION_DIR/presentation.docx"
+HTML_FILE="$SESSION_DIR/presentation.html"
 
 if [ ${#TRANSCRIPT_FILES[@]} -eq 1 ]; then
   # Single session - generate presentation directly from transcript
@@ -774,7 +1008,10 @@ ${PRES_CONTENT}
 "
   md_flush
 
-  convert_to_pptx "$PRES_FILE" "$PPTX_FILE"
+  convert_to_docx "$PRES_FILE" "$DOCX_FILE"
+  if [ "$HTML_ENABLED" = "true" ]; then
+    convert_to_html "$PRES_FILE" "$HTML_FILE"
+  fi
 
   echo ""
   echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -782,7 +1019,10 @@ ${PRES_CONTENT}
   echo "    ${#SEEDS[@]} seed, ${TURN_COUNT} turns, ${MODE} composition"
   echo ""
   echo "  📝 Presentation: $PRES_FILE"
-  echo "  📊 Slides:       $PPTX_FILE"
+  echo "  📄 Document:     $DOCX_FILE"
+  if [ "$HTML_ENABLED" = "true" ]; then
+    echo "  🌐 HTML:         $HTML_FILE"
+  fi
   echo "  📄 Transcript:   $TRANSCRIPT_MD"
   echo "  📊 JSON:         $TRANSCRIPT_JSON"
   if [ -f "$SESSION_DIR/context.md" ]; then
@@ -805,7 +1045,10 @@ else
   esac
 
   synthesise_presentations "$WORD_COUNT" "$PRES_FILE" "$seed_summary" "${TRANSCRIPT_FILES[@]}" > /dev/null
-  convert_to_pptx "$PRES_FILE" "$PPTX_FILE"
+  convert_to_docx "$PRES_FILE" "$DOCX_FILE"
+  if [ "$HTML_ENABLED" = "true" ]; then
+    convert_to_html "$PRES_FILE" "$HTML_FILE"
+  fi
 
   echo ""
   echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -813,7 +1056,10 @@ else
   echo "    ${#SEEDS[@]} seeds, ${MODE} composition"
   echo ""
   echo "  📝 Presentation: $PRES_FILE"
-  echo "  📊 Slides:       $PPTX_FILE"
+  echo "  📄 Document:     $DOCX_FILE"
+  if [ "$HTML_ENABLED" = "true" ]; then
+    echo "  🌐 HTML:         $HTML_FILE"
+  fi
   for tf in "${TRANSCRIPT_FILES[@]}"; do
     echo "  📄 Transcript:  $tf"
   done

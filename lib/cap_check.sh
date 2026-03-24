@@ -13,6 +13,15 @@ CAP_LIMIT_HIT=""
 CAP_FAIL_COUNT=0
 CAP_FAIL_THRESHOLD=2
 CLAUDE_RESPONSE=""
+ALLOWED_TOOLS_FLAG=""
+
+# ── Build --allowedTools flag from ALLOWED_TOOLS global ──
+build_tools_flag() {
+  ALLOWED_TOOLS_FLAG=""
+  if [ -n "${ALLOWED_TOOLS:-}" ]; then
+    ALLOWED_TOOLS_FLAG="--allowedTools ${ALLOWED_TOOLS}"
+  fi
+}
 
 # ── Resume globals ──
 RESUME_FROM_TURN=0
@@ -64,9 +73,9 @@ claude_call() {
 
   local exit_code=0
   if [ -n "$system_prompt" ]; then
-    CLAUDE_RESPONSE=$(cat "$tmpfile" | claude -p --system-prompt "$system_prompt" 2>"$stderr_file") || exit_code=$?
+    CLAUDE_RESPONSE=$(cat "$tmpfile" | claude -p --system-prompt "$system_prompt" $ALLOWED_TOOLS_FLAG 2>"$stderr_file") || exit_code=$?
   else
-    CLAUDE_RESPONSE=$(cat "$tmpfile" | claude -p 2>"$stderr_file") || exit_code=$?
+    CLAUDE_RESPONSE=$(cat "$tmpfile" | claude -p $ALLOWED_TOOLS_FLAG 2>"$stderr_file") || exit_code=$?
   fi
 
   local stderr_content
@@ -116,7 +125,8 @@ save_state() {
     "friction_enabled": ${FRICTION_ENABLED:-true},
     "bias_enabled": ${BIAS_ENABLED:-true},
     "sensory_enabled": ${SENSORY_ENABLED:-true},
-    "shuffle_enabled": ${SHUFFLE_ENABLED:-false}
+    "shuffle_enabled": ${SHUFFLE_ENABLED:-false},
+    "allowed_tools": "${ALLOWED_TOOLS:-}"
   }
 }
 STATEEOF
@@ -178,7 +188,11 @@ print('FRICTION_ENABLED=' + shlex.quote(str(state['flags']['friction_enabled']).
 print('BIAS_ENABLED=' + shlex.quote(str(state['flags']['bias_enabled']).lower()))
 print('SENSORY_ENABLED=' + shlex.quote(str(state['flags']['sensory_enabled']).lower()))
 print('SHUFFLE_ENABLED=' + shlex.quote(str(state['flags']['shuffle_enabled']).lower()))
+print('ALLOWED_TOOLS=' + shlex.quote(state['flags'].get('allowed_tools', '')))
 ")"
+
+  # Rebuild tools flag from restored state
+  build_tools_flag
 
   # Load large text fields separately to avoid shell quoting issues
   CONVERSATION=$(python3 -c "import json; print(json.load(open('${state_file}'))['conversation'], end='')")

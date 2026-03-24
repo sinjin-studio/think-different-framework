@@ -1,0 +1,21 @@
+{
+  "name": "think-different-html-template",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "export": "astro build && cp dist/index.html ../template.html && echo 'Exported to report/template.html'"
+  },
+  "dependencies": {
+    "astro": "^5.7.0",
+    "tailwindcss": "^4.1.0",
+    "@tailwindcss/vite": "^4.1.0",
+    "gsap": "^3.12.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.0"
+  }
+}
