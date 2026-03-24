@@ -192,6 +192,7 @@ The framework meets you wherever you are. Give it a brief, a brand name, or some
 ./think.sh --notes "luxury wellness, Gen Z, sustainability"
 ./think.sh                                        # auto-detect from project directory
 ./think.sh --brief ./brief.pdf --pick             # interactive provocation selection
+./think.sh --brand "Nike" --audience "runners who need permission to start"
 ./think.sh --brief ./brief.pdf --mode spiral      # all flags combine
 ```
 
@@ -225,6 +226,7 @@ cd ~/projects/my-project && ~/think.sh "seed topic"
 | `--brief FILE` | Generate provocations from a brief file |
 | `--brand NAME` | Generate provocations from a brand name |
 | `--notes TEXT` | Generate provocations from working notes |
+| `--audience TEXT` | Target audience (auto-inferred from input if not set) |
 | `--seeds N` | Number of provocations to generate (default: 3, max: 12) |
 | `--pick` | Interactively select which provocations to run |
 | `--synthesise` | Synthesise existing transcript files into one presentation |
@@ -287,6 +289,7 @@ When experimental flags are active, the session banner shows what's different:
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   Seed: How might luxury wellness...
   Mode: dyslexic
+  Audience: Gen Z consumers seeking wellness that...
   Presentation: ~500 words
   Experiments:
     + skeptic (included via --include)
@@ -325,7 +328,7 @@ Beyond agents, the framework uses several mechanisms:
 
 Each session produces:
 
-- **Presentation** (`presentation_*.pptx`) - A structured presentation with six sections: Provocation, Landscape, Insight, Tension, Experiment, Sources and Threads
+- **Presentation** (`presentation.md` / `.docx` / `.html`) - The Line (platform + expression at two altitudes), creative brief, manifesto, and insight article. Controlled by `--type`. HTML version features cinematic scroll effects with GSAP ScrollTrigger
 - **Transcript** (`session_*.md`) - Full markdown transcript of the thinking session
 - **JSON** (`session_*.json`) - Machine-readable transcript for analysis
 - **Context** (`context_*.md`) - Project context brief (if gathered)

@@ -34,13 +34,21 @@ A multi-agent structured divergence framework for Claude Code CLI. It runs creat
 ### Key Flags
 
 - `--mode {dyslexic|spiral|lapidary}` - Composition mode (default: dyslexic)
-- `--words N` - Target word count (default: 500-800)
+- `--words N` - Total word budget across all presentation sections (default: 1500). Auto-drops sections at low budgets unless `--type` is explicit
 - `--output DIR` - Output directory (default: ./think-different-output)
 - `--context FILE` - Explicit context file
 - `--rounds N`, `--spirals N`, `--passes N` - Customize phase counts
 - `--include/--exclude agents` - Force agent inclusion/exclusion
+- `--audience TEXT` - Target audience (auto-inferred from input if not set). Shapes provocations and all presentation output toward audience-facing content
+- `--tone TONE` - Provocation tone: `provocative` (default), `generous`, `intimate`, `absurd`, `daydream`, `mixed`. Comma-separated for custom mix (e.g. `--tone provocative,generous`)
+- `--type TYPES` - Output types: `insight,brief,manifesto` (default: all three). Comma-separated
+- `--lines N` - Number of angles to generate (default: 3, max: 7). Each angle outputs two altitudes: Platform (strategic truth) and Expression (audience-facing punch)
+- `--practitioners LIST` - Comma-separated creative practitioners as quality bar for The Line (default: random 3 from built-in pool)
+- `--no-html` - Skip HTML presentation generation
+- `--formats LIST` - Output formats for `--report-only`: `all`, `md`, `doc`, `html` (comma-separated)
 - `--no-friction`, `--no-bias`, `--no-sensory` - Disable mechanisms
 - `--shuffle` - Randomize agent order within rounds
+- `--allowedTools TOOLS` - Pass allowed tools to Claude CLI (e.g. `"WebSearch,WebFetch"` for web research)
 
 ### npm Distribution
 
@@ -81,7 +89,7 @@ A global `$CONVERSATION` string accumulates all agent responses. Each agent read
 2. **Mode-specific seed prep** - Fracture (dyslexic), tune (spiral), or appraise (lapidary)
 3. **Rounds/spirals/passes** with interspersed mechanisms (friction, sensory, bias)
 4. **Between-phase operations** - Re-seeding (spiral) or polish (lapidary)
-5. **Report generation** - Extract conversation into 6-section article, optional .pptx
+5. **Report generation** - Generate The Line (platform + expression at two altitudes), then creative brief, manifesto, and insight article. Optional .docx
 
 ### Key Directories
 
@@ -90,13 +98,15 @@ A global `$CONVERSATION` string accumulates all agent responses. Each agent read
 - `context/` - Input handling (gather, ground, provoke, fracture, tune, appraise)
 - `mechanisms/` - Meta-cognitive operations (friction, sensory, bias, reseed, polish)
 - `lib/` - Shared utilities (dispatch, JSON/MD transcript output, markers)
-- `report/` - Presentation generation and synthesis
+- `report/` - Presentation generation, synthesis, and format converters (docx, html)
+- `report/html-template/` - Astro project for developing the HTML template (`npm run dev` for hot reload)
 
 ### Output
 
 Sessions produce files in `./think-different-output/<slug>_<timestamp>/`:
-- `presentation.md` - Structured article (Provocation, Landscape, Insight, Tension, Experiment, Sources)
-- `presentation.pptx` - PowerPoint slides (if python-pptx available)
+- `presentation.md` - Combined output: The Line (platform + expression), creative brief, manifesto, insight article (controlled by `--type`)
+- `presentation.docx` - Branded Word document (if python-docx available)
+- `presentation.html` - Cinematic scroll presentation with GSAP ScrollTrigger (disable with `--no-html`)
 - `session.md` / `session.json` - Full transcript (markdown + machine-readable)
 - `session.state.json` - Session state for resume capability
 - `context.md` - Project context brief (if gathered)
@@ -105,7 +115,7 @@ Sessions produce files in `./think-different-output/<slug>_<timestamp>/`:
 
 - Bash 3.2+ (macOS compatible - no bash 4+ features)
 - Claude Code CLI (`claude` binary in PATH)
-- Python 3 + python-pptx (optional, for .pptx output)
+- Python 3 + python-docx (optional, for .docx output)
 
 ## Conventions
 
