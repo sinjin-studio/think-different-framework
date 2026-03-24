@@ -6,7 +6,7 @@
 #
 # Cognitions: Evaluative (appraiser, historian, editor)
 # Perceivers: empath, connoisseur, provocateur, observer, skeptic
-# Child and Anxious excluded by default (mature judgement, not wild generation)
+# Child excluded by default (mature judgement, not wild generation)
 # 3 passes + ground = ~23 steps
 #
 # Depends on:
@@ -31,6 +31,8 @@ run_session() {
   is_agent_active "provocateur" && source "${SCRIPT_DIR}/agents/perceivers/provocateur.sh"
   is_agent_active "observer" && source "${SCRIPT_DIR}/agents/perceivers/observer.sh"
   is_agent_active "skeptic" && source "${SCRIPT_DIR}/agents/perceivers/skeptic.sh"
+  is_agent_active "achala" && source "${SCRIPT_DIR}/agents/perceivers/achala.sh"
+  is_agent_active "mortal" && source "${SCRIPT_DIR}/agents/perceivers/mortal.sh"
   is_agent_active "logician" && source "${SCRIPT_DIR}/agents/hybrids/logician.sh"
 
   # Source context and mechanisms
@@ -40,11 +42,10 @@ run_session() {
   source "${SCRIPT_DIR}/mechanisms/friction.sh"
   source "${SCRIPT_DIR}/mechanisms/polish.sh"
   source "${SCRIPT_DIR}/mechanisms/bias.sh"
+  source "${SCRIPT_DIR}/mechanisms/transcendence.sh"
 
-  # Gather, ground, then appraise
+  # Gather context, then appraise (grounding is embedded in appraisal)
   gather_project_context || true
-  [ "$CAP_LIMIT_HIT" = "true" ] && return 0
-  ground_seed || true
   [ "$CAP_LIMIT_HIT" = "true" ] && return 0
   appraise_seed || true
   [ "$CAP_LIMIT_HIT" = "true" ] && return 0
@@ -90,6 +91,8 @@ run_session() {
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
     polish 2 || true
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    transcendence_check 2 || true
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
   fi
 
   # ── PASS 3: Facet ──
@@ -101,6 +104,8 @@ run_session() {
       "appraiser:weigh:3:Final proportion check. Three passes of working this material. Is the balance right? Does it have the weight of conviction or the lightness of convenience? State your assessment with the precision this final pass demands." \
       "historian:root:3:Take the ten-year view. Where does what has emerged sit in the longer arc? Not just what tradition it comes from but where it points. Is this something that will matter in a decade or is it a fashion? Root the final assessment in time." \
       "skeptic:question:3:Three passes of refinement. What assumption has survived every pass unchallenged? What is everyone walking past because the cutting has been too respectful of it? What is in plain sight but invisible because of how the material has been worked?" \
+      "achala:devotion:3:Three passes of refinement. The material has been cut, shaped, and faceted. Now the final question: does it have soul? Not polish, not quality, not craft. Soul. Is this something someone would devote themselves to? Or is it merely well-made?" \
+      "mortal:urgency:3:Three passes of refinement. Achala asked whether this has soul. Now ask whether it has urgency. Is this material that demands to exist now, or could it wait another year without loss? If there is no urgency, what would create it? Name the cost of delay in human terms, not business terms." \
       "editor:pare:3:Final cut. Every word must be load-bearing. Every element structural. This is the pass where good becomes accomplished. Remove the last thing that is not the thing. Show the finished shape." \
       "connoisseur:evaluate:3:Final verdict. Is this finished or merely stopped? Not perfect - finished. Does it have the quality of something made with care and attention? Would you want to live with it? Is it ready to leave the workshop?"
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0

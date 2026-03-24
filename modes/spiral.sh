@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ── Spiral composition ──
 # Deepening spirals: diverge, analogise, integrate, reseed
-# Perceivers: empath, provocateur, observer, skeptic, includer
+# Perceivers: empath, provocateur, observer, skeptic, includer, achala, mortal
 # 3 spirals, each ~10 turns + ground = ~34 steps
 #
 # Depends on:
@@ -22,6 +22,8 @@ run_session() {
   is_agent_active "observer" && source "${SCRIPT_DIR}/agents/perceivers/observer.sh"
   is_agent_active "skeptic" && source "${SCRIPT_DIR}/agents/perceivers/skeptic.sh"
   is_agent_active "includer" && source "${SCRIPT_DIR}/agents/perceivers/includer.sh"
+  is_agent_active "achala" && source "${SCRIPT_DIR}/agents/perceivers/achala.sh"
+  is_agent_active "mortal" && source "${SCRIPT_DIR}/agents/perceivers/mortal.sh"
 
   # Source context and mechanisms
   source "${SCRIPT_DIR}/context/gather.sh"
@@ -30,11 +32,10 @@ run_session() {
   source "${SCRIPT_DIR}/mechanisms/friction.sh"
   source "${SCRIPT_DIR}/mechanisms/reseed.sh"
   source "${SCRIPT_DIR}/mechanisms/bias.sh"
+  source "${SCRIPT_DIR}/mechanisms/transcendence.sh"
 
-  # Gather, ground, then tune
+  # Gather context, then tune (grounding is embedded in tuning)
   gather_project_context || true
-  [ "$CAP_LIMIT_HIT" = "true" ] && return 0
-  ground_seed || true
   [ "$CAP_LIMIT_HIT" = "true" ] && return 0
   tune_seed || true
   [ "$CAP_LIMIT_HIT" = "true" ] && return 0
@@ -114,6 +115,16 @@ run_session() {
       "empath:feel:2:Two spirals in. What would the person at the centre actually do with any of this? Is there a radical simplification that compresses the best thinking into something someone would actually use, do, or feel?"
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
 
+    mark_phase "Devote" "What's Worth Giving Yourself To"
+    dispatch_round \
+      "achala:devotion:2:The Empath anchored to feelings. Go deeper. What would the person at the centre sacrifice for? What are they devoted to that the conversation has been treating as a mere preference? What is the love that powers this situation?"
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+
+    mark_phase "Urgency" "The Cost of Waiting"
+    dispatch_round \
+      "mortal:urgency:2:Achala named what is sacred. Now name the cost of not acting on it. Two spirals of exploration - what is being deferred while the conversation deepens? If the person at the centre had one year, not a career, which ideas survive?"
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+
     mark_phase "Provoke" "Demolish Foundations"
     dispatch_round \
       "provocateur:provoke:2:The conversation has been building something across two spirals. What if the entire direction of travel is wrong? Say it plainly."
@@ -124,8 +135,10 @@ run_session() {
       "integrator:integrate:2:Two spirals of thinking. What has emerged that nobody planned? What pattern is forming across the spirals themselves, not just within them? Name it precisely."
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
 
-    # Friction + reseed
+    # Friction + transcendence + reseed
     detect_prediction_errors 2 || true
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    transcendence_check 2 || true
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
     if [ "$total_spirals" -ge 3 ]; then
       local RESEED_2
@@ -154,6 +167,16 @@ run_session() {
     mark_phase "Feel" "Final Human Reality"
     dispatch_round \
       "empath:feel:3:Three spirals of exploration. Forget the metaphors. What does the person at the centre of this seed actually need? What is the one-sentence reframe? Compress ruthlessly."
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+
+    mark_phase "Devote" "What Makes This Worth Doing"
+    dispatch_round \
+      "achala:devotion:3:Three spirals of exploration. Everything is connected to everything else. Name the connection that matters most, the one that makes this worth doing, not just worth solving."
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+
+    mark_phase "Urgency" "The Price of Delay"
+    dispatch_round \
+      "mortal:urgency:3:Three spirals of exploration. Achala named what matters most. Now name what is lost with every week this stays theoretical. If everything the conversation has uncovered is true, what is the cost of waiting measured in lived human time?"
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
 
     mark_phase "Question" "Incongruence Check"

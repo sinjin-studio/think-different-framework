@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # ── Dyslexic composition ──
 # Fragmentary thinking: decompose, associate, scale, reify
-# Perceivers: empath, provocateur, observer, anxious, child, includer
+# Perceivers: empath, provocateur, observer, mortal, child, includer
 # Skeptic excluded by default but can be force-included (placed in Round 3)
 # ~25 agent turns + 3 friction + 1 sensory + 1 bias = ~30 steps
 #
 # Depends on:
 #   agents/cognitions/fragmentary/*.sh
 #   agents/hybrids/logician.sh
-#   agents/perceivers/empath.sh, provocateur.sh, observer.sh, anxious.sh, child.sh
+#   agents/perceivers/empath.sh, provocateur.sh, observer.sh, mortal.sh, child.sh
 #   context/gather.sh, context/fracture.sh
 #   mechanisms/friction.sh, mechanisms/sensory.sh, mechanisms/bias.sh
 #   lib/call_agent.sh, lib/markers.sh
@@ -24,9 +24,10 @@ run_session() {
   is_agent_active "empath" && source "${SCRIPT_DIR}/agents/perceivers/empath.sh"
   is_agent_active "provocateur" && source "${SCRIPT_DIR}/agents/perceivers/provocateur.sh"
   is_agent_active "observer" && source "${SCRIPT_DIR}/agents/perceivers/observer.sh"
-  is_agent_active "anxious" && source "${SCRIPT_DIR}/agents/perceivers/anxious.sh"
+  is_agent_active "mortal" && source "${SCRIPT_DIR}/agents/perceivers/mortal.sh"
   is_agent_active "child" && source "${SCRIPT_DIR}/agents/perceivers/child.sh"
   is_agent_active "includer" && source "${SCRIPT_DIR}/agents/perceivers/includer.sh"
+  is_agent_active "achala" && source "${SCRIPT_DIR}/agents/perceivers/achala.sh"
   is_agent_active "logician" && source "${SCRIPT_DIR}/agents/hybrids/logician.sh"
 
   # Skeptic: excluded by default in dyslexic, but --include skeptic overrides
@@ -47,11 +48,10 @@ run_session() {
   source "${SCRIPT_DIR}/mechanisms/friction.sh"
   source "${SCRIPT_DIR}/mechanisms/sensory.sh"
   source "${SCRIPT_DIR}/mechanisms/bias.sh"
+  source "${SCRIPT_DIR}/mechanisms/transcendence.sh"
 
-  # Gather, ground, then fracture
+  # Gather context, then fracture (grounding is embedded in fracture)
   gather_project_context || true
-  [ "$CAP_LIMIT_HIT" = "true" ] && return 0
-  ground_seed || true
   [ "$CAP_LIMIT_HIT" = "true" ] && return 0
   fracture_seed || true
   [ "$CAP_LIMIT_HIT" = "true" ] && return 0
@@ -86,6 +86,7 @@ run_session() {
       "child:naivety:2:Look at everything the conversation has assumed so far. Ask the question nobody is asking because they think the answer is obvious. Why can't you just...? What if you didn't? What would happen if you did it backwards?" \
       "associator:associate:2:The Scaler just showed us the problem at a new altitude. What connections are visible now that were invisible before, especially connections that work with the contradictions?" \
       "provocateur:provoke:2:The conversation has been building something. Strip it. What is the uncomfortable simplification? What is everyone avoiding saying because it is too direct? Say it in as few words as possible." \
+      "achala:devotion:2:The conversation has been fragmenting and scaling. Before it goes further, name the thing people would sacrifice for here. Not the stated need. The sacred thing underneath. What do people actually love about this situation, and what would it mean to honour that rather than optimise it?" \
       "logician:trace:2:The Scaler just shifted altitude twice. At this new scale, what causal chains are visible that were hidden before? Trace one forward - if this is true, what necessarily follows? Trace one backward - what is the structural root cause that nobody has named yet?" \
       "scaler:scale:2:Zoom again. The other direction. If you zoomed out last time, zoom in to the microscopic. If you zoomed in, pull up to the cosmic. The problem should look completely different from here."
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
@@ -103,7 +104,7 @@ run_session() {
     # Build round 3 agents - skeptic placed here if force-included
     local round3_agents=(
       "decomposer:decompose:3:Two rounds of thinking are loaded and friction has been identified twice. Go back to the original seed and fragment it again, but this time you see differently. The blind spots and contradictions from previous rounds are your guide. What piece of the seed looks completely different now?"
-      "anxious:anxiety:3:What is this conversation avoiding? What is the 3am fear? Not the risk assessment. The thing that would keep the person at the centre awake. The fear nobody wants to name because naming it means rethinking everything."
+      "mortal:urgency:3:Three rounds of thinking. What is being deferred? What is the conversation assuming there is time for that there might not be? If the person at the centre had one year to act on this, which of these ideas would survive and which would fall away? Name the cost of waiting in lived time."
       "associator:associate:3:Three rounds of fragments, scale shifts, and reality checks. Two rounds of friction. What is the most daring connection you can make? Connect something from round 1 to something from round 3 through a domain nobody has mentioned."
       "observer:observe:3:Three rounds in. What has been said repeatedly that nobody has questioned? What specific claim was made that might not be literally true? What gap exists between how the situation was described and how it would actually look if you were standing there watching?"
       "empath:empathise:3:Third and most important reality check. Three rounds of fragmenting, connecting, and scaling. Two rounds of friction. Forget the cleverness. What does the person at the centre of this actually need? What's the one-sentence reframe that would make them say 'yes, that is it'?"
@@ -122,6 +123,8 @@ run_session() {
     detect_prediction_errors 3 || true
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
     detect_cognitive_bias 3 || true
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    transcendence_check 3 || true
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
   fi
 
@@ -150,6 +153,8 @@ run_session() {
   dispatch_round \
     "reifier:reify:${final_round}:This is your moment. Multiple rounds of fragments, connections, scale shifts, and reality checks. The mismatches between agents' views are the most important signal. Step back and look at all of it. What is the constellation? What shape connects the most surprising CONTRADICTIONS, not just the agreements? Name the thing." \
     "associator:associate:${final_round}:The Reifier just drew a constellation. What adjacent thing does that constellation look like? What else in the world has this same shape? One final connection that makes the named insight feel inevitable rather than invented." \
+    "achala:devotion:${final_round}:The constellation has been named. Now ask: is this worthy of devotion? Would someone give their time, their reputation, their sleep to this? If not, what would make it worthy?" \
+    "mortal:urgency:${final_round}:Achala named what is sacred. Now name the cost of not acting on it. What is being lost while this remains an idea instead of a thing in the world? If this constellation is true, what is the price of another quarter of deliberation?" \
     "provocateur:provoke:${final_round}:The constellation has been named and connected. Now compress it. What is the five-word version? The version that makes the room go quiet? Not a tagline. The truth, compressed."
   [ "$CAP_LIMIT_HIT" = "true" ] && return 0
 

@@ -57,6 +57,7 @@ EXCLUDE_AGENTS=()
 FRICTION_ENABLED="true"
 BIAS_ENABLED="true"
 SENSORY_ENABLED="true"
+TRANSCENDENCE_ENABLED="true"
 SHUFFLE_ENABLED="false"
 GROUND_ENABLED="true"
 GROUND_ONLY=""
@@ -65,7 +66,7 @@ SEEDS_SET_BY_USER=""
 ROUND_COUNT=""
 SPIRAL_COUNT=""
 PASS_COUNT=""
-ALLOWED_TOOLS=""
+ALLOWED_TOOLS="WebSearch,WebFetch"
 PROVOCATION_TONE="provocative"
 OUTPUT_TYPE="insight,brief,manifesto"
 TYPE_EXPLICIT=""
@@ -125,18 +126,19 @@ show_help() {
   echo "    --help           Show this help"
   echo ""
   echo "  Experimental:"
-  echo "    --include A,B    Force-include agents by key (e.g. skeptic,anxious)"
+  echo "    --include A,B    Force-include agents by key (e.g. skeptic,mortal)"
   echo "    --exclude A,B    Force-exclude agents by key"
   echo "    --no-friction    Skip friction detection between rounds"
   echo "    --no-bias        Skip cognitive bias checks"
   echo "    --no-sensory     Skip sensory/context re-injection"
+  echo "    --no-transcendence  Skip transcendence check"
   echo "    --rounds N       Number of rounds (dyslexic default: 4)"
   echo "    --spirals N      Number of spirals (spiral default: 3)"
   echo "    --passes N       Number of passes (lapidary default: 3)"
   echo "    --shuffle        Randomize agent order within each round/phase"
-  echo "    --no-ground      Skip assumption grounding step before session"
+  echo "    --no-ground      Skip assumption grounding embedded in seed prep"
   echo "    --ground-only    Run only the grounding step, then exit"
-  echo "    --allowedTools T Pass allowed tools to Claude CLI (e.g. \"WebSearch,WebFetch\")"
+  echo "    --allowedTools T Tools for Claude CLI (default: \"WebSearch,WebFetch\", use \"\" to disable)"
   echo ""
   exit 0
 }
@@ -210,6 +212,10 @@ while [ $# -gt 0 ]; do
       ;;
     --no-sensory)
       SENSORY_ENABLED="false"
+      shift
+      ;;
+    --no-transcendence)
+      TRANSCENDENCE_ENABLED="false"
       shift
       ;;
     --rounds)
@@ -758,12 +764,17 @@ fi
 [ "$FRICTION_ENABLED" != "true" ] && EXPERIMENT_LINES+=("    - friction (disabled via --no-friction)")
 [ "$BIAS_ENABLED" != "true" ] && EXPERIMENT_LINES+=("    - bias (disabled via --no-bias)")
 [ "$SENSORY_ENABLED" != "true" ] && EXPERIMENT_LINES+=("    - sensory (disabled via --no-sensory)")
+[ "$TRANSCENDENCE_ENABLED" != "true" ] && EXPERIMENT_LINES+=("    - transcendence (disabled via --no-transcendence)")
 [ -n "$ROUND_COUNT" ] && EXPERIMENT_LINES+=("    ~ rounds: ${ROUND_COUNT} (via --rounds)")
 [ -n "$SPIRAL_COUNT" ] && EXPERIMENT_LINES+=("    ~ spirals: ${SPIRAL_COUNT} (via --spirals)")
 [ -n "$PASS_COUNT" ] && EXPERIMENT_LINES+=("    ~ passes: ${PASS_COUNT} (via --passes)")
 [ "$SHUFFLE_ENABLED" = "true" ] && EXPERIMENT_LINES+=("    ~ shuffle (agent order randomized)")
 [ "$GROUND_ENABLED" != "true" ] && EXPERIMENT_LINES+=("    - ground (disabled via --no-ground)")
-[ -n "$ALLOWED_TOOLS" ] && EXPERIMENT_LINES+=("    + tools: ${ALLOWED_TOOLS}")
+if [ -n "$ALLOWED_TOOLS" ]; then
+  EXPERIMENT_LINES+=("    + tools: ${ALLOWED_TOOLS}")
+else
+  EXPERIMENT_LINES+=("    - tools: disabled (no web search)")
+fi
 [ "$PROVOCATION_TONE" != "provocative" ] && EXPERIMENT_LINES+=("    ~ tone: ${PROVOCATION_TONE}")
 
 # ── 1. Read input material ──
@@ -804,7 +815,7 @@ if [ -z "$AUDIENCE_TEXT" ] && [ -n "$INPUT_MATERIAL" ]; then
   start_spinner "👥 Inferring target audience"
   infer_tmp=$(mktemp)
   cat > "$infer_tmp" << INFER_EOF
-From the following input, identify the target audience in one sentence. Who is this work ultimately trying to reach or move? Be specific - name the human beings, not demographics. If you genuinely cannot determine an audience, respond with exactly: UNKNOWN
+From the following input, identify the target audience in one or two sentences. Who is this work ultimately trying to reach or move? Be specific - name the human beings, not demographics. Include the full range of life stages this touches, not just the youngest or most aspirational. If you genuinely cannot determine an audience, respond with exactly: UNKNOWN
 
 INPUT TYPE: ${input_type}
 INPUT: ${INPUT_MATERIAL}
@@ -877,7 +888,9 @@ if [ -n "$GROUND_ONLY" ]; then
   json_open
 
   gather_project_context
-  ground_seed
+
+  # Standalone grounding: surface assumptions, verify with web search if available
+  ground_standalone
 
   json_flush
   md_flush
