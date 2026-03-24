@@ -9,7 +9,7 @@
 detect_prediction_errors() {
   [ "$FRICTION_ENABLED" != "true" ] && return
   local unit_num="$1"
-  echo -n "  ⚡ Detecting prediction errors..."
+  start_spinner "⚡ Detecting prediction errors"
 
   local error_prompt="You are reading a conversation between several thinkers working on a problem. Do not analyse it. React to it.
 
@@ -27,7 +27,7 @@ ${CONVERSATION}"
   # Resume skip
   if [ "$TURN_COUNT" -lt "$RESUME_FROM_TURN" ]; then
     rm -f "$tmpfile"
-    echo " skipped (resuming)"
+    stop_spinner "skipped (resuming)"
     TURN_COUNT=$((TURN_COUNT + 1))
     return
   fi
@@ -38,14 +38,14 @@ ${CONVERSATION}"
   else
     rm -f "$tmpfile"
     if [ "$CAP_LIMIT_HIT" = "true" ]; then
-      echo " cap limit reached"
+      stop_spinner "cap limit"
       return 1
     fi
     errors="No prediction errors detected."
   fi
   rm -f "$tmpfile"
 
-  echo " done"
+  stop_spinner "done"
 
   CONVERSATION="${CONVERSATION}
 

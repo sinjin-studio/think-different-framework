@@ -6,7 +6,7 @@
 # Sets: $PROJECT_CONTEXT
 
 gather_project_context() {
-  echo -n "  📍 Gathering project context..."
+  start_spinner "📍 Gathering project context"
 
   if [ -n "$CONTEXT_FILE" ]; then
     if [ -f "$CONTEXT_FILE" ]; then
@@ -14,10 +14,10 @@ gather_project_context() {
       if [ -n "${SESSION_DIR:-}" ]; then
         cp "$CONTEXT_FILE" "$SESSION_DIR/context.md"
       fi
-      echo " done (from file)"
+      stop_spinner "done (from file)"
       return
     else
-      echo ""
+      stop_spinner "failed"
       echo "  Warning: context file not found: $CONTEXT_FILE"
       PROJECT_CONTEXT=""
       return
@@ -30,7 +30,7 @@ gather_project_context() {
   fi
 
   if [ -z "$has_project" ]; then
-    echo " skipped (no project detected)"
+    stop_spinner "skipped (no project detected)"
     PROJECT_CONTEXT=""
     return
   fi
@@ -52,14 +52,24 @@ gather_project_context() {
       if [ -n "${SESSION_DIR:-}" ]; then
         cp "$cache_file" "$SESSION_DIR/context.md"
       fi
-      echo " done (cached, commit ${current_commit:0:7})"
+      stop_spinner "done (cached, commit ${current_commit:0:7})"
       return
     else
-      echo -n " stale cache, regenerating..."
+      stop_spinner "stale cache"
+      start_spinner "📍 Regenerating project context"
     fi
   fi
 
-  local gather_prompt="I need you to look at this project and produce a brief that describes the HUMAN EXPERIENCE of what this project is. This brief will be used as context for a creative thinking session.
+  local research_preamble=""
+  case "${ALLOWED_TOOLS:-}" in
+    *WebSearch*)
+      research_preamble="You have access to web search. If the project references a specific product, brand, or market, search for current public information to enrich your brief.
+
+"
+      ;;
+  esac
+
+  local gather_prompt="${research_preamble}I need you to look at this project and produce a brief that describes the HUMAN EXPERIENCE of what this project is. This brief will be used as context for a creative thinking session.
 
 CRITICAL: Do NOT mention technical implementation details. No frameworks (Astro, React, Next.js, etc.), no deployment platforms (Netlify, Vercel, etc.), no programming languages, no package managers, no database engines, no CSS approaches, no build tools. None of that.
 
@@ -84,10 +94,10 @@ Keep the brief under 500 words. Concrete and specific."
     PROJECT_CONTEXT=""
     rm -f "$gather_tmpfile"
     if [ "$CAP_LIMIT_HIT" = "true" ]; then
-      echo " cap limit reached"
+      stop_spinner "cap limit"
       return 1
     fi
-    echo " failed (continuing without context)"
+    stop_spinner "failed (continuing without context)"
     return
   fi
   rm -f "$gather_tmpfile"
@@ -96,10 +106,10 @@ Keep the brief under 500 words. Concrete and specific."
   echo "$PROJECT_CONTEXT" > "$cache_file"
   if [ -n "$current_commit" ]; then
     echo "$current_commit" > "$cache_commit_file"
-    echo " done (cached at commit ${current_commit:0:7})"
+    stop_spinner "done (cached at commit ${current_commit:0:7})"
   else
     echo "none" > "$cache_commit_file"
-    echo " done (cached, no git)"
+    stop_spinner "done (cached, no git)"
   fi
 
   if [ -n "${SESSION_DIR:-}" ]; then

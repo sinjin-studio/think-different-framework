@@ -114,7 +114,7 @@ ${CONVERSATION}
 ---
 It is now your turn. See differently. Add something new."
 
-  echo -n "  ${emoji} ${name} is thinking..."
+  start_spinner "${emoji} ${name}"
 
   local tmpfile
   tmpfile=$(mktemp)
@@ -126,14 +126,14 @@ It is now your turn. See differently. Add something new."
   else
     rm -f "$tmpfile"
     if [ "$CAP_LIMIT_HIT" = "true" ]; then
-      echo " cap limit reached"
+      stop_spinner "cap limit"
       return 1
     fi
     response="[Agent could not respond]"
   fi
   rm -f "$tmpfile"
 
-  echo " done"
+  stop_spinner "done"
 
   CONVERSATION="${CONVERSATION}
 

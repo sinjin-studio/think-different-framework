@@ -19,9 +19,18 @@ ground_seed() {
     return
   fi
 
-  echo -n "  🔍 Grounding the seed..."
+  start_spinner "🔍 Grounding the seed"
 
-  local ground_prompt="You are a rigorous analyst preparing a creative thinking session. Your job is to separate what is actually known from what would be assumed - but surface only what matters most, not everything.
+  local research_preamble=""
+  case "${ALLOWED_TOOLS:-}" in
+    *WebSearch*)
+      research_preamble="You have access to web search. Use it to verify your INFERRED assumptions against current real-world facts.
+
+"
+      ;;
+  esac
+
+  local ground_prompt="${research_preamble}You are a rigorous analyst preparing a creative thinking session. Your job is to separate what is actually known from what would be assumed - but surface only what matters most, not everything.
 
 Given the seed topic (and any project context) below, classify into three categories. Be ruthless about the distinction between stated and inferred.
 
@@ -53,15 +62,15 @@ SEED TOPIC: ${SEED_TOPIC}"
     GROUND_CONTEXT=""
     rm -f "$tmpfile"
     if [ "$CAP_LIMIT_HIT" = "true" ]; then
-      echo " cap limit reached"
+      stop_spinner "cap limit"
       return 1
     fi
-    echo " skipped (could not reach model)"
+    stop_spinner "skipped (could not reach model)"
     return
   fi
   rm -f "$tmpfile"
 
-  echo " done"
+  stop_spinner "done"
   echo ""
 
   # Display ground check

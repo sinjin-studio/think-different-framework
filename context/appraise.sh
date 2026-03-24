@@ -7,7 +7,7 @@
 # Depends on: lib/json.sh
 
 appraise_seed() {
-  echo -n "  🌱 Appraising the raw material..."
+  start_spinner "🌱 Appraising the raw material"
 
   local appraise_prompt="You are preparing a creative thinking session that works through iterative refinement - cutting, polishing, and faceting raw material through repeated passes, each more precise than the last.
 
@@ -43,14 +43,14 @@ SEED TOPIC: ${SEED_TOPIC}"
   else
     rm -f "$tmpfile"
     if [ "$CAP_LIMIT_HIT" = "true" ]; then
-      echo " cap limit reached"
+      stop_spinner "cap limit"
       return 1
     fi
     APPRAISE_CONTEXT="No appraisal context available. Agents should follow their own instincts."
   fi
   rm -f "$tmpfile"
 
-  echo " done"
+  stop_spinner "done"
   echo ""
 
   CONVERSATION="The session begins with the seed topic: ${SEED_TOPIC}"

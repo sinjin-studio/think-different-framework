@@ -9,7 +9,7 @@
 
 polish() {
   local pass_num="$1"
-  echo -n "  💎 Polishing between passes..."
+  start_spinner "💎 Polishing between passes"
 
   local polish_prompt="You are reading a conversation between several thinkers who are working material through iterative refinement. A pass of cutting and shaping has just been completed.
 
@@ -32,7 +32,7 @@ ${CONVERSATION}"
   # Resume skip
   if [ "$TURN_COUNT" -lt "$RESUME_FROM_TURN" ]; then
     rm -f "$tmpfile"
-    echo " skipped (resuming)"
+    stop_spinner "skipped (resuming)"
     TURN_COUNT=$((TURN_COUNT + 1))
     return
   fi
@@ -43,14 +43,14 @@ ${CONVERSATION}"
   else
     rm -f "$tmpfile"
     if [ "$CAP_LIMIT_HIT" = "true" ]; then
-      echo " cap limit reached"
+      stop_spinner "cap limit"
       return 1
     fi
     assessment="The material is taking shape. Continue working."
   fi
   rm -f "$tmpfile"
 
-  echo " done"
+  stop_spinner "done"
 
   CONVERSATION="${CONVERSATION}
 

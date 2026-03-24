@@ -6,7 +6,7 @@
 # Depends on: lib/json.sh
 
 tune_seed() {
-  echo -n "  🌱 Tuning lenses to the seed..."
+  start_spinner "🌱 Tuning lenses to the seed"
 
   local tuning_prompt="You are preparing a multi-agent brainstorming session. Given the seed topic below, suggest unexpected angles of approach.
 
@@ -38,14 +38,14 @@ SEED TOPIC: ${SEED_TOPIC}"
   else
     rm -f "$tmpfile"
     if [ "$CAP_LIMIT_HIT" = "true" ]; then
-      echo " cap limit reached"
+      stop_spinner "cap limit"
       return 1
     fi
     LENS_CONTEXT="No lens context available. Agents should follow their own instincts."
   fi
   rm -f "$tmpfile"
 
-  echo " done"
+  stop_spinner "done"
   echo ""
 
   CONVERSATION="The session begins with the seed topic: ${SEED_TOPIC}"

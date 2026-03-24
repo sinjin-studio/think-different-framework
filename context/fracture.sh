@@ -6,7 +6,7 @@
 # Depends on: lib/json.sh
 
 fracture_seed() {
-  echo -n "  🌱 Fracturing the seed..."
+  start_spinner "🌱 Fracturing the seed"
 
   local fracture_prompt="You are preparing a creative thinking session that works through dyslexic thinking, seeing differently, making unexpected connections, shifting scale.
 
@@ -42,14 +42,14 @@ SEED TOPIC: ${SEED_TOPIC}"
   else
     rm -f "$tmpfile"
     if [ "$CAP_LIMIT_HIT" = "true" ]; then
-      echo " cap limit reached"
+      stop_spinner "cap limit"
       return 1
     fi
     FRACTURE_CONTEXT="No fracture context available. Agents should follow their own instincts."
   fi
   rm -f "$tmpfile"
 
-  echo " done"
+  stop_spinner "done"
   echo ""
 
   CONVERSATION="The session begins with the seed topic: ${SEED_TOPIC}"

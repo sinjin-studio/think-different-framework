@@ -10,7 +10,7 @@
 detect_cognitive_bias() {
   [ "$BIAS_ENABLED" != "true" ] && return
   local unit_num="$1"
-  echo -n "  🔬 Checking for cognitive bias..."
+  start_spinner "🔬 Checking for cognitive bias"
 
   local bias_prompt="You are a metacognitive observer reading a conversation between several thinkers. Your job is not to evaluate the ideas. It is to notice the THINKING PATTERNS and flag any cognitive biases that are shaping the conversation.
 
@@ -35,7 +35,7 @@ ${CONVERSATION}"
   # Resume skip
   if [ "$TURN_COUNT" -lt "$RESUME_FROM_TURN" ]; then
     rm -f "$tmpfile"
-    echo " skipped (resuming)"
+    stop_spinner "skipped (resuming)"
     TURN_COUNT=$((TURN_COUNT + 1))
     return
   fi
@@ -46,14 +46,14 @@ ${CONVERSATION}"
   else
     rm -f "$tmpfile"
     if [ "$CAP_LIMIT_HIT" = "true" ]; then
-      echo " cap limit reached"
+      stop_spinner "cap limit"
       return 1
     fi
     biases="No significant cognitive biases detected."
   fi
   rm -f "$tmpfile"
 
-  echo " done"
+  stop_spinner "done"
 
   CONVERSATION="${CONVERSATION}
 
