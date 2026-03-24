@@ -9,6 +9,7 @@ import '../styles/global.css';
 const isDev = import.meta.env.DEV;
 
 const demoSeed = isDev ? 'How might luxury wellness appeal to Gen Z without losing its soul?' : '{{SEED_TOPIC}}';
+const demoBrand = isDev ? 'Aesop' : '{{BRAND_NAME}}';
 const demoDate = isDev ? '2026-03-24 14:30' : '{{DATE}}';
 const demoWords = isDev ? '~800' : '{{WORD_COUNT}}';
 const demoSource = isDev ? '28 turns, dyslexic composition' : '{{SOURCE_INFO}}';
@@ -121,6 +122,9 @@ const demoManifesto = isDev ? `
   Show the supply chain. Open the lab. Let the product speak.
 </div>
 ` : '{{MANIFESTO_CONTENT}}';
+
+// Show brand only if present
+const showBrand = isDev ? true : false; // Python handles visibility at runtime
 ---
 
 <html lang="en">
@@ -133,28 +137,41 @@ const demoManifesto = isDev ? `
   <link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,700;1,7..72,400;1,7..72,700&display=swap" rel="stylesheet" />
   <script is:inline src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js"></script>
   <script is:inline src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/ScrollTrigger.min.js"></script>
+  <script is:inline src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/ScrollToPlugin.min.js"></script>
 </head>
 <body>
 
   <!-- ── Hero ── -->
   <section data-section="hero" class="scroll-section relative flex items-center justify-center min-h-screen">
     <div class="text-center max-w-4xl mx-auto px-8">
+      {(showBrand || demoBrand) && (
+        <div class="brand-lockup" data-brand-lockup>
+          <div class="brand-name-text">{demoBrand}</div>
+          <div class="brand-accent"></div>
+        </div>
+      )}
       <h1 class="hero-title font-bold text-sinjin-text leading-tight" style="font-size: clamp(1.5rem, 5vw, 3.5rem);">
         {demoSeed}
       </h1>
       <div class="accent-line w-32 mx-auto mt-6"></div>
     </div>
-    <div class="scroll-indicator text-sinjin-grey text-xs tracking-widest uppercase">
-      scroll
+    <div class="scroll-indicator">
+      <div class="scroll-chevron"></div>
     </div>
   </section>
 
+  <!-- ── Divider ── -->
+  <div class="section-divider"></div>
+
   <!-- ── The Line ── -->
-  <section data-section="the-line" class="scroll-section flex items-center justify-center min-h-screen" id="the-line-section" set:html={demoLines ? '' : undefined}>
+  <section data-section="the-line" class="scroll-section flex items-center justify-center min-h-screen">
     <div class="max-w-4xl mx-auto px-8 text-center the-line-text">
       <Fragment set:html={demoLines} />
     </div>
   </section>
+
+  <!-- ── Divider ── -->
+  <div class="section-divider"></div>
 
   <!-- ── Insight Article ── -->
   {demoInsight && (
@@ -162,6 +179,9 @@ const demoManifesto = isDev ? `
       <Fragment set:html={demoInsight} />
     </div>
   )}
+
+  <!-- ── Divider ── -->
+  {demoInsight && <div class="section-divider"></div>}
 
   <!-- ── Creative Brief ── -->
   {demoBrief && (
@@ -172,6 +192,9 @@ const demoManifesto = isDev ? `
       </div>
     </section>
   )}
+
+  <!-- ── Divider ── -->
+  {demoBrief && <div class="section-divider"></div>}
 
   <!-- ── Manifesto ── -->
   {demoManifesto && (
@@ -195,6 +218,11 @@ const demoManifesto = isDev ? `
       <a href="https://sinjin.studio">Sinjin Studio</a>
     </p>
   </footer>
+
+  <!-- ── Section Navigation ── -->
+  <nav class="section-nav" aria-label="Section navigation">
+    <ul class="nav-dots"></ul>
+  </nav>
 
   <!-- ── Scroll Animations ── -->
   <script>

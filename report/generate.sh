@@ -11,9 +11,10 @@ STYLE_RULES='Style rules:
 - Do not use bullet points, numbered lists, or headers with markdown formatting
 - Do not use the words "genuinely", "honestly", "straightforward", "nuanced", "multifaceted", "paradigm", "ecosystem", "holistic", "stakeholder", or "leverage" (as verb)
 - Do not use "landscape", "framework", or "space" as metaphors
+- Do not use "sacred", "prayer", "altar", "pilgrimage", "devotion", or "worship" as metaphors for non-religious subjects. Find secular language for the same intensity
 - No emojis
 - Write in paragraphs, not lists
-- Short paragraphs. Two to four sentences each. White space is your friend
+- Short paragraphs. Two to four sentences each. If a paragraph exceeds four sentences, split it. This is not a suggestion. White space is your friend
 - Sentences should vary in length. Short ones hit harder after long ones
 - If a paragraph could appear in any strategy deck for any client, delete it and try again'
 
@@ -228,13 +229,13 @@ The Platform should open territory that matters to these people. The Expression 
   fi
 
 read -r -d '' LINE_SYSTEM << LINESYS || true
-You distil thinking into two altitudes. Not taglines. Not slogans. Strategic territory and its sharpest expression.
+You distil thinking into two altitudes. Strategic territory and its sharpest expression. The expression may well become a slogan - that is fine, as long as it carries depth and genuine meaning, not shallow aspiration.
 
 You will receive research notes from a deep thinking session. Your job is to find the core insight and render it at two altitudes.
 ${audience_line_block}
 
 ALTITUDE 1 - THE PLATFORM
-A generative strategic truth. The kind of line you can make decisions against, brief campaigns from, and build products on. "Think Different" is a platform - it opens territory. "Empowering creativity" is not - it closes it.
+A generative strategic truth. The kind of line you can make decisions against, brief campaigns from, and build products on. A platform opens territory. You can brief campaigns from it, build products on it, make decisions against it. If it merely describes a quality ("Empowering creativity"), it closes territory instead of opening it. The best platforms enter culture - they get quoted by people who never saw the brief.
 
 A good platform:
 - Opens more doors than it closes
@@ -244,7 +245,7 @@ A good platform:
 - Sounds like a belief, not a benefit
 
 ALTITUDE 2 - THE EXPRESSION
-The audience-facing punch. Shorter, sharper, more visceral. "Just Do It" is an expression of a platform about overcoming hesitation. The expression must SERVE the platform, not replace it.
+The audience-facing punch. Shorter, sharper, more visceral. If the platform names the tension, the expression resolves it in the fewest possible words. The best expressions escape the campaign and become language - the kind of line people say to themselves before doing the hard thing. The expression must SERVE the platform, not replace it.
 
 A good expression:
 - Could be said by a real person in conversation
@@ -309,7 +310,7 @@ generate_insight() {
     *)
       local low=$((words - words / 10))
       local high=$((words + words / 10))
-      length_guidance="Total length: approximately ${words} words (${low}-${high} range). Use the space to develop arguments fully, but do not pad. Every paragraph must earn its place."
+      length_guidance="Stay within ${low}-${high} words. Use the space to develop arguments fully, but do not pad. Every paragraph must earn its place."
       ;;
   esac
 
@@ -368,7 +369,21 @@ What would you actually build or try? Be concrete enough that someone could star
 After the five sections, add:
 
 **Sources and Threads**
-Specific thinkers, precedents, concepts, or cross-domain connections that informed the thinking. Write as "I drew on..." not "the agents referenced..."
+Distinguish between established knowledge and your own analogical leaps. For real sources (published thinkers, named research, historical precedents), write "I drew on [source]." For your own cross-domain connections or original analogies, write "I found a useful frame in [concept] - [what it illuminated]." Do not present original synthesis at the same epistemic weight as published work.
+
+After the six text sections, include a single SVG diagram that visualises the insight journey or key relationships. This diagram appears in the HTML presentation and will be animated.
+
+SVG rules:
+- Output raw <svg> markup (no markdown fencing, no wrapping HTML)
+- Use viewBox attribute, no fixed width/height
+- Colours: only #169B62 (green, for nodes/accents), #FF8200 (orange, for highlights), #e8e8e8 (light text), #999999 (secondary), #181818 (background fills)
+- Font: font-family="Literata, Georgia, serif"
+- Add class="diagram-node" on clickable shapes (circles, rects), class="diagram-edge" on connecting lines/paths, class="diagram-label" on text elements
+- Add data-node-id="unique-id" on each node, data-from="id" data-to="id" on each edge, data-label-for="id" on labels
+- Keep the diagram under 5KB total
+- Diagram type: a journey/flow showing Provocation -> Landscape -> Insight -> Tension -> Experiment as connected nodes, with the core insight node visually emphasised
+- Short labels only (2-4 words per node, extracted from your actual content)
+- No decorative elements - clean, minimal, functional
 
 ${length_guidance}
 INSIGHTSYS
@@ -422,9 +437,9 @@ generate_brief() {
   local numeric_words="${words%%-*}"
   local low=$((numeric_words - numeric_words / 10))
   local high=$((numeric_words + numeric_words / 10))
-  local length_guidance="Target ${numeric_words} words (${low}-${high} range). Keep it tight. A brief that runs long is not a brief."
+  local length_guidance="Stay within ${low}-${high} words. A brief that runs long is not a brief."
   if [ "$numeric_words" -gt 1200 ] 2>/dev/null; then
-    length_guidance="Target ${numeric_words} words (${low}-${high} range). You have room to develop each section. Use it, but stay sharp."
+    length_guidance="Stay within ${low}-${high} words. You have room to develop each section. Use it, but stay sharp."
   fi
 
 read -r -d '' BRIEF_SYSTEM << BRIEFSYS || true
@@ -447,13 +462,27 @@ Who are we talking to? Not demographics. Psychographics. What do they believe? W
 Where does this brand or idea live in culture? What conversations is it adjacent to? What tensions exist in this space? Map the cultural context, not the competitive landscape.
 
 **The Proposition**
-One sentence. The single most compelling thing we can say. Not a tagline. The strategic truth that everything else hangs from.
+Exactly one sentence. If you wrote two, delete the weaker one. The single most compelling thing we can say. The strategic truth that everything else hangs from.
 
 **Proof Points**
 Why should anyone believe the proposition? What evidence, behaviour, or cultural signal supports it? Three to five concrete proof points, written as short declarative paragraphs.
 
 **The Mandatories**
 What must be true of any execution? Tone, channels, constraints, non-negotiables. Be prescriptive where it matters, open where creativity needs room.
+
+After the five text sections, include a single SVG diagram that visualises the relationship between the audience and the territory - what connects them, what tensions exist, what the proposition resolves. This diagram appears in the HTML presentation and will be animated.
+
+SVG rules:
+- Output raw <svg> markup (no markdown fencing, no wrapping HTML)
+- Use viewBox attribute, no fixed width/height
+- Colours: only #169B62 (green, for nodes/accents), #FF8200 (orange, for highlights), #e8e8e8 (light text), #999999 (secondary), #181818 (background fills)
+- Font: font-family="Literata, Georgia, serif"
+- Add class="diagram-node" on clickable shapes, class="diagram-edge" on connecting lines/paths, class="diagram-label" on text elements
+- Add data-node-id="unique-id" on each node, data-from="id" data-to="id" on each edge, data-label-for="id" on labels
+- Keep the diagram under 5KB total
+- Diagram type: show the audience and the territory as two poles, with the proposition as the bridge or resolution between them. Use labels drawn from your actual content, not the section names. The proposition node should be visually emphasised (larger, orange)
+- Short labels only (2-4 words per node, extracted from your actual content)
+- No decorative elements - clean, minimal, functional
 
 ${length_guidance}
 BRIEFSYS
@@ -490,13 +519,14 @@ generate_manifesto() {
   local seed="$2"
   local the_line="$3"
   local words="${4:-400}"
+  local prior_brief="${5:-}"
   local low=$((words - words / 10))
   local high=$((words + words / 10))
 
 read -r -d '' MANIFESTO_SYSTEM << MANIFESTOSYS || true
 You are a writer crafting a manifesto. Not a mission statement. Not a vision document. A declaration of belief.
 
-Target ${words} words (${low}-${high} range).
+Stay within ${low}-${high} words.
 
 CRITICAL: Write as if these are your deepest convictions. No references to sessions, agents, research, or process. You believe this. You are putting a stake in the ground.
 ${AUDIENCE_TEXT:+
@@ -516,6 +546,19 @@ Additional rules for the manifesto:
 Do not use section headers. This is one continuous piece. The structure is: the line, the conviction, the call to action.
 MANIFESTOSYS
 
+  local dedup_block=""
+  if [ -n "$prior_brief" ]; then
+    dedup_block="
+TERRITORY ALREADY CLAIMED:
+A creative brief has already been written. It painted specific characters, scenes, and emotional ground. Your manifesto MUST NOT re-use the same characters, re-play the same scenes, or cover the same emotional territory. The brief describes who they are. You declare what we believe. Find DIFFERENT emotional ground - escalate from conviction, not from character portraits.
+
+BRIEF (already written):
+${prior_brief}
+
+---
+"
+  fi
+
   local manifesto_prompt="Here are research notes on a topic, and a rallying line distilled from them. Write a manifesto that opens with this line and builds conviction around it.
 
 THE LINE: ${the_line}
@@ -526,7 +569,7 @@ RESEARCH NOTES:
 ${conversation_text}
 
 ---
-
+${dedup_block}
 Write the manifesto. Open with the line in bold. Build conviction. End with a call to action."
 
   local tmpfile
@@ -616,7 +659,7 @@ generate_presentation() {
   # Manifesto
   if [ -n "$do_manifesto" ] && [ "$BUDGET_MANIFESTO" -gt 0 ]; then
     start_spinner "🔥 Writing manifesto (~${BUDGET_MANIFESTO}w)"
-    manifesto_content=$(generate_manifesto "$conversation_text" "$seed" "$first_line" "$BUDGET_MANIFESTO")
+    manifesto_content=$(generate_manifesto "$conversation_text" "$seed" "$first_line" "$BUDGET_MANIFESTO" "$brief_content")
     stop_spinner "done"
   fi
 
@@ -635,6 +678,9 @@ generate_presentation() {
 > **Date:** $(date '+%Y-%m-%d %H:%M')
 > **Words:** ~${words}
 ${turn_info:+> **Source:** ${turn_info}}
+${BRAND_NAME:+> **Brand:** ${BRAND_NAME}}
+${AUDIENCE_TEXT:+> **Audience:** ${AUDIENCE_TEXT}}
+${MODE:+> **Mode:** ${MODE}}
 
 ---
 

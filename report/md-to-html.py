@@ -89,12 +89,33 @@ def md_to_html_paragraphs(text, css_class='para-reveal text-lg leading-relaxed m
         para = para.strip()
         if not para or para.startswith('---') or para.startswith('> **"'):
             continue
+        # Skip SVG blocks - handled separately
+        if para.strip().startswith('<svg'):
+            continue
         # Handle bold text
         para = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', para)
         # Handle italic
         para = re.sub(r'\*(.+?)\*', r'<em>\1</em>', para)
-        # Escape HTML entities in remaining text (but preserve our tags)
         result.append(f'<p class="{css_class}">{para}</p>')
+    return '\n'.join(result)
+
+
+def extract_svgs(text):
+    """Extract SVG blocks from content text."""
+    svgs = re.findall(r'(<svg[\s\S]*?</svg>)', text)
+    return svgs
+
+
+def build_diagrams_html(svgs):
+    """Wrap extracted SVGs in diagram containers for animation."""
+    if not svgs:
+        return ''
+    result = []
+    for i, svg in enumerate(svgs):
+        # Skip oversized SVGs (> 10KB)
+        if len(svg) > 10240:
+            continue
+        result.append(f'<div class="diagram-container" data-diagram="{i}">{svg}</div>')
     return '\n'.join(result)
 
 
@@ -121,6 +142,9 @@ def build_insight_html(content):
     if not content:
         return ''
 
+    # Extract any SVGs before processing subsections
+    svgs = extract_svgs(content)
+
     subsections = parse_subsections(content)
     panels = []
 
@@ -140,6 +164,17 @@ def build_insight_html(content):
   </div>
 </div>''')
 
+    # Append diagrams at the end of insight section
+    if svgs:
+        diagrams_html = build_diagrams_html(svgs)
+        if diagrams_html:
+            panels.append(f'''<div class="section-panel">
+  <div class="max-w-4xl mx-auto px-8 text-center">
+    <h3 class="subsection-title">How It Connects</h3>
+    {diagrams_html}
+  </div>
+</div>''')
+
     return '\n'.join(panels)
 
 
@@ -147,6 +182,9 @@ def build_brief_html(content):
     """Build HTML for creative brief with cards."""
     if not content:
         return ''
+
+    # Extract any SVGs before processing subsections
+    svgs = extract_svgs(content)
 
     subsections = parse_subsections(content)
     cards = []
@@ -162,6 +200,14 @@ def build_brief_html(content):
             cards.append(f'''<div class="brief-card">
   {title_html}
   {body_html}
+</div>''')
+
+    # Append diagrams at the end of brief section
+    if svgs:
+        diagrams_html = build_diagrams_html(svgs)
+        if diagrams_html:
+            cards.append(f'''<div class="mt-12 text-center">
+    {diagrams_html}
 </div>''')
 
     return '\n'.join(cards)
@@ -180,6 +226,9 @@ def build_manifesto_html(content):
         para = para.strip()
         if not para:
             continue
+        # Skip SVG blocks
+        if para.strip().startswith('<svg'):
+            continue
         # Handle bold
         para = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', para)
         para = re.sub(r'\*(.+?)\*', r'<em>\1</em>', para)
@@ -195,12 +244,27 @@ def inject_into_template(template, replacements):
         placeholder = '{{' + key + '}}'
         result = result.replace(placeholder, value)
 
+    # Handle brand lockup visibility
+    brand = replacements.get('BRAND_NAME', '').strip()
+    if not brand:
+        # Remove the brand lockup entirely when no brand
+        result = re.sub(
+            r'<div class="brand-lockup"[^>]*>.*?</div>\s*</div>',
+            '', result, flags=re.DOTALL
+        )
+
     # Hide empty sections by removing their containers if content is empty
     # Brief section
     if not replacements.get('BRIEF_CONTENT', '').strip():
         result = re.sub(
             r'<section data-section="brief".*?</section>',
             '', result, flags=re.DOTALL
+        )
+        # Also remove the divider before brief
+        result = re.sub(
+            r'<!-- -- Divider -- -->\s*<div class="section-divider"></div>\s*<!-- -- Creative Brief',
+            '<!-- -- Creative Brief',
+            result, flags=re.DOTALL
         )
     # Manifesto section
     if not replacements.get('MANIFESTO_CONTENT', '').strip():
@@ -214,6 +278,20 @@ def inject_into_template(template, replacements):
             r'<div data-section="insight".*?</div>',
             '', result, flags=re.DOTALL
         )
+
+    # Clean up orphaned section dividers (dividers next to removed sections)
+    # Remove consecutive dividers
+    result = re.sub(
+        r'(<div class="section-divider"></div>\s*){2,}',
+        '<div class="section-divider"></div>\n',
+        result
+    )
+    # Remove divider right before footer if no content after it
+    result = re.sub(
+        r'<div class="section-divider"></div>\s*\n\s*<!-- -- Footer',
+        '\n  <!-- -- Footer',
+        result
+    )
 
     return result
 
@@ -252,6 +330,7 @@ def main():
 
     replacements = {
         'SEED_TOPIC': html.escape(metadata.get('seed', 'Think Different')),
+        'BRAND_NAME': html.escape(metadata.get('brand', '')),
         'DATE': html.escape(metadata.get('date', '')),
         'WORD_COUNT': html.escape(metadata.get('words', '')),
         'SOURCE_INFO': html.escape(metadata.get('source', '')),
