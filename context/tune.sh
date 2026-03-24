@@ -1,18 +1,44 @@
 #!/usr/bin/env bash
 # ── Seed tuning (spiral composition) ──
 # Generates tensions, human realities, and wildcards for the seed.
+# Grounding is embedded: surfaces and verifies assumptions before tuning.
 # Expects globals: $SEED_TOPIC, $PROJECT_CONTEXT, $CONVERSATION,
-#                  $TRANSCRIPT_MD, $TRANSCRIPT_JSON, $TURN_COUNT, $OUTPUT_DIR, $TIMESTAMP
-# Depends on: lib/json.sh
+#                  $TRANSCRIPT_MD, $TRANSCRIPT_JSON, $TURN_COUNT, $OUTPUT_DIR,
+#                  $TIMESTAMP, $GROUND_ENABLED, $ALLOWED_TOOLS
+# Depends on: lib/json.sh, context/ground.sh (for build_ground_preamble)
 
 tune_seed() {
+  # Build optional grounding preamble
+  local ground_section=""
+  if [ "${GROUND_ENABLED:-true}" = "true" ]; then
+    local web_available="false"
+    case "${ALLOWED_TOOLS:-}" in
+      *WebSearch*) web_available="true" ;;
+    esac
+
+    if [ "$web_available" != "true" ]; then
+      echo ""
+      echo "  ⚠ Web search unavailable - assumptions will be unverified."
+      echo "  Rerun with default tools or --allowedTools 'WebSearch,WebFetch' for verified grounding."
+      echo ""
+    fi
+
+    ground_section="$(build_ground_preamble)
+
+Then tune the seed."
+  fi
+
   start_spinner "🌱 Tuning lenses to the seed"
 
   local tuning_prompt="You are preparing a multi-agent brainstorming session. Given the seed topic below, suggest unexpected angles of approach.
 
-Output EXACTLY this format, nothing else:
+${ground_section:+${ground_section}
 
-TENSIONS: [3-4 genuine tensions or contradictions embedded in the seed that are worth exploring. Frame each as a sharp question.]
+}Output EXACTLY this format, nothing else:
+
+${ground_section:+ASSUMPTIONS: [3-4 assumptions about the problem/audience/situation, each marked VERIFIED or UNVERIFIED, with 2-3 alternative realities]
+
+}TENSIONS: [3-4 genuine tensions or contradictions embedded in the seed that are worth exploring. Frame each as a sharp question.]
 
 HUMAN REALITY: [2-3 observations about the actual lived experience of the person or people at the centre of this seed. What do they feel? What do they want? What are they afraid of? Be specific and empathetic, not abstract.]
 
@@ -20,12 +46,6 @@ WILDCARD: [One completely orthogonal concept, phenomenon, or question that has n
 
 ${PROJECT_CONTEXT:+PROJECT CONTEXT (use this to ground your suggestions in the actual situation):
 ${PROJECT_CONTEXT}}
-
-${GROUND_CONTEXT:+GROUND CHECK (what is stated vs inferred about this seed):
-${GROUND_CONTEXT}}
-
-${CORRECTIONS:+CORRECTIONS (treat these as ground truth - do not re-assume what has been corrected):
-${CORRECTIONS}}
 
 SEED TOPIC: ${SEED_TOPIC}"
 
@@ -55,20 +75,6 @@ SEED TOPIC: ${SEED_TOPIC}"
 
 PROJECT CONTEXT (ground truth about the actual project, business, or situation this seed relates to):
 ${PROJECT_CONTEXT}"
-  fi
-
-  if [ -n "$GROUND_CONTEXT" ]; then
-    CONVERSATION="${CONVERSATION}
-
-GROUND CHECK (what is stated vs inferred about this seed):
-${GROUND_CONTEXT}"
-  fi
-
-  if [ -n "$CORRECTIONS" ]; then
-    CONVERSATION="${CONVERSATION}
-
-CORRECTIONS (ground truth - do not re-assume what has been corrected):
-${CORRECTIONS}"
   fi
 
   CONVERSATION="${CONVERSATION}

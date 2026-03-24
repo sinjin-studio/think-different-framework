@@ -1,51 +1,59 @@
 #!/usr/bin/env bash
-# ── Seed grounding ──
-# Surfaces assumptions BEFORE the session begins.
-# Classifies seed content as STATED, INFERRED, or UNKNOWN.
-# Interactive review lets the user correct wrong assumptions.
-# Corrections become ground truth for all agents.
+# ── Standalone grounding (--ground-only mode) ──
+# Surfaces assumptions about the seed and verifies via web search if available.
+# Used only for --ground-only. In normal sessions, grounding is embedded
+# in seed prep (fracture/tune/appraise).
 #
-# Expects globals: $SEED_TOPIC, $PROJECT_CONTEXT, $CONVERSATION,
-#                  $TRANSCRIPT_MD, $TRANSCRIPT_JSON, $TURN_COUNT,
-#                  $GROUND_ENABLED
-# Sets: $GROUND_CONTEXT, $CORRECTIONS
-# Depends on: lib/json.sh
+# Expects globals: $SEED_TOPIC, $PROJECT_CONTEXT, $ALLOWED_TOOLS
+# Depends on: lib/json.sh, lib/md.sh, lib/cap_check.sh
 
-ground_seed() {
-  GROUND_CONTEXT=""
-  CORRECTIONS=""
-
-  if [ "$GROUND_ENABLED" != "true" ]; then
-    return
-  fi
-
-  start_spinner "🔍 Grounding the seed"
-
-  local research_preamble=""
+# ── Grounding prompt shared between standalone and embedded modes ──
+build_ground_preamble() {
+  local web_available="false"
   case "${ALLOWED_TOOLS:-}" in
-    *WebSearch*)
-      research_preamble="You have access to web search. Use it to verify your INFERRED assumptions against current real-world facts.
-
-"
-      ;;
+    *WebSearch*) web_available="true" ;;
   esac
 
-  local ground_prompt="${research_preamble}You are a rigorous analyst preparing a creative thinking session. Your job is to separate what is actually known from what would be assumed - but surface only what matters most, not everything.
+  local verify_instruction=""
+  if [ "$web_available" = "true" ]; then
+    verify_instruction="You have web search. Use it to verify factual claims - market data, demographics, trends, statistics. For each assumption, note whether you verified it or not."
+  else
+    verify_instruction="Web search is not available. Mark all assumptions as UNVERIFIED and hold them loosely."
+  fi
 
-Given the seed topic (and any project context) below, classify into three categories. Be ruthless about the distinction between stated and inferred.
+  cat <<PREAMBLE
+Before preparing the seed, surface and check your assumptions.
 
-Use CONTINUOUS numbering across all sections (1-7). Output EXACTLY this format, nothing else:
+${verify_instruction}
 
-STATED:
-[Exactly 2 items, numbered 1-2. Quote or closely paraphrase only things explicitly said in the seed or project context. Cite the source - seed or context.]
+ASSUMPTIONS (3-4 assumptions about THE PROBLEM, AUDIENCE, OR SITUATION most likely to be wrong or most consequential if wrong. Do not surface descriptions of how this thinking framework works. For each, give 2-3 alternative realities that are equally plausible. Mark each VERIFIED or UNVERIFIED):
+PREAMBLE
+}
 
-INFERRED:
-[Exactly 3 items, numbered 3-5. The 3 assumptions most likely to be wrong OR most consequential if wrong. For each, give 2-3 alternative realities that are equally plausible. Format: N. [assumption] -- Alternatives: a) ... b) ... c) ...]
+ground_standalone() {
+  start_spinner "🔍 Grounding the seed"
 
-UNKNOWN:
-[Exactly 2 items, numbered 6-7. The 2 questions whose answers would most change the direction of thinking.]
+  local web_available="false"
+  case "${ALLOWED_TOOLS:-}" in
+    *WebSearch*) web_available="true" ;;
+  esac
 
-Prioritise ruthlessly. The user will review these in under a minute. Surface only what would actually change the session if it were wrong.
+  if [ "$web_available" != "true" ]; then
+    echo ""
+    echo "  ⚠ Web search unavailable - assumptions will be unverified."
+    echo "  Rerun with default tools or --allowedTools 'WebSearch,WebFetch' for verified grounding."
+    echo ""
+  fi
+
+  local ground_prompt="You are a rigorous analyst. Your job is to separate what is actually known from what would be assumed about this seed topic.
+
+$(build_ground_preamble)
+
+Surface 3-4 assumptions about THE PROBLEM, AUDIENCE, OR SITUATION BEING EXPLORED that are most likely to be wrong or most consequential if wrong. Do not surface descriptions of how this thinking framework works, its methodology, or its design philosophy.
+
+For each assumption, give 2-3 alternative realities that are equally plausible.
+
+Prioritise ruthlessly. Surface only what would actually change the session if it were wrong.
 
 ${PROJECT_CONTEXT:+PROJECT CONTEXT:
 ${PROJECT_CONTEXT}}
@@ -56,10 +64,10 @@ SEED TOPIC: ${SEED_TOPIC}"
   tmpfile=$(mktemp)
   echo "$ground_prompt" > "$tmpfile"
 
+  local ground_output=""
   if claude_call "$tmpfile"; then
-    GROUND_CONTEXT="$CLAUDE_RESPONSE"
+    ground_output="$CLAUDE_RESPONSE"
   else
-    GROUND_CONTEXT=""
     rm -f "$tmpfile"
     if [ "$CAP_LIMIT_HIT" = "true" ]; then
       stop_spinner "cap limit"
@@ -72,81 +80,14 @@ SEED TOPIC: ${SEED_TOPIC}"
 
   stop_spinner "done"
   echo ""
-
-  # Display ground check
-  echo "$GROUND_CONTEXT"
+  echo "$ground_output"
   echo ""
 
-  # Write to transcript buffer
+  # Write to transcript
   md_append_section 3 "Ground Check"
   MD_BUFFER="${MD_BUFFER}
-${GROUND_CONTEXT}
+${ground_output}
 "
 
-  # Write to JSON
-  json_append_entry "ground" "Ground Check" "🔍" "Assumption Surfacing" "ground" 0 0 "$GROUND_CONTEXT"
-
-  # Interactive review
-  review_assumptions
-}
-
-review_assumptions() {
-  if [ -z "$GROUND_CONTEXT" ]; then
-    return
-  fi
-
-  echo "  Correct anything (number=correction), Enter when done:"
-
-  CORRECTIONS=""
-  while true; do
-    echo -n "  > "
-    read -r input
-
-    # Empty input means done
-    if [ -z "$input" ]; then
-      break
-    fi
-
-    # Parse number=correction format
-    local num correction
-    num="${input%%=*}"
-    correction="${input#*=}"
-
-    if [ "$num" = "$input" ]; then
-      echo "  Format: number=correction (e.g. 1=Actually it works like this)"
-      continue
-    fi
-
-    # Trim whitespace (bash 3.2 compatible)
-    num=$(echo "$num" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
-    correction=$(echo "$correction" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
-
-    if [ -n "$num" ] && [ -n "$correction" ]; then
-      if [ -n "$CORRECTIONS" ]; then
-        CORRECTIONS="${CORRECTIONS}
-${num}. CORRECTED: ${correction}"
-      else
-        CORRECTIONS="${num}. CORRECTED: ${correction}"
-      fi
-      echo "  ✓ Correction ${num} recorded"
-    fi
-  done
-
-  if [ -n "$CORRECTIONS" ]; then
-    echo ""
-    echo "  Corrections applied:"
-    echo "$CORRECTIONS" | while IFS= read -r line; do
-      echo "    ${line}"
-    done
-    echo ""
-
-    # Append corrections to transcript buffer
-    md_append_section 3 "Corrections"
-    MD_BUFFER="${MD_BUFFER}
-${CORRECTIONS}
-"
-
-    # Append corrections to JSON
-    json_append_entry "ground" "Ground Check" "🔍" "Corrections" "corrections" 0 0 "$CORRECTIONS"
-  fi
+  json_append_entry "ground" "Ground Check" "🔍" "Assumption Surfacing" "ground" 0 0 "$ground_output"
 }

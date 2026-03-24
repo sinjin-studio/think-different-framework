@@ -2,20 +2,46 @@
 # ── Seed appraisal (lapidary composition) ──
 # Assesses the raw material: what is it? What traditions does it sit within?
 # What is the initial quality assessment?
+# Grounding is embedded: surfaces and verifies assumptions before appraising.
 # Expects globals: $SEED_TOPIC, $PROJECT_CONTEXT, $CONVERSATION,
-#                  $TRANSCRIPT_MD, $TRANSCRIPT_JSON, $TURN_COUNT, $OUTPUT_DIR, $TIMESTAMP
-# Depends on: lib/json.sh
+#                  $TRANSCRIPT_MD, $TRANSCRIPT_JSON, $TURN_COUNT, $OUTPUT_DIR,
+#                  $TIMESTAMP, $GROUND_ENABLED, $ALLOWED_TOOLS
+# Depends on: lib/json.sh, context/ground.sh (for build_ground_preamble)
 
 appraise_seed() {
+  # Build optional grounding preamble
+  local ground_section=""
+  if [ "${GROUND_ENABLED:-true}" = "true" ]; then
+    local web_available="false"
+    case "${ALLOWED_TOOLS:-}" in
+      *WebSearch*) web_available="true" ;;
+    esac
+
+    if [ "$web_available" != "true" ]; then
+      echo ""
+      echo "  ⚠ Web search unavailable - assumptions will be unverified."
+      echo "  Rerun with default tools or --allowedTools 'WebSearch,WebFetch' for verified grounding."
+      echo ""
+    fi
+
+    ground_section="$(build_ground_preamble)
+
+Then appraise the seed."
+  fi
+
   start_spinner "🌱 Appraising the raw material"
 
   local appraise_prompt="You are preparing a creative thinking session that works through iterative refinement - cutting, polishing, and faceting raw material through repeated passes, each more precise than the last.
 
-Given the seed topic below, appraise it as raw material. Do not solve it. ASSESS it.
+${ground_section:+${ground_section}
+
+}Given the seed topic below, appraise it as raw material. Do not solve it. ASSESS it.
 
 Output EXACTLY this format, nothing else:
 
-RAW MATERIAL: [What is this, really? Not what it says it is but what it actually is. Name the thing beneath the question. 2-3 sentences.]
+${ground_section:+ASSUMPTIONS: [3-4 assumptions about the problem/audience/situation, each marked VERIFIED or UNVERIFIED, with 2-3 alternative realities]
+
+}RAW MATERIAL: [What is this, really? Not what it says it is but what it actually is. Name the thing beneath the question. 2-3 sentences.]
 
 TRADITIONS: [3-4 traditions, disciplines, or lineages this seed sits within, whether it knows it or not. Not keywords. Living traditions with centuries of accumulated intelligence. For each, one sentence on what that tradition would notice that others would miss.]
 
@@ -25,12 +51,6 @@ WHAT COULD BE REMOVED: [What is already unnecessary in how this seed is framed? 
 
 ${PROJECT_CONTEXT:+PROJECT CONTEXT (ground truth about the actual situation):
 ${PROJECT_CONTEXT}}
-
-${GROUND_CONTEXT:+GROUND CHECK (what is stated vs inferred about this seed):
-${GROUND_CONTEXT}}
-
-${CORRECTIONS:+CORRECTIONS (treat these as ground truth - do not re-assume what has been corrected):
-${CORRECTIONS}}
 
 SEED TOPIC: ${SEED_TOPIC}"
 
@@ -60,20 +80,6 @@ SEED TOPIC: ${SEED_TOPIC}"
 
 PROJECT CONTEXT (ground truth about the actual project, business, or situation):
 ${PROJECT_CONTEXT}"
-  fi
-
-  if [ -n "$GROUND_CONTEXT" ]; then
-    CONVERSATION="${CONVERSATION}
-
-GROUND CHECK (what is stated vs inferred about this seed):
-${GROUND_CONTEXT}"
-  fi
-
-  if [ -n "$CORRECTIONS" ]; then
-    CONVERSATION="${CONVERSATION}
-
-CORRECTIONS (ground truth - do not re-assume what has been corrected):
-${CORRECTIONS}"
   fi
 
   CONVERSATION="${CONVERSATION}

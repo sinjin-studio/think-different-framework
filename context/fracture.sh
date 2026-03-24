@@ -1,20 +1,46 @@
 #!/usr/bin/env bash
 # ── Seed fracturing (dyslexic composition) ──
 # Breaks the seed into fragments, adjacencies, and entry points.
+# Grounding is embedded: surfaces and verifies assumptions before fracturing.
 # Expects globals: $SEED_TOPIC, $PROJECT_CONTEXT, $CONVERSATION,
-#                  $TRANSCRIPT_MD, $TRANSCRIPT_JSON, $TURN_COUNT, $OUTPUT_DIR, $TIMESTAMP
-# Depends on: lib/json.sh
+#                  $TRANSCRIPT_MD, $TRANSCRIPT_JSON, $TURN_COUNT, $OUTPUT_DIR,
+#                  $TIMESTAMP, $GROUND_ENABLED, $ALLOWED_TOOLS
+# Depends on: lib/json.sh, context/ground.sh (for build_ground_preamble)
 
 fracture_seed() {
+  # Build optional grounding preamble
+  local ground_section=""
+  if [ "${GROUND_ENABLED:-true}" = "true" ]; then
+    local web_available="false"
+    case "${ALLOWED_TOOLS:-}" in
+      *WebSearch*) web_available="true" ;;
+    esac
+
+    if [ "$web_available" != "true" ]; then
+      echo ""
+      echo "  ⚠ Web search unavailable - assumptions will be unverified."
+      echo "  Rerun with default tools or --allowedTools 'WebSearch,WebFetch' for verified grounding."
+      echo ""
+    fi
+
+    ground_section="$(build_ground_preamble)
+
+Then fracture the seed."
+  fi
+
   start_spinner "🌱 Fracturing the seed"
 
   local fracture_prompt="You are preparing a creative thinking session that works through dyslexic thinking, seeing differently, making unexpected connections, shifting scale.
 
-Given the seed topic below, break it apart. Do not analyse it. FRACTURE it.
+${ground_section:+${ground_section}
+
+}Given the seed topic below, break it apart. Do not analyse it. FRACTURE it.
 
 Output EXACTLY this format, nothing else:
 
-FRAGMENTS: [4-5 individual words or short phrases pulled from the seed that could each be the entire problem if looked at from the right angle. Not keywords. Entry points.]
+${ground_section:+ASSUMPTIONS: [3-4 assumptions about the problem/audience/situation, each marked VERIFIED or UNVERIFIED, with 2-3 alternative realities]
+
+}FRAGMENTS: [4-5 individual words or short phrases pulled from the seed that could each be the entire problem if looked at from the right angle. Not keywords. Entry points.]
 
 ADJACENT WORLDS: [3-4 completely unrelated domains, situations, or human experiences that FEEL like this problem even though they look nothing like it. Not analogies. Adjacencies. Things that sit next to this in some dimension nobody usually looks at.]
 
@@ -24,12 +50,6 @@ WILDCARD: [Something that has no connection to the seed at all but might produce
 
 ${PROJECT_CONTEXT:+PROJECT CONTEXT (ground truth about the actual situation):
 ${PROJECT_CONTEXT}}
-
-${GROUND_CONTEXT:+GROUND CHECK (what is stated vs inferred about this seed):
-${GROUND_CONTEXT}}
-
-${CORRECTIONS:+CORRECTIONS (treat these as ground truth - do not re-assume what has been corrected):
-${CORRECTIONS}}
 
 SEED TOPIC: ${SEED_TOPIC}"
 
@@ -59,20 +79,6 @@ SEED TOPIC: ${SEED_TOPIC}"
 
 PROJECT CONTEXT (ground truth about the actual project, business, or situation):
 ${PROJECT_CONTEXT}"
-  fi
-
-  if [ -n "$GROUND_CONTEXT" ]; then
-    CONVERSATION="${CONVERSATION}
-
-GROUND CHECK (what is stated vs inferred about this seed):
-${GROUND_CONTEXT}"
-  fi
-
-  if [ -n "$CORRECTIONS" ]; then
-    CONVERSATION="${CONVERSATION}
-
-CORRECTIONS (ground truth - do not re-assume what has been corrected):
-${CORRECTIONS}"
   fi
 
   CONVERSATION="${CONVERSATION}
