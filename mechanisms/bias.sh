@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# ── Cognitive bias detection ──
-# Reads conversation and flags active cognitive biases.
-# Different from friction (friction is felt, bias is identified).
-# Outputs as signal, not correction.
+# -- Cognitive bias as creative fuel --
+# Reads conversation and identifies which cognitive biases are alive,
+# then asks how each could be channelled into something authentic.
+# Different from friction (friction is felt, bias is identified and harnessed).
 # Expects globals: $CONVERSATION, $TRANSCRIPT_MD, $TRANSCRIPT_JSON,
 #                  $TURN_COUNT, $UNIT_LABEL
 # Depends on: lib/json.sh
@@ -10,20 +10,24 @@
 detect_cognitive_bias() {
   [ "$BIAS_ENABLED" != "true" ] && return
   local unit_num="$1"
-  start_spinner "🔬 Checking for cognitive bias"
+  start_spinner "🧲 Reading cognitive bias as creative fuel"
 
-  local bias_prompt="You are a metacognitive observer reading a conversation between several thinkers. Your job is not to evaluate the ideas. It is to notice the THINKING PATTERNS and flag any cognitive biases that are shaping the conversation.
+  local bias_prompt="You are a metacognitive observer reading a conversation between several thinkers. Your job is not to flag biases as problems. It is to notice which cognitive biases are already alive in the conversation and ask how each could be channelled into something authentic and resonant.
+
+Humans do not decide rationally. The best communication has always worked with how people actually think, not against it. Your job is to name the bias, show how the conversation is already channelling it, and ask whether it could be channelled more honestly.
 
 Look for:
-- Anchoring: is the conversation stuck on the first idea or framing?
-- Confirmation bias: are agents finding evidence for what they already believe?
-- Availability heuristic: is one example or analogy dominating because it was vivid, not because it was best?
-- Groupthink: are agents converging too quickly? Is disagreement being smoothed over?
-- Framing effect: is the way the question was framed determining the answers?
-- Sunk cost: is the conversation continuing a direction because of investment rather than merit?
-- Dunning-Kruger: is confidence outpacing the depth of the thinking?
+- Loss aversion: is the conversation tapping into what people fear losing? Could it create genuine urgency rather than manufactured panic?
+- Identity/in-group bias: is the conversation building belonging? Could it invite people in rather than define them from outside?
+- Self-serving bias: is the conversation empowering people's self-image? Could it make the audience the hero honestly?
+- Scarcity: is the conversation creating desire through limits? Is the scarcity real or fabricated?
+- Social proof: is the conversation leveraging what others do? Could it build trust rather than manufacture conformity?
+- Availability heuristic: is one vivid image dominating? Could that vividness serve truth rather than distort it?
+- Anchoring: has the first idea set the frame? Could that anchor be chosen deliberately rather than accidentally?
 
-Output 2-3 short observations. Name the bias. Describe how it is operating in this specific conversation. One sentence each. No labels, no numbering. Write as signals, not corrections.
+The line to draw: understanding how humans actually decide versus exploiting them. The former is craft. The latter is manipulation. Name which side each bias is on.
+
+Output 2-3 short observations. Name the bias. Show how it is operating. Ask how it could be channelled generatively. One sentence each. No labels, no numbering.
 
 CONVERSATION:
 ${CONVERSATION}"
@@ -58,15 +62,15 @@ ${CONVERSATION}"
   CONVERSATION="${CONVERSATION}
 
 === COGNITIVE BIAS CHECK (${UNIT_LABEL} ${unit_num}) ===
-These biases have been detected in the thinking so far. They are signals, not corrections. Be aware of them but do not overcorrect.
+These biases are alive in the conversation. They are creative fuel, not warnings. The question is whether they are being channelled honestly or accidentally.
 ${biases}"
 
-  md_append_section 3 "🔬 Bias Check (${UNIT_LABEL} ${unit_num})"
+  md_append_section 3 "🧲 Bias Check (${UNIT_LABEL} ${unit_num})"
   MD_BUFFER="${MD_BUFFER}
 ${biases}
 "
 
-  json_append_entry "bias_detector" "Bias Check" "🔬" "Metacognitive Signal" "bias" "$unit_num" "$TURN_COUNT" "$biases"
+  json_append_entry "bias_detector" "Bias Check" "🧲" "Metacognitive Signal" "bias" "$unit_num" "$TURN_COUNT" "$biases"
   TURN_COUNT=$((TURN_COUNT + 1))
 
   json_flush
