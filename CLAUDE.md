@@ -46,9 +46,9 @@ A multi-agent structured divergence framework for Claude Code CLI. It runs creat
 - `--practitioners LIST` - Comma-separated creative practitioners as quality bar for The Line (default: random 3 from built-in pool)
 - `--no-html` - Skip HTML presentation generation
 - `--formats LIST` - Output formats for `--report-only`: `all`, `md`, `doc`, `html` (comma-separated)
-- `--no-friction`, `--no-bias`, `--no-sensory` - Disable mechanisms
+- `--no-friction`, `--no-bias`, `--no-sensory`, `--no-transcendence` - Disable mechanisms
 - `--shuffle` - Randomize agent order within rounds
-- `--allowedTools TOOLS` - Pass allowed tools to Claude CLI (e.g. `"WebSearch,WebFetch"` for web research)
+- `--allowedTools TOOLS` - Tools for Claude CLI (default: `"WebSearch,WebFetch"`, use `""` to disable)
 
 ### npm Distribution
 
@@ -61,7 +61,7 @@ think-different "seed topic"   # or: td "seed topic"
 
 ### Three-Layer Taxonomy
 
-1. **Perceivers** (8 agents) - How you see. Each has a cognitive bias lens (empathy, compression, literal, threat-awareness, naivety, absence, incongruence, quality/proportion).
+1. **Perceivers** (9 agents) - How you see. Each has a cognitive bias lens (empathy, compression, literal, finitude/impermanence/urgency, naivety, absence, incongruence, quality/proportion, devotion/interconnection).
 2. **Cognitions** (11 agents) - What you do with what you see. Grouped into fragmentary (break, leap, shift, name), deepening (open, rhyme, integrate), and evaluative (weigh, root, pare).
 3. **Compositions** (3 modes) - How you sequence perceivers + cognitions together.
 
@@ -69,9 +69,9 @@ think-different "seed topic"   # or: td "seed topic"
 
 | Mode | Cognitions | Character | Steps |
 |------|-----------|-----------|-------|
-| **Dyslexic** (`dyslexic.sh`) | Fragmentary + Logician | Leaping, collision-driven | ~30 |
-| **Spiral** (`spiral.sh`) | Deepening | 3 widening-then-crystallizing spirals | ~34 |
-| **Lapidary** (`lapidary.sh`) | Evaluative + Logician | Iterative refinement/polish | ~23 |
+| **Dyslexic** (`dyslexic.sh`) | Fragmentary + Logician | Leaping, collision-driven | ~32 |
+| **Spiral** (`spiral.sh`) | Deepening | 3 widening-then-crystallizing spirals | ~37 |
+| **Lapidary** (`lapidary.sh`) | Evaluative + Logician | Iterative refinement/polish | ~25 |
 
 ### Agent Dispatch System
 
@@ -85,18 +85,17 @@ A global `$CONVERSATION` string accumulates all agent responses. Each agent read
 
 ### Pipeline Flow
 
-1. **Ground** - Surface assumptions (stated/inferred/unknown)
-2. **Mode-specific seed prep** - Fracture (dyslexic), tune (spiral), or appraise (lapidary)
-3. **Rounds/spirals/passes** with interspersed mechanisms (friction, sensory, bias)
+1. **Seed prep with embedded grounding** - Fracture (dyslexic), tune (spiral), or appraise (lapidary). Each surfaces and web-verifies assumptions before preparing the seed
+3. **Rounds/spirals/passes** with interspersed mechanisms (friction, sensory, bias, transcendence)
 4. **Between-phase operations** - Re-seeding (spiral) or polish (lapidary)
 5. **Report generation** - Generate The Line (platform + expression at two altitudes), then creative brief, manifesto, and insight article. Optional .docx
 
 ### Key Directories
 
-- `agents/` - 19 agents across `perceivers/`, `cognitions/{fragmentary,deepening,evaluative}/`, `hybrids/`
+- `agents/` - 20 agents across `perceivers/`, `cognitions/{fragmentary,deepening,evaluative}/`, `hybrids/`
 - `modes/` - Three composition orchestrators
-- `context/` - Input handling (gather, ground, provoke, fracture, tune, appraise)
-- `mechanisms/` - Meta-cognitive operations (friction, sensory, bias, reseed, polish)
+- `context/` - Input handling (gather, ground preamble, provoke, fracture, tune, appraise)
+- `mechanisms/` - Meta-cognitive operations (friction, sensory, bias, transcendence, reseed, polish)
 - `lib/` - Shared utilities (dispatch, JSON/MD transcript output, markers)
 - `report/` - Presentation generation, synthesis, and format converters (docx, html)
 - `report/html-template/` - Astro project for developing the HTML template (`npm run dev` for hot reload)

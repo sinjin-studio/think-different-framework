@@ -1,7 +1,5 @@
 # Think Different Framework (for Claude)
 
-🪟💭🌀☁️🔮🪢💥❤️‍🔥🌊🌱✨💎🪑🏺⚖️📜✂️
-
 Here's to the crazy ones. The misfits. The rebels. The troublemakers. The round pegs in square holes.
 
 Multi-agent structured divergence via Claude Code CLI. Multiple AI agents with different cognitive modes think together, then distil their collisions into a publishable presentation. You plant a seed. They see differently. You harvest the insight.
@@ -15,6 +13,9 @@ Made By Dyslexia and GCHQ have demonstrated that dyslexic thinking - pattern com
 This framework embodies the "Think Different" philosophy: it does not just use divergent thinking as a technique. It is built from the ground up to see the world through neurodivergent lenses.
 
 No single agent is thinking differently. The system is. The divergent thinking is an emergent property of the architecture.
+
+> [!WARNING]
+> **This will eat your tokens.** This is an experiment in brute-forcing new thinking, not an exercise in cost efficiency. Every session fires 19+ agents in sequence, each reading the full conversation history. A single run can burn through a good chunk of your session budget. It is not optimised. It is not subtle. It is a deliberate, token-heavy collision engine. You have been warned.
 
 ## Quick Start
 
@@ -61,7 +62,7 @@ The framework has three levels, like colour theory. **Perceivers** are pigments 
 
 Each composition picks from a shared pool of perceivers and pairs them with a set of cognitions, then sequences them across rounds or spirals. The same perceiver (say, The Empath) behaves differently depending on which cognitions surround it and when in the sequence it speaks.
 
-![Taxonomy - concentric rings showing compositions, cognitions, and perceivers with colour-coded connections](taxonomy.svg)
+![Taxonomy - concentric rings showing compositions, cognitions, and perceivers with colour-coded connections](docs/taxonomy.svg)
 
 ### Perceivers - HOW you see
 
@@ -72,11 +73,12 @@ Shared pool. Every composition draws from these. Each is a productive cognitive 
 | ❤️‍🔥 The Empath | Empathy bias | Treating people as abstractions |
 | 🔥 The Provocateur | Compression bias | Complexity and politeness |
 | 👁️ The Observer | Literal bias | Social filtering and convention |
-| 😰 The Anxious | Threat-awareness bias | Optimism bias, unspoken fears |
+| ⏳ The Mortal | Finitude, impermanence & urgency | The illusion of infinite time, deferral as strategy |
 | 🧒 The Child | Naivety bias | "Grown-up" assumptions |
 | 🪑 The Includer | Absence perception | Uninvited constituencies, forgotten people, the empty chair |
 | 🧿 The Skeptic | Incongruence detection | What doesn't fit, what's in plain sight but invisible |
 | 🏺 The Connoisseur | Quality, proportion & resonance | Indifference to quality, the flattening of taste |
+| 🕯️ The Achala | Devotion, interconnection & the sacred | Transactionalism, reducing every motivation to incentive |
 
 ### Cognitions - WHAT you do with what you see
 
@@ -121,23 +123,21 @@ Each composition pairs a cognition set with a selection of perceivers and define
 
 | Mode | Cognitions | Perceivers | Character | Steps |
 |------|------------|------------|-----------|-------|
-| 🪟 `dyslexic` | Fragmentary + Logician (rounds 2-3) | All except Skeptic | Leaping, collision-driven. 4 rounds of decompose-associate-scale-reify with perceivers woven between. | ~30 |
-| 🌀 `spiral` | Deepening | Empath, Provocateur, Observer, Skeptic, Includer | 3 spirals of diverge-analogise-integrate, each reseeding the next. | ~34 |
-| 🏺 `lapidary` | Evaluative + Logician (pass 2) | Empath, Connoisseur, Provocateur, Observer, Skeptic | Iterative refinement. 3 passes of weigh-root-pare, each more precise than the last. | ~23 |
+| 🪟 `dyslexic` | Fragmentary + Logician (rounds 2-3) | All except Skeptic | Leaping, collision-driven. 4 rounds of decompose-associate-scale-reify with perceivers woven between. | ~32 |
+| 🌀 `spiral` | Deepening | Empath, Provocateur, Observer, Skeptic, Includer, Achala | 3 spirals of diverge-analogise-integrate, each reseeding the next. | ~37 |
+| 🏺 `lapidary` | Evaluative + Logician (pass 2) | Empath, Connoisseur, Provocateur, Observer, Skeptic, Achala | Iterative refinement. 3 passes of weigh-root-pare, each more precise than the last. | ~25 |
 
 The Skeptic is excluded from the dyslexic composition by default. Dyslexic thinking naturally produces incongruence detection as a perceptual byproduct - adding an explicit Skeptic agent can over-anchor on what doesn't fit before the leaps have had space to form. Use `--include skeptic` to override this and place it in Round 3.
 
-The Child and Anxious are excluded from the lapidary composition by default. Lapidary thinking requires mature judgement - the discernment of a craftsperson, not wild generation. The Connoisseur takes the evaluative seat that neither Child nor Anxious can occupy.
+The Child is excluded from the lapidary composition by default. Lapidary thinking requires mature judgement - the discernment of a craftsperson, not wild generation. The Connoisseur takes the evaluative seat that the Child cannot occupy.
 
 ### Assumption Grounding
 
-Before the session begins - before fracturing, tuning, or appraising - the framework runs a ground check. It classifies everything in the seed as:
+Grounding is embedded directly in seed preparation (fracture, tune, or appraise). Before breaking apart or assessing the seed, the model surfaces 3-4 assumptions about the problem, audience, or situation most likely to be wrong, with alternative realities for each.
 
-- **STATED** - things explicitly said in the seed or project context
-- **INFERRED** - assumptions an AI would naturally make, with alternative realities for each
-- **UNKNOWN** - questions a good interviewer would ask before proceeding
+Web search is enabled by default (`WebSearch,WebFetch`). When available, the model verifies factual claims - market data, demographics, trends - and marks each assumption as VERIFIED or UNVERIFIED. This means the framework does its own homework rather than blocking the session for interactive user correction.
 
-The user then corrects any wrong assumptions interactively. Corrections become ground truth that all agents respect throughout the session.
+When web search is unavailable (via `--allowedTools ""`), assumptions are marked UNVERIFIED and held loosely by agents. A warning is printed with instructions to re-enable.
 
 This matters because assumptions form during seed preparation, BEFORE any of the existing checking mechanisms fire (friction, bias, sensory, Observer, Skeptic all run DURING composition rounds). Without grounding, contaminated assumptions bake into the conversation that every agent builds on.
 
@@ -168,7 +168,7 @@ Two paths to a presentation. A direct seed runs one session. Raw input (brief, b
 
 ### 🏺 Lapidary Composition - step by step
 
-3 passes. Each pass works the same material with increasing precision. Polish mechanism between passes assesses what survived and what was revealed. Mature judgement only - Child and Anxious excluded by default.
+3 passes. Each pass works the same material with increasing precision. Polish mechanism between passes assesses what survived and what was revealed. Mature judgement only - Child excluded by default.
 
 ![Lapidary composition flow - 3 passes with polish, friction, and bias checks](docs/lapidary-flow.svg)
 
@@ -194,6 +194,27 @@ The framework meets you wherever you are. Give it a brief, a brand name, or some
 ./think.sh --brief ./brief.pdf --pick             # interactive provocation selection
 ./think.sh --brand "Nike" --audience "runners who need permission to start"
 ./think.sh --brief ./brief.pdf --mode spiral      # all flags combine
+```
+
+### Tones
+
+The `--tone` flag controls the character of provocation generation. Each tone shapes how the framework turns your input into a seed worth thinking about.
+
+| Tone | Description |
+|------|-------------|
+| 🔥⚡ `provocative` (default) | Uncomfortable, not safe. Forces a position. Pushes beyond input material |
+| 🌷🎁 `generous` | Radically positive, finds hidden strength, reveals untapped potential |
+| 🫂🌙 `intimate` | Zoomed to one human, one moment, sensory detail. Turns market into person |
+| 🦞📞 `absurd` | Surreal, lateral, alien. Breaks fundamental assumptions |
+| 🪟💭 `daydream` | Loose, wandering, permission-giving. Drifts past edges |
+| 🎲✨ `mixed` | All five tones, assigned round-robin across seeds |
+
+Comma-separate tones to assign them round-robin across seeds. With `--tone provocative,generous,intimate` and 6 seeds, seed 1 gets provocative, seed 2 generous, seed 3 intimate, seed 4 provocative again, and so on.
+
+```bash
+./think.sh --brand "Nike" --tone generous
+./think.sh --brief ./brief.pdf --tone provocative,intimate,absurd
+./think.sh --brand "Patagonia" --tone mixed --seeds 5
 ```
 
 ### With project context
@@ -227,10 +248,18 @@ cd ~/projects/my-project && ~/think.sh "seed topic"
 | `--brand NAME` | Generate provocations from a brand name |
 | `--notes TEXT` | Generate provocations from working notes |
 | `--audience TEXT` | Target audience (auto-inferred from input if not set) |
+| `--tone TONE` / `-t` | Provocation tone (default: `provocative`). See [Tones](#tones) |
 | `--seeds N` | Number of provocations to generate (default: 3, max: 12) |
 | `--pick` | Interactively select which provocations to run |
+| `--type TYPES` | Output types: `insight`, `brief`, `manifesto` (default: all three, comma-separated) |
+| `--lines N` | Number of rallying lines to generate (default: 3, max: 7) |
+| `--practitioners LIST` | Comma-separated creative practitioners as quality bar for The Line |
+| `--no-html` | Skip HTML presentation generation |
+| `--formats LIST` | Output formats for `--report-only`: `all`, `md`, `doc`, `html` (comma-separated) |
 | `--synthesise` | Synthesise existing transcript files into one presentation |
 | `--report-only` | Regenerate presentation from existing transcript |
+| `--resume FILE` | Resume an interrupted session from state file |
+| `--allowedTools TOOLS` | Tools for Claude CLI (default: `"WebSearch,WebFetch"`, use `""` to disable) |
 
 ### Experimentation
 
@@ -240,11 +269,11 @@ The framework is experimental. These flags let you test different configurations
 
 ```bash
 ./think.sh "seed" --include skeptic          # Force-include Skeptic in dyslexic mode (Round 3)
-./think.sh "seed" --exclude anxious,child    # Run without Anxious and Child
+./think.sh "seed" --exclude mortal,child    # Run without Mortal and Child
 ./think.sh "seed" --mode spiral --exclude skeptic  # Spiral without Skeptic
 ```
 
-Agent key names: `empath`, `provocateur`, `observer`, `anxious`, `child`, `skeptic`, `includer`, `connoisseur`, `decomposer`, `associator`, `scaler`, `reifier`, `diverger`, `analogiser`, `integrator`, `appraiser`, `historian`, `editor`, `logician`.
+Agent key names: `empath`, `provocateur`, `observer`, `mortal`, `child`, `skeptic`, `includer`, `connoisseur`, `achala`, `decomposer`, `associator`, `scaler`, `reifier`, `diverger`, `analogiser`, `integrator`, `appraiser`, `historian`, `editor`, `logician`.
 
 Explicit `--exclude` wins over `--include`. `--include` overrides mode defaults (e.g. Skeptic excluded from dyslexic by default).
 
@@ -254,6 +283,7 @@ Explicit `--exclude` wins over `--include`. `--include` overrides mode defaults 
 ./think.sh "seed" --no-friction    # Skip friction detection between rounds
 ./think.sh "seed" --no-bias        # Skip cognitive bias checks
 ./think.sh "seed" --no-sensory     # Skip sensory/context re-injection
+./think.sh "seed" --no-transcendence  # Skip transcendence check
 ```
 
 #### Round/spiral/pass count
@@ -265,7 +295,7 @@ Explicit `--exclude` wins over `--include`. `--include` overrides mode defaults 
 ./think.sh "seed" --mode lapidary --passes 5 # 5-pass deep refinement
 ```
 
-Fewer rounds/passes truncates from the end (keeps early rounds, always runs Ground). More rounds/passes repeats the middle pattern with fresh instructions.
+Fewer rounds/passes truncates from the end (keeps early rounds). More rounds/passes repeats the middle pattern with fresh instructions.
 
 #### Shuffle
 
@@ -293,7 +323,7 @@ When experimental flags are active, the session banner shows what's different:
   Presentation: ~500 words
   Experiments:
     + skeptic (included via --include)
-    - anxious (excluded via --exclude)
+    - mortal (excluded via --exclude)
     - friction (disabled via --no-friction)
     ~ shuffle (agent order randomized)
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -310,17 +340,20 @@ When experimental flags are active, the session banner shows what's different:
 | `--spirals N` | Number of spirals (spiral default: 3) |
 | `--passes N` | Number of passes (lapidary default: 3) |
 | `--shuffle` | Randomize agent order within each round/phase |
-| `--no-ground` | Skip assumption grounding step before session |
+| `--no-transcendence` | Skip transcendence check |
+| `--no-ground` | Skip assumption grounding embedded in seed prep |
 | `--ground-only` | Run only the grounding step, then exit |
+| `--allowedTools T` | Tools for Claude CLI (default: `"WebSearch,WebFetch"`, use `""` to disable) |
 
 ## Mechanisms
 
 Beyond agents, the framework uses several mechanisms:
 
-- **Assumption grounding** - Pre-session step that surfaces what is stated vs inferred in the seed. Interactive correction ensures wrong assumptions don't contaminate the entire session.
+- **Assumption grounding** - Embedded in seed preparation (fracture/tune/appraise). Surfaces assumptions most likely to be wrong and verifies factual claims via web search. No interactive correction needed - the framework does its own homework.
 - **Friction detection** - Clark-inspired prediction error detection. Finds where agents contradict each other. The signal is in the mismatch, not the agreement.
 - **Sensory check** - Re-injects project context mid-session so abstract thinking collides with ground truth.
-- **Cognitive bias detection** - Metacognitive layer that flags anchoring, confirmation bias, groupthink, and other patterns shaping the conversation. Signals, not corrections.
+- **Cognitive bias as creative fuel** - Metacognitive layer that identifies which cognitive biases are alive in the conversation and asks how each could be channelled into something authentic. Loss aversion becomes urgency, identity bias becomes belonging, scarcity becomes desire. Craft, not manipulation.
+- **Transcendence** - Late-session check on whether the conversation has reached beyond its starting assumptions into genuinely new territory, or is still circling familiar ground.
 - **Spiral re-seeding** - Extracts the most surprising insight from integration and uses it to seed the next spiral (spiral mode only).
 - **Polish** - Between-pass quality assessment. What survived? What was revealed? Is the material getting denser or losing life? (lapidary mode only).
 
@@ -343,7 +376,7 @@ lib/
   md.sh                          # Markdown output helpers
   markers.sh                     # Round/spiral/phase markers
 agents/
-  perceivers/                    # Shared human lenses (8 agents)
+  perceivers/                    # Shared human lenses (9 agents)
   cognitions/
     fragmentary/                 # Break, leap, shift, name (4 agents)
     deepening/                   # Open, rhyme, integrate (3 agents)
@@ -352,7 +385,7 @@ agents/
     logician.sh                  # Fused structural perception + causal reasoning
 context/
   gather.sh                      # Project context gathering
-  ground.sh                      # Assumption grounding (stated vs inferred)
+  ground.sh                      # Standalone grounding (--ground-only) + shared preamble
   provoke.sh                     # Provocation generation from raw input
   fracture.sh                    # Seed fracturing (dyslexic)
   tune.sh                        # Seed tuning (spiral)

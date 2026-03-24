@@ -109,6 +109,14 @@
   <rect x="271" y="626" width="78" height="24" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
   <text class="agent" x="310" y="638" text-anchor="middle" dominant-baseline="central">❤️‍🔥 Empath</text>
 
+  <!-- 135deg: (260, 600) - Achala -->
+  <rect x="221" y="588" width="78" height="24" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
+  <text class="agent" x="260" y="600" text-anchor="middle" dominant-baseline="central">🕯️ Achala</text>
+
+  <!-- 142deg: (240, 578) - Mortal (Urgency phase after Devote) -->
+  <rect x="148" y="566" width="78" height="24" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
+  <text class="agent" x="187" y="578" text-anchor="middle" dominant-baseline="central">⏳ Mortal</text>
+
   <!-- 150deg: (222, 550) - Provocateur -->
   <rect x="175" y="538" width="94" height="24" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
   <text class="agent" x="222" y="550" text-anchor="middle" dominant-baseline="central">🔥 Provocateur</text>
@@ -125,6 +133,9 @@
 
   <rect x="204" y="330" width="52" height="18" rx="9" fill="#7b2d8e"/>
   <text class="mech" x="230" y="339" text-anchor="middle" dominant-baseline="central">Reseed</text>
+
+  <rect x="108" y="341" width="80" height="18" rx="9" fill="#d4a017"/>
+  <text class="mech" x="148" y="350" text-anchor="middle" dominant-baseline="central">Transcend</text>
 
   <!-- ═══ SPIRAL 3 - Inner ring (r=150) ═══ -->
   <!-- 6 agents from 200deg to 80deg (240deg clockwise, wrapping), step ~48deg -->
@@ -145,6 +156,14 @@
   <!-- Empath -->
   <rect x="457" y="283" width="78" height="24" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
   <text class="agent" x="496" y="295" text-anchor="middle" dominant-baseline="central">❤️‍🔥 Empath</text>
+
+  <!-- 320deg: (545, 334) - Achala -->
+  <rect x="506" y="322" width="78" height="24" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
+  <text class="agent" x="545" y="334" text-anchor="middle" dominant-baseline="central">🕯️ Achala</text>
+
+  <!-- 332deg: Mortal (Urgency phase after Devote) -->
+  <rect x="526" y="352" width="78" height="24" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
+  <text class="agent" x="565" y="364" text-anchor="middle" dominant-baseline="central">⏳ Mortal</text>
 
   <!-- 344deg: (430+150*cos344, 430+150*sin344) = (430+144, 430-41) = (574, 389) -->
   <!-- Skeptic -->
@@ -203,6 +222,9 @@
 
     <rect x="248" y="0" width="12" height="12" rx="3" fill="#9b59b6"/>
     <text class="legend-text" x="266" y="10">Bias</text>
+
+    <rect x="298" y="0" width="12" height="12" rx="3" fill="#d4a017"/>
+    <text class="legend-text" x="316" y="10">Transcendence</text>
   </g>
 
   <text font-size="9" fill="#94a3b8" x="430" y="870" text-anchor="middle" letter-spacing="0.5">OUTER: SPIRAL 1 (widest) - MIDDLE: SPIRAL 2 - INNER: SPIRAL 3 (deepest)</text>

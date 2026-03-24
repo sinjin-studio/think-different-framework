@@ -28,15 +28,16 @@
       <path d="M500,390 Q471,303 446,246"/>
       <path d="M500,390 Q529,303 554,246"/>
       <path d="M500,390 Q583,326 653,290"/>
-      <!-- To perceivers: Empath, Provocateur, Observer, Anxious, Child, Includer -->
+      <!-- To perceivers: Empath, Provocateur, Observer, Mortal, Child, Includer, Achala -->
       <path d="M500,390 Q500,230 500,100"/>
-      <path d="M500,390 Q651,292 783,217"/>
-      <path d="M500,390 Q715,441 900,500"/>
-      <path d="M500,390 Q500,660 500,900"/>
-      <path d="M500,390 Q346,595 217,783"/>
-      <path d="M500,390 Q285,441 100,500"/>
+      <path d="M500,390 Q640,285 757,194"/>
+      <path d="M500,390 Q720,405 894,431"/>
+      <path d="M500,390 Q575,650 637,876"/>
+      <path d="M500,390 Q425,650 363,876"/>
+      <path d="M500,390 Q310,550 154,700"/>
+      <path d="M500,390 Q365,285 243,194"/>
       <!-- Skeptic: excluded by default, available via include flag -->
-      <path d="M500,390 Q350,292 217,217" stroke-dasharray="6 4"/>
+      <path d="M500,390 Q290,405 106,431" stroke-dasharray="6 4"/>
       <!-- To Logician hybrid -->
       <path d="M500,390 Q662,378 805,374"/>
     </g>
@@ -47,12 +48,13 @@
       <path d="M405,555 Q379,652 370,725"/>
       <path d="M405,555 Q327,601 275,630"/>
       <path d="M405,555 Q308,530 240,500"/>
-      <!-- To perceivers: Empath, Provocateur, Observer, Skeptic, Includer -->
+      <!-- To perceivers: Empath, Provocateur, Observer, Skeptic, Includer, Achala -->
       <path d="M405,555 Q449,313 500,100"/>
-      <path d="M405,555 Q604,374 783,217"/>
-      <path d="M405,555 Q668,531 900,500"/>
-      <path d="M405,555 Q298,378 217,217"/>
-      <path d="M405,555 Q238,530 100,500"/>
+      <path d="M405,555 Q590,365 757,194"/>
+      <path d="M405,555 Q665,490 894,431"/>
+      <path d="M405,555 Q245,490 106,431"/>
+      <path d="M405,555 Q270,630 154,700"/>
+      <path d="M405,555 Q318,365 243,194"/>
     </g>
 
     <!-- Lapidary connections (amber/bronze) -->
@@ -61,12 +63,13 @@
       <path d="M595,555 Q693,530 760,500"/>
       <path d="M595,555 Q673,601 725,630"/>
       <path d="M595,555 Q622,652 630,725"/>
-      <!-- To perceivers: Empath, Connoisseur, Provocateur, Observer, Skeptic -->
+      <!-- To perceivers: Empath, Connoisseur, Provocateur, Observer, Skeptic, Achala -->
       <path d="M595,555 Q552,314 500,100"/>
-      <path d="M595,555 Q700,679 783,783"/>
-      <path d="M595,555 Q702,378 783,217"/>
-      <path d="M595,555 Q763,530 900,500"/>
-      <path d="M595,555 Q396,374 217,217"/>
+      <path d="M595,555 Q730,630 846,700"/>
+      <path d="M595,555 Q690,365 757,194"/>
+      <path d="M595,555 Q760,490 894,431"/>
+      <path d="M595,555 Q340,490 106,431"/>
+      <path d="M595,555 Q410,365 243,194"/>
       <!-- To Logician hybrid -->
       <path d="M595,555 Q712,460 805,374"/>
     </g>
@@ -90,31 +93,43 @@
   <text class="group-label" x="340" y="600" text-anchor="middle">Deepening</text>
   <text class="group-label" x="660" y="600" text-anchor="middle">Evaluative</text>
 
-  <!-- Perceiver nodes (outer ring, r=400, 45deg spacing from 270deg) -->
+  <!-- Perceiver nodes (outer ring, r=400, 9 perceivers, 40deg spacing from 270deg clockwise) -->
   <g>
+    <!-- 270deg: top centre -->
     <rect x="466" y="87" width="68" height="26" rx="13" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
     <text class="node-text" x="500" y="100" text-anchor="middle" dominant-baseline="central">Empath</text>
 
-    <rect x="732" y="204" width="102" height="26" rx="13" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
-    <text class="node-text" x="783" y="217" text-anchor="middle" dominant-baseline="central">Provocateur</text>
+    <!-- 310deg: upper-right -->
+    <rect x="706" y="181" width="102" height="26" rx="13" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text class="node-text" x="757" y="194" text-anchor="middle" dominant-baseline="central">Provocateur</text>
 
-    <rect x="861" y="487" width="78" height="26" rx="13" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
-    <text class="node-text" x="900" y="500" text-anchor="middle" dominant-baseline="central">Observer</text>
+    <!-- 350deg: right -->
+    <rect x="855" y="418" width="78" height="26" rx="13" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text class="node-text" x="894" y="431" text-anchor="middle" dominant-baseline="central">Observer</text>
 
-    <rect x="732" y="770" width="102" height="26" rx="13" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
-    <text class="node-text" x="783" y="783" text-anchor="middle" dominant-baseline="central">Connoisseur</text>
+    <!-- 30deg: lower-right -->
+    <rect x="795" y="687" width="102" height="26" rx="13" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text class="node-text" x="846" y="700" text-anchor="middle" dominant-baseline="central">Connoisseur</text>
 
-    <rect x="464" y="887" width="72" height="26" rx="13" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
-    <text class="node-text" x="500" y="900" text-anchor="middle" dominant-baseline="central">Anxious</text>
+    <!-- 70deg: bottom-right -->
+    <rect x="601" y="863" width="72" height="26" rx="13" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text class="node-text" x="637" y="876" text-anchor="middle" dominant-baseline="central">Mortal</text>
 
-    <rect x="189" y="770" width="56" height="26" rx="13" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
-    <text class="node-text" x="217" y="783" text-anchor="middle" dominant-baseline="central">Child</text>
+    <!-- 110deg: bottom-left -->
+    <rect x="335" y="863" width="56" height="26" rx="13" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text class="node-text" x="363" y="876" text-anchor="middle" dominant-baseline="central">Child</text>
 
-    <rect x="62" y="487" width="76" height="26" rx="13" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
-    <text class="node-text" x="100" y="500" text-anchor="middle" dominant-baseline="central">Includer</text>
+    <!-- 150deg: lower-left -->
+    <rect x="116" y="687" width="76" height="26" rx="13" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text class="node-text" x="154" y="700" text-anchor="middle" dominant-baseline="central">Includer</text>
 
-    <rect x="183" y="204" width="68" height="26" rx="13" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
-    <text class="node-text" x="217" y="217" text-anchor="middle" dominant-baseline="central">Skeptic</text>
+    <!-- 190deg: left -->
+    <rect x="72" y="418" width="68" height="26" rx="13" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text class="node-text" x="106" y="431" text-anchor="middle" dominant-baseline="central">Skeptic</text>
+
+    <!-- 230deg: upper-left -->
+    <rect x="212" y="181" width="62" height="26" rx="13" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text class="node-text" x="243" y="194" text-anchor="middle" dominant-baseline="central">Achala</text>
   </g>
 
   <!-- Cognition nodes - Fragmentary (r=260, centered at 270deg, 24deg spacing) -->
