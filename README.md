@@ -2,7 +2,9 @@
 
 Here's to the crazy ones. The misfits. The rebels. The troublemakers. The round pegs in square holes.
 
-Multi-agent structured divergence via Claude Code CLI. Multiple AI agents with different cognitive modes think together, then distil their collisions into a publishable presentation. You plant a seed. They see differently. You harvest the insight.
+Multi-lens structured divergence via Claude Code CLI. Multiple cognitive lenses think together, then distil their collisions into a publishable presentation. You plant a seed. They see differently. You harvest the insight.
+
+**Autonomous mode is on by default.** A conductor orchestrates lenses with autonomous decision-making, lenses skip turns when they have nothing new to add, mechanisms return structured decisions that shape session flow, and a reviewer can restart sessions with mutations when output stays conventional. Use `--no-autonomous` to fall back to hardcoded composition sequences.
 
 ## Why
 
@@ -12,10 +14,8 @@ Made By Dyslexia and GCHQ have demonstrated that dyslexic thinking - pattern com
 
 This framework embodies the "Think Different" philosophy: it does not just use divergent thinking as a technique. It is built from the ground up to see the world through neurodivergent lenses.
 
-No single agent is thinking differently. The system is. The divergent thinking is an emergent property of the architecture.
+No single lens is thinking differently. The system is. The divergent thinking is an emergent property of the architecture.
 
-> [!WARNING]
-> **This will eat your tokens.** This is an experiment in brute-forcing new thinking, not an exercise in cost efficiency. Every session fires 19+ agents in sequence, each reading the full conversation history. A single run can burn through a good chunk of your session budget. It is not optimised. It is not subtle. It is a deliberate, token-heavy collision engine. You have been warned.
 
 ## Quick Start
 
@@ -46,7 +46,8 @@ chmod +x think.sh
 
 ## Token Usage
 
-This framework is optimised for unique thinking, not token efficiency. Each session dispatches 19+ AI agents sequentially, each reading the full conversation history. A single provocation typically uses the equivalent of several long conversations.
+> [!WARNING]
+> **This will eat your tokens.** This is an experiment in brute-forcing new thinking, the framework is optimised for unique thinking, not token efficiency or an exercise in cost reduction. Every session fires 19+ lenses in various sequences, each reading the full conversation history and multiple sessions can be run at once and synthesizing later. In autonomous mode, the conductor, skip-turn decisions, and reviewer add additional calls, tools can be invoked too. A single run can burn through a good chunk of your session budget. It is not optimised. It is not subtle. It is a deliberate, token-heavy collision engine. You have been warned.
 
 **Plan recommendations:**
 
@@ -68,17 +69,17 @@ Each composition picks from a shared pool of perceivers and pairs them with a se
 
 Shared pool. Every composition draws from these. Each is a productive cognitive bias - a way of seeing that rebels against some default.
 
-| Agent | Bias | What it rebels against |
+| Lens | Bias | What it rebels against |
 |-------|------|----------------------|
-| ❤️‍🔥 The Empath | Empathy bias | Treating people as abstractions |
-| 🔥 The Provocateur | Compression bias | Complexity and politeness |
-| 👁️ The Observer | Literal bias | Social filtering and convention |
-| ⏳ The Mortal | Finitude, impermanence & urgency | The illusion of infinite time, deferral as strategy |
-| 🧒 The Child | Naivety bias | "Grown-up" assumptions |
-| 🪑 The Includer | Absence perception | Uninvited constituencies, forgotten people, the empty chair |
-| 🧿 The Skeptic | Incongruence detection | What doesn't fit, what's in plain sight but invisible |
-| 🏺 The Connoisseur | Quality, proportion & resonance | Indifference to quality, the flattening of taste |
-| 🕯️ The Achala | Devotion, interconnection & the sacred | Transactionalism, reducing every motivation to incentive |
+| 💞🪷 The Empath | Empathy bias | Treating people as abstractions |
+| 💣🌶️ The Provocateur | Compression bias | Complexity and politeness |
+| 👁️🔍 The Observer | Literal bias | Social filtering and convention |
+| ⏳💀 The Mortal | Finitude, impermanence & urgency | The illusion of infinite time, deferral as strategy |
+| 🧒❓ The Child | Naivety bias | "Grown-up" assumptions |
+| 🪑👤 The Includer | Absence perception | Uninvited constituencies, forgotten people, the empty chair |
+| 🧿🪞 The Skeptic | Incongruence detection | What doesn't fit, what's in plain sight but invisible |
+| 🏺⚖️ The Connoisseur | Quality, proportion & resonance | Indifference to quality, the flattening of taste |
+| ⚔️❤️‍🔥 The Achala | Devotion, interconnection & the sacred | Transactionalism, reducing every motivation to incentive |
 
 ### Cognitions - WHAT you do with what you see
 
@@ -86,48 +87,48 @@ Two sets of cognitive operations. Compositions choose which set to use.
 
 **Fragmentary cognitions** - break, leap, shift, name:
 
-| Agent | Operation |
+| Lens | Operation |
 |-------|-----------|
-| 🔍 The Decomposer | Break apart, examine piece as whole |
-| 🪢 The Associator | Link across domains, adjacencies |
-| 🔭 The Scaler | Change altitude radically |
-| 💎 The Reifier | Make invisible visible, name the shape |
+| 🔍🫧 The Decomposer | Break apart, examine piece as whole |
+| 🪢🌉 The Associator | Link across domains, adjacencies |
+| 🔭🔬 The Scaler | Change altitude radically |
+| 💎👁️‍🗨️ The Reifier | Make invisible visible, name the shape |
 
 **Deepening cognitions** - open, rhyme, integrate:
 
-| Agent | Operation |
+| Lens | Operation |
 |-------|-----------|
-| 🧭 The Diverger | Open territory, follow surprise |
-| 🔮 The Analogiser | Find structural rhymes across domains |
-| 🧐 The Integrator | Find emergent whole, name the unnamed |
+| 🧭🌀 The Diverger | Open territory, follow surprise |
+| 🔮🧬 The Analogiser | Find structural rhymes across domains |
+| 🧐🕸️ The Integrator | Find emergent whole, name the unnamed |
 
 **Evaluative cognitions** - weigh, root, pare:
 
-| Agent | Operation |
+| Lens | Operation |
 |-------|-----------|
-| ⚖️ The Appraiser | Weigh quality, proportion, fitness |
-| 📜 The Historian | Contextualise in tradition, culture, precedent |
-| ✂️ The Editor | Refine toward economy, remove everything that is not the thing |
+| ⚖️🎚️ The Appraiser | Weigh quality, proportion, fitness |
+| 📜🏛️ The Historian | Contextualise in tradition, culture, precedent |
+| ✂️🪶 The Editor | Refine toward economy, remove everything that is not the thing |
 
-### Hybrids - agents that break the boundary
+### Hybrids - lenses that break the boundary
 
-Some cognitive traits do not fit neatly into perceiver or cognition. They fuse perception with reasoning in a single operation. Hybrid agents intentionally break the perceiver/cognition boundary - a framework about thinking differently should think differently about its own rules.
+Some cognitive traits do not fit neatly into perceiver or cognition. They fuse perception with reasoning in a single operation. Hybrid lenses intentionally break the perceiver/cognition boundary - a framework about thinking differently should think differently about its own rules.
 
-| Agent | Bias | What it rebels against |
+| Lens | Bias | What it rebels against |
 |-------|------|----------------------|
-| 🧩 The Logician | Structure, Causation & First Principles | Accepting "how" without understanding "why", correlation as causation |
+| 🧩🧮 The Logician | Structure, Causation & First Principles | Accepting "how" without understanding "why", correlation as causation |
 
 ### Compositions - HOW you sequence them
 
-Each composition pairs a cognition set with a selection of perceivers and defines the rhythm - how many rounds, which agents speak when, where friction and bias checks fall.
+Each composition pairs a cognition set with a selection of perceivers and defines the rhythm - how many rounds, which lenses speak when, where friction and bias checks fall.
 
 | Mode | Cognitions | Perceivers | Character | Steps |
 |------|------------|------------|-----------|-------|
-| 🪟 `dyslexic` | Fragmentary + Logician (rounds 2-3) | All except Skeptic | Leaping, collision-driven. 4 rounds of decompose-associate-scale-reify with perceivers woven between. | ~32 |
-| 🌀 `spiral` | Deepening | Empath, Provocateur, Observer, Skeptic, Includer, Achala | 3 spirals of diverge-analogise-integrate, each reseeding the next. | ~37 |
-| 🏺 `lapidary` | Evaluative + Logician (pass 2) | Empath, Connoisseur, Provocateur, Observer, Skeptic, Achala | Iterative refinement. 3 passes of weigh-root-pare, each more precise than the last. | ~25 |
+| 💫🔀 `dyslexic` | Fragmentary + Logician (rounds 2-3) | All except Skeptic | Leaping, collision-driven. 4 rounds of decompose-associate-scale-reify with perceivers woven between. | ~32 |
+| 🌀🌿 `spiral` | Deepening | Empath, Provocateur, Observer, Skeptic, Includer, Achala | 3 spirals of diverge-analogise-integrate, each reseeding the next. | ~37 |
+| 🪨✨ `lapidary` | Evaluative + Logician (pass 2) | Empath, Connoisseur, Provocateur, Observer, Skeptic, Achala | Iterative refinement. 3 passes of weigh-root-pare, each more precise than the last. | ~25 |
 
-The Skeptic is excluded from the dyslexic composition by default. Dyslexic thinking naturally produces incongruence detection as a perceptual byproduct - adding an explicit Skeptic agent can over-anchor on what doesn't fit before the leaps have had space to form. Use `--include skeptic` to override this and place it in Round 3.
+The Skeptic is excluded from the dyslexic composition by default. Dyslexic thinking naturally produces incongruence detection as a perceptual byproduct - adding an explicit Skeptic lens can over-anchor on what doesn't fit before the leaps have had space to form. Use `--include skeptic` to override this and place it in Round 3.
 
 The Child is excluded from the lapidary composition by default. Lapidary thinking requires mature judgement - the discernment of a craftsperson, not wild generation. The Connoisseur takes the evaluative seat that the Child cannot occupy.
 
@@ -139,7 +140,7 @@ Web search is enabled by default (`WebSearch,WebFetch`). When available, the mod
 
 When web search is unavailable (via `--allowedTools ""`), assumptions are marked UNVERIFIED and held loosely by agents. A warning is printed with instructions to re-enable.
 
-This matters because assumptions form during seed preparation, BEFORE any of the existing checking mechanisms fire (friction, bias, sensory, Observer, Skeptic all run DURING composition rounds). Without grounding, contaminated assumptions bake into the conversation that every agent builds on.
+This matters because assumptions form during seed preparation, BEFORE any of the existing checking mechanisms fire (friction, bias, sensory, Observer, Skeptic all run DURING composition rounds). Without grounding, contaminated assumptions bake into the conversation that every lens builds on.
 
 You can test grounding in isolation without running a full session:
 
@@ -154,23 +155,23 @@ Two paths to a presentation. A direct seed runs one session. Raw input (brief, b
 
 ![Session flow - two paths converging to presentation](docs/session-flow.svg)
 
-### 🪟 Dyslexic Composition - step by step
+### 💫🔀 Dyslexic Composition - step by step
 
-4 rounds. Cognitions and perceivers interleave. Friction between every round. Sensory check mid-session. Bias check before convergence.
+7 rounds (default). Cognitions and perceivers interleave. Friction between every round. Sensory check mid-session. Bias check before convergence. Void and transcendence checks from round 5 onwards (two-strike pattern - first signal noted, second triggers grounding).
 
-![Dyslexic composition flow - 4 rounds with friction, sensory, and bias checks](docs/dyslexic-flow.svg)
+![Dyslexic composition flow - 7 rounds with friction, sensory, void, bias, and transcendence checks](docs/dyslexic-flow.svg)
 
-### 🌀 Spiral Composition - step by step
+### 🌀🌿 Spiral Composition - step by step
 
-3 spirals. Each spiral widens then crystallises. The Integrator's insight reseeds the next spiral. Friction and bias checks in later spirals.
+5 spirals (default). Each spiral widens then crystallises. The Integrator's insight reseeds the next spiral. Friction, bias, void and transcendence checks from spiral 3 onwards.
 
-![Spiral composition flow - 3 spirals converging inward with reseed connections](docs/spiral-flow.svg)
+![Spiral composition flow - 5 spirals converging inward with reseed connections](docs/spiral-flow.svg)
 
-### 🏺 Lapidary Composition - step by step
+### 🪨✨ Lapidary Composition - step by step
 
-3 passes. Each pass works the same material with increasing precision. Polish mechanism between passes assesses what survived and what was revealed. Mature judgement only - Child excluded by default.
+5 passes (default). Each pass works the same material with increasing precision. Polish mechanism between passes assesses what survived and what was revealed. Void and transcendence checks from pass 3 onwards. Mature judgement only - Child excluded by default.
 
-![Lapidary composition flow - 3 passes with polish, friction, and bias checks](docs/lapidary-flow.svg)
+![Lapidary composition flow - 5 passes with polish, friction, void, and transcendence checks](docs/lapidary-flow.svg)
 
 ## Usage
 
@@ -202,18 +203,18 @@ The `--tone` flag controls the character of provocation generation. Each tone sh
 
 | Tone | Description |
 |------|-------------|
-| 🔥⚡ `provocative` (default) | Uncomfortable, not safe. Forces a position. Pushes beyond input material |
+| 💣🌶️ `provocative` (default) | Uncomfortable, not safe. Forces a position. Pushes beyond input material |
 | 🌷🎁 `generous` | Radically positive, finds hidden strength, reveals untapped potential |
-| 🫂🌙 `intimate` | Zoomed to one human, one moment, sensory detail. Turns market into person |
+| 🤲🫀 `personal` | Zoomed to one human, one moment, sensory detail. Turns market into person |
 | 🦞📞 `absurd` | Surreal, lateral, alien. Breaks fundamental assumptions |
-| 🪟💭 `daydream` | Loose, wandering, permission-giving. Drifts past edges |
+| ☁️💭 `daydream` | Loose, wandering, permission-giving. Drifts past edges |
 | 🎲✨ `mixed` | All five tones, assigned round-robin across seeds |
 
-Comma-separate tones to assign them round-robin across seeds. With `--tone provocative,generous,intimate` and 6 seeds, seed 1 gets provocative, seed 2 generous, seed 3 intimate, seed 4 provocative again, and so on.
+Comma-separate tones to assign them round-robin across seeds. With `--tone provocative,generous,personal` and 6 seeds, seed 1 gets provocative, seed 2 generous, seed 3 personal, seed 4 provocative again, and so on.
 
 ```bash
 ./think.sh --brand "Nike" --tone generous
-./think.sh --brief ./brief.pdf --tone provocative,intimate,absurd
+./think.sh --brief ./brief.pdf --tone provocative,personal,absurd
 ./think.sh --brand "Patagonia" --tone mixed --seeds 5
 ```
 
@@ -254,7 +255,7 @@ cd ~/projects/my-project && ~/think.sh "seed topic"
 | `--type TYPES` | Output types: `insight`, `brief`, `manifesto` (default: all three, comma-separated) |
 | `--lines N` | Number of rallying lines to generate (default: 3, max: 7) |
 | `--practitioners LIST` | Comma-separated creative practitioners as quality bar for The Line |
-| `--no-html` | Skip HTML presentation generation |
+| `--html` | Enable HTML presentation generation (experimental, off by default) |
 | `--formats LIST` | Output formats for `--report-only`: `all`, `md`, `doc`, `html` (comma-separated) |
 | `--synthesise` | Synthesise existing transcript files into one presentation |
 | `--report-only` | Regenerate presentation from existing transcript |
@@ -265,7 +266,7 @@ cd ~/projects/my-project && ~/think.sh "seed topic"
 
 The framework is experimental. These flags let you test different configurations without editing mode files.
 
-#### Agent inclusion/exclusion
+#### Lens inclusion/exclusion
 
 ```bash
 ./think.sh "seed" --include skeptic          # Force-include Skeptic in dyslexic mode (Round 3)
@@ -273,7 +274,7 @@ The framework is experimental. These flags let you test different configurations
 ./think.sh "seed" --mode spiral --exclude skeptic  # Spiral without Skeptic
 ```
 
-Agent key names: `empath`, `provocateur`, `observer`, `mortal`, `child`, `skeptic`, `includer`, `connoisseur`, `achala`, `decomposer`, `associator`, `scaler`, `reifier`, `diverger`, `analogiser`, `integrator`, `appraiser`, `historian`, `editor`, `logician`.
+Lens key names: `empath`, `provocateur`, `observer`, `mortal`, `child`, `skeptic`, `includer`, `connoisseur`, `achala`, `decomposer`, `associator`, `scaler`, `reifier`, `diverger`, `analogiser`, `integrator`, `appraiser`, `historian`, `editor`, `logician`.
 
 Explicit `--exclude` wins over `--include`. `--include` overrides mode defaults (e.g. Skeptic excluded from dyslexic by default).
 
@@ -284,6 +285,7 @@ Explicit `--exclude` wins over `--include`. `--include` overrides mode defaults 
 ./think.sh "seed" --no-bias        # Skip cognitive bias checks
 ./think.sh "seed" --no-sensory     # Skip sensory/context re-injection
 ./think.sh "seed" --no-transcendence  # Skip transcendence check
+./think.sh "seed" --no-void        # Skip negative space mapping
 ```
 
 #### Round/spiral/pass count
@@ -300,10 +302,10 @@ Fewer rounds/passes truncates from the end (keeps early rounds). More rounds/pas
 #### Shuffle
 
 ```bash
-./think.sh "seed" --shuffle         # Randomize agent order within each round
+./think.sh "seed" --shuffle         # Randomize lens order within each round
 ```
 
-Agents are shuffled within each round/phase, not across rounds. The sequence of rounds remains fixed.
+Lenses are shuffled within each round/phase, not across rounds. The sequence of rounds remains fixed.
 
 #### Combining flags
 
@@ -325,37 +327,65 @@ When experimental flags are active, the session banner shows what's different:
     + skeptic (included via --include)
     - mortal (excluded via --exclude)
     - friction (disabled via --no-friction)
-    ~ shuffle (agent order randomized)
+    ~ shuffle (lens order randomized)
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 | Flag | Description |
 |------|-------------|
-| `--include A,B` | Force-include agents by key name |
-| `--exclude A,B` | Force-exclude agents by key name |
+| `--include A,B` | Force-include lenses by key name |
+| `--exclude A,B` | Force-exclude lenses by key name |
 | `--no-friction` | Skip friction detection between rounds |
 | `--no-bias` | Skip cognitive bias checks |
 | `--no-sensory` | Skip sensory/context re-injection |
-| `--rounds N` | Number of rounds (dyslexic default: 4) |
-| `--spirals N` | Number of spirals (spiral default: 3) |
-| `--passes N` | Number of passes (lapidary default: 3) |
-| `--shuffle` | Randomize agent order within each round/phase |
+| `--no-void` | Skip negative space mapping |
+| `--rounds N` | Number of rounds (dyslexic default: 7) |
+| `--spirals N` | Number of spirals (spiral default: 5) |
+| `--passes N` | Number of passes (lapidary default: 5) |
+| `--min-turns N` | Min turns before conductor can end session (default: 15) |
+| `--shuffle` | Randomize lens order within each round/phase |
 | `--no-transcendence` | Skip transcendence check |
 | `--no-ground` | Skip assumption grounding embedded in seed prep |
 | `--ground-only` | Run only the grounding step, then exit |
+| `--autonomous` | Enable agentic mode (default: on) |
+| `--no-autonomous` | Disable agentic mode, use hardcoded composition sequences |
+| `--skip-strict` | Use separate pre-call for skip-turn instead of inline detection |
+| `--compact` | Enable context compaction (off by default, opt in for very long sessions) |
 | `--allowedTools T` | Tools for Claude CLI (default: `"WebSearch,WebFetch"`, use `""` to disable) |
 
 ## Mechanisms
 
-Beyond agents, the framework uses several mechanisms:
+Beyond lenses, the framework uses several mechanisms:
 
 - **Assumption grounding** - Embedded in seed preparation (fracture/tune/appraise). Surfaces assumptions most likely to be wrong and verifies factual claims via web search. No interactive correction needed - the framework does its own homework.
-- **Friction detection** - Clark-inspired prediction error detection. Finds where agents contradict each other. The signal is in the mismatch, not the agreement.
+- **Friction detection** - Clark-inspired prediction error detection. Finds where lenses contradict each other. The signal is in the mismatch, not the agreement.
 - **Sensory check** - Re-injects project context mid-session so abstract thinking collides with ground truth.
 - **Cognitive bias as creative fuel** - Metacognitive layer that identifies which cognitive biases are alive in the conversation and asks how each could be channelled into something authentic. Loss aversion becomes urgency, identity bias becomes belonging, scarcity becomes desire. Craft, not manipulation.
-- **Transcendence** - Late-session check on whether the conversation has reached beyond its starting assumptions into genuinely new territory, or is still circling familiar ground.
+- **Transcendence (two-strike)** - Late-session check on whether the conversation has reached beyond its starting assumptions into genuinely new territory, or is still circling familiar ground. Uses a two-strike pattern: first positive signal is noted but the session continues, second consecutive signal triggers early grounding. This prevents premature exit - research shows breakthroughs often arrive at iteration 10+.
+- **Negative space** - Mid-session cartography of absence. Maps what the conversation has NOT explored relative to the provocation - scales, audiences, emotions, time horizons, domains that no lens has entered. Like the Hubble Deep Field: points at the dark patches precisely because the absence of foreground noise is the condition for seeing further. Can redirect a lens into the void. In synthesis, maps the collective blind spot across multiple runs.
+- **Mechanism memory** - Mechanisms build on each other's findings. Each mechanism receives a structured history of what previous mechanisms discovered, so friction at round 3 knows what friction at round 1 flagged and focuses on what's new or evolved. Prevents the same tensions being re-discovered without progress.
 - **Spiral re-seeding** - Extracts the most surprising insight from integration and uses it to seed the next spiral (spiral mode only).
 - **Polish** - Between-pass quality assessment. What survived? What was revealed? Is the material getting denser or losing life? (lapidary mode only).
+
+### Autonomous Mode (default)
+
+Genuinely agentic behaviour, on by default:
+
+- **Conductor** - Replaces hardcoded composition sequences. An agent that decides which lens speaks next, what instruction to give, and when to trigger mechanisms or end the session. Three conductor presets (dyslexic/spiral/lapidary) shape its orchestration style.
+- **Inline skip-turn** - Each lens decides within its response whether it has something genuinely new to add. If not, it responds with `SKIP: reason` and the turn is logged without wasting a separate pre-call. Use `--skip-strict` to restore the original two-call pattern if inline detection proves unreliable.
+- **Context compaction (opt-in)** - Disabled by default. When enabled via `--compact`, every 8-10 turns the conversation is distilled into a digest plus the last 3-4 verbatim turns. Off by default because breakthroughs often arrive at iteration 10+ and compaction destroys the raw phrasing that fuels them. Opus 4.6's 1M context window handles full conversations comfortably. Full transcript is always preserved in output files.
+- **Structured mechanism decisions** - Friction returns `{recommendation: "deepen|redirect|continue"}` and can inject a specific lens. Transcendence returns `{has_breakthrough: bool}` and can skip to grounding. Void returns `{recommendation: "redirect_to_void|note_and_continue|void_is_intentional"}` and identifies unexplored territories with suggested lenses. Mechanisms receive a structured history of prior mechanism findings, so each builds on the last.
+- **Provocation review** - When multiple provocations are generated, they're reviewed for distinctness before sessions begin. Similar provocations get merged, weak ones get reframed.
+- **Adversarial session reviewer** - Post-composition quality gate using a prosecution/defense/verdict pattern. The prosecution assumes the session failed and searches for prior art (WebSearch). The defense concedes weak ideas and argues only for genuine divergence. The verdict decides restart/proceed from the adversarial exchange. Can restart with mutations: different mode, shuffled lens order, reframed seed. 2-run ceiling per provocation. Synthesises across both runs.
+
+```bash
+# Autonomous is the default - just run:
+./think.sh "seed"
+./think.sh --brief ./brief.pdf --mode spiral
+
+# Opt out to use hardcoded sequences:
+./think.sh "seed" --no-autonomous
+```
 
 ## Output
 
@@ -371,40 +401,56 @@ Each session produces:
 ```
 think.sh                          # CLI entry point
 lib/
-  call_agent.sh                   # Core agent invocation + COMMON_RULES
+  call_lens.sh                   # Core lens invocation + COMMON_RULES + compaction (opt-in) + mechanism memory + flow control
+  conductor_loop.sh              # Agentic orchestration loop (--autonomous)
+  cap_check.sh                   # Cap detection + claude_call / claude_call_json wrappers
   json.sh                        # JSON output helpers
   md.sh                          # Markdown output helpers
   markers.sh                     # Round/spiral/phase markers
-agents/
-  perceivers/                    # Shared human lenses (9 agents)
+lenses/
+  conductor.sh                   # The Conductor - first true agent, orchestrates lenses
+  perceivers/                    # Shared perceiver lenses (9 lenses)
   cognitions/
-    fragmentary/                 # Break, leap, shift, name (4 agents)
-    deepening/                   # Open, rhyme, integrate (3 agents)
-    evaluative/                  # Weigh, root, pare (3 agents)
-  hybrids/                       # Agents that break the perceiver/cognition boundary
+    fragmentary/                 # Break, leap, shift, name (4 lenses)
+    deepening/                   # Open, rhyme, integrate (3 lenses)
+    evaluative/                  # Weigh, root, pare (3 lenses)
+  hybrids/                       # Lenses that break the perceiver/cognition boundary
     logician.sh                  # Fused structural perception + causal reasoning
 context/
   gather.sh                      # Project context gathering
   ground.sh                      # Standalone grounding (--ground-only) + shared preamble
-  provoke.sh                     # Provocation generation from raw input
+  provoke.sh                     # Provocation generation + review gate (--autonomous)
   fracture.sh                    # Seed fracturing (dyslexic)
   tune.sh                        # Seed tuning (spiral)
   appraise.sh                    # Seed appraisal (lapidary)
 mechanisms/
-  friction.sh                    # Between-round friction detection
+  friction.sh                    # Between-round friction detection (structured decisions)
   sensory.sh                     # Project context re-injection
-  bias.sh                        # Cognitive bias detection
+  bias.sh                        # Cognitive bias detection (structured decisions)
+  transcendence.sh               # Transcendence check (structured decisions)
+  review.sh                      # Adversarial session reviewer - prosecution/defense/verdict
+  void.sh                        # Negative space mapping (mid-session + synthesis)
   reseed.sh                      # Spiral re-seeding
   polish.sh                      # Between-pass quality assessment (lapidary)
 modes/
-  dyslexic.sh                    # Fragmentary composition
-  spiral.sh                      # Deepening composition
-  lapidary.sh                    # Evaluative composition (iterative refinement)
+  dyslexic.sh                    # Fragmentary composition (conductor preset in --autonomous)
+  spiral.sh                      # Deepening composition (conductor preset in --autonomous)
+  lapidary.sh                    # Evaluative composition (conductor preset in --autonomous)
 report/
   generate.sh                    # Single transcript to presentation
   synthesise.sh                  # Multiple transcripts to one presentation
 ```
 
+### The Ralph Wiggam Loop
+
+Every lens call is a stateless `claude -p` invocation - a fresh context window with no memory of prior reasoning. The conversation output accumulates as input (each lens reads "the minutes of the meeting so far"), but the internal chain-of-thought from every previous call is discarded completely. Lens 20 reasons as freshly as lens 1. No attention degradation, no compounding drift across a 30+ turn session.
+
+Context compaction is available via `--compact` for very long sessions but is off by default. [Anthropic's harness design research](https://www.anthropic.com/engineering/harness-design-long-running-apps) shows creative breakthroughs arriving at iteration 10+, and compaction risks destroying the raw phrasing that fuels them. With Opus 4.6's 1M context window, full conversations are handled comfortably without compression.
+
+This architecture is [Geoffrey Huntley's Ralph Wiggam loop](https://ghuntley.com/specs/ralph/) - a pattern he originated for agentic AI systems where the model is called in a loop, with the context window clearing between iterations to prevent accumulated reasoning from degrading output quality.
+
+This framework applies the Ralph Wiggam loop to a different problem. Where the pattern is typically used for task automation - retrying, refining, converging on a correct answer - here it drives creative divergence. Each lens gets a clean reasoning slate specifically so it can see differently. The accumulated conversation is raw material, not instructions. The fresh window is not a workaround for context limits - it is the mechanism that keeps 20 lenses from collapsing into one voice.
+
 ## Credits
 
-Inspired by the cognitive science of dyslexic thinking (Made By Dyslexia, GCHQ), predictive processing  ('The Experience Machine' Andy Clark), behavioural science (Rory Sutherland), and the philosophy that the people who are crazy enough to think they can change the world are the ones who do (Apple).
+Inspired by the cognitive science of dyslexic thinking (Made By Dyslexia, GCHQ), the Ralph Wiggam loop architecture (Geoffrey Huntley), predictive processing ('The Experience Machine' Andy Clark), behavioural science (Rory Sutherland), and the philosophy that the people who are crazy enough to think they can change the world are the ones who do (Apple).

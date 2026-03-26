@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-A multi-agent structured divergence framework for Claude Code CLI. It runs creative thinking sessions by dispatching multiple AI agents (each with a distinct cognitive bias) through composition modes inspired by neurodivergent thinking patterns. Raw input (briefs, brand names, notes) is distilled into seed provocations, each run through a multi-agent session, then synthesized into a structured presentation.
+A multi-lens structured divergence framework for Claude Code CLI. It runs creative thinking sessions by dispatching multiple cognitive lenses (each with a distinct bias) through composition modes inspired by neurodivergent thinking patterns. Raw input (briefs, brand names, notes) is distilled into seed provocations, each run through a thinking session, then synthesized into a structured presentation.
+
+**Autonomous mode is on by default.** A conductor agent orchestrates lenses with autonomous decision-making, lenses can skip turns when they have nothing new to add, mechanisms return structured decisions that influence session flow, and a reviewer can restart sessions with mutations when output is conventional. Use `--no-autonomous` to fall back to hardcoded composition sequences.
 
 ## Commands
 
@@ -12,6 +14,9 @@ A multi-agent structured divergence framework for Claude Code CLI. It runs creat
 # Direct seed
 ./think.sh "How might luxury wellness appeal to Gen Z?"
 ./think.sh "seed" --mode spiral --words 1500
+
+# Non-autonomous mode (hardcoded composition sequences)
+./think.sh "seed" --no-autonomous
 
 # From raw input (generates provocations)
 ./think.sh --brief ./client-brief.pdf
@@ -37,17 +42,23 @@ A multi-agent structured divergence framework for Claude Code CLI. It runs creat
 - `--words N` - Total word budget across all presentation sections (default: 1500). Auto-drops sections at low budgets unless `--type` is explicit
 - `--output DIR` - Output directory (default: ./think-different-output)
 - `--context FILE` - Explicit context file
-- `--rounds N`, `--spirals N`, `--passes N` - Customize phase counts
-- `--include/--exclude agents` - Force agent inclusion/exclusion
+- `--rounds N`, `--spirals N`, `--passes N` - Customize phase counts for non-autonomous modes (defaults: 7, 5, 5)
+- `--turns N` - Max turns for autonomous conductor (default: 35)
+- `--min-turns N` - Min turns before conductor can end session (default: 15)
+- `--include/--exclude lenses` - Force lens inclusion/exclusion
 - `--audience TEXT` - Target audience (auto-inferred from input if not set). Shapes provocations and all presentation output toward audience-facing content
-- `--tone TONE` - Provocation tone: `provocative` (default), `generous`, `intimate`, `absurd`, `daydream`, `mixed`. Comma-separated for custom mix (e.g. `--tone provocative,generous`)
+- `--tone TONE` - Provocation tone: `provocative` (default), `generous`, `personal`, `absurd`, `daydream`, `mixed`. Comma-separated for custom mix (e.g. `--tone provocative,generous`)
 - `--type TYPES` - Output types: `insight,brief,manifesto` (default: all three). Comma-separated
 - `--lines N` - Number of angles to generate (default: 3, max: 7). Each angle outputs two altitudes: Platform (strategic truth) and Expression (audience-facing punch)
 - `--practitioners LIST` - Comma-separated creative practitioners as quality bar for The Line (default: random 3 from built-in pool)
-- `--no-html` - Skip HTML presentation generation
+- `--html` - Enable HTML presentation generation (experimental, off by default)
 - `--formats LIST` - Output formats for `--report-only`: `all`, `md`, `doc`, `html` (comma-separated)
-- `--no-friction`, `--no-bias`, `--no-sensory`, `--no-transcendence` - Disable mechanisms
-- `--shuffle` - Randomize agent order within rounds
+- `--no-friction`, `--no-bias`, `--no-sensory`, `--no-transcendence`, `--no-void` - Disable mechanisms
+- `--shuffle` - Randomize lens order within rounds
+- `--autonomous` - Enable agentic mode (default: on)
+- `--no-autonomous` - Disable agentic mode, use hardcoded composition sequences
+- `--skip-strict` - Use separate pre-call for skip-turn (default: inline detection)
+- `--compact` - Enable context compaction (off by default, opt in for very long sessions)
 - `--allowedTools TOOLS` - Tools for Claude CLI (default: `"WebSearch,WebFetch"`, use `""` to disable)
 
 ### npm Distribution
@@ -59,44 +70,109 @@ think-different "seed topic"   # or: td "seed topic"
 
 ## Architecture
 
-### Three-Layer Taxonomy
+### Taxonomy (aligned with Anthropic's terms)
 
-1. **Perceivers** (9 agents) - How you see. Each has a cognitive bias lens (empathy, compression, literal, finitude/impermanence/urgency, naivety, absence, incongruence, quality/proportion, devotion/interconnection).
-2. **Cognitions** (11 agents) - What you do with what you see. Grouped into fragmentary (break, leap, shift, name), deepening (open, rhyme, integrate), and evaluative (weigh, root, pare).
+- **Lenses** (perceivers + cognitions) - Cognitive perspectives. Not agents or skills. Each sees through a specific bias.
+- **Modes** - Composition strategies / conductor presets. How lenses are sequenced together.
+- **Mechanisms** - Metacognitive operations (friction, sensory, bias, transcendence, review). Return structured JSON decisions that influence session flow.
+- **Conductor** - The framework's first true agent. Orchestrates lenses autonomously in `--autonomous` mode. Has tool use (via dispatched lenses), decision-making (choosing sequence), and evaluate-decide-act loops (via reviewer).
+- **Reviewer** - Adversarial quality gate using prosecution/defense/verdict pattern. The prosecution assumes the session failed and searches for prior art. The defense concedes weak ideas and argues only for genuine divergence. The verdict decides restart/proceed. Can trigger session restart with mutations.
+
+### Three-Layer Lens Taxonomy
+
+1. **Perceivers** (9 lenses) - How you see. Each has a cognitive bias (empathy, compression, literal, finitude/impermanence/urgency, naivety, absence, incongruence, quality/proportion, devotion/interconnection).
+2. **Cognitions** (11 lenses) - What you do with what you see. Grouped into fragmentary (break, leap, shift, name), deepening (open, rhyme, integrate), and evaluative (weigh, root, pare).
 3. **Compositions** (3 modes) - How you sequence perceivers + cognitions together.
 
 ### Three Composition Modes
 
 | Mode | Cognitions | Character | Steps |
 |------|-----------|-----------|-------|
-| **Dyslexic** (`dyslexic.sh`) | Fragmentary + Logician | Leaping, collision-driven | ~32 |
-| **Spiral** (`spiral.sh`) | Deepening | 3 widening-then-crystallizing spirals | ~37 |
-| **Lapidary** (`lapidary.sh`) | Evaluative + Logician | Iterative refinement/polish | ~25 |
+| **Dyslexic** (`dyslexic.sh`) | Fragmentary + Logician | Leaping, collision-driven | ~50 |
+| **Spiral** (`spiral.sh`) | Deepening | 5 widening-then-crystallizing spirals | ~55 |
+| **Lapidary** (`lapidary.sh`) | Evaluative + Logician | Iterative refinement/polish | ~40 |
 
-### Agent Dispatch System
+In autonomous mode, these become conductor presets rather than hardcoded sequences.
 
-`lib/call_agent.sh` is the core dispatcher. Each agent script (in `agents/`) exports 4 functions: `agent_emoji_${key}`, `agent_name_${key}`, `agent_bias_${key}`, `agent_system_${key}`. The dispatcher calls Claude Code CLI directly: `claude -p --system-prompt "$system_prompt"`.
+### Lens Dispatch System
 
-COMMON_RULES (defined in `lib/call_agent.sh`) are applied to every agent call - 150-200 word constraint, first-person prose, no lists, no em-dashes.
+`lib/call_lens.sh` is the core dispatcher. Each lens script (in `lenses/`) exports functions: `lens_emoji_${key}`, `lens_name_${key}`, `lens_bias_${key}`, `lens_system_${key}`, and optionally `lens_tools_${key}` (per-lens tool access). The dispatcher calls Claude Code CLI directly: `claude -p --system-prompt "$system_prompt"`.
+
+**Per-lens tool access:** Observer, Empath, Skeptic, Mortal, and Logician have `WebSearch,WebFetch` enabled. Other lenses stay tool-free (thinking from feeling, not facts).
+
+**Inline skip-turn (--autonomous):** Each lens decides within its response whether it has something new to add. If it responds with `SKIP: reason`, the turn is logged and skipped without a separate pre-call. Use `--skip-strict` to restore the original two-call pattern.
+
+**Context compaction (off by default):** When enabled via `--compact`, every 8-10 turns or when the conversation exceeds ~15K characters, the full history is distilled into a 400-600 word digest plus the last 3-4 verbatim turns. Disabled by default because research shows breakthroughs often arrive at iteration 10+ and compaction destroys the raw phrasing that fuels them. Opus 4.6's 1M context window handles full conversations comfortably. Full transcript always preserved in output files.
+
+COMMON_RULES (defined in `lib/call_lens.sh`) are applied to every lens call - 150-200 word constraint, first-person prose, no lists, no em-dashes.
+
+### Conductor (--autonomous mode)
+
+`lib/conductor_loop.sh` implements the agentic orchestration loop. The conductor (`lenses/conductor.sh`) makes structured JSON decisions about which lens speaks next, what instruction to give, whether to trigger a mechanism, and when to end the session.
+
+Guard rails: max 35 turns, minimum 15 turns before ending, minimum 7 distinct lenses before grounding, two-strike transcendence (requires two consecutive signals before triggering early grounding), cap awareness.
 
 ### Conversation Threading
 
-A global `$CONVERSATION` string accumulates all agent responses. Each agent reads the full history and adds its perspective. Friction/bias/sensory mechanisms inject meta-commentary as special markers between agent turns.
+A global `$CONVERSATION` string accumulates all lens responses. Each lens reads the history and adds its perspective. Mechanisms inject meta-commentary and structured decisions between lens turns.
+
+**Context compaction** (`compact_conversation()` in `lib/call_lens.sh`): Off by default. When enabled via `--compact`, every 8-10 turns or when the conversation exceeds ~15K characters, the history is distilled into a 400-600 word digest plus the last 3-4 verbatim turns. Disabled by default because late-arriving breakthroughs (iteration 10+) need access to raw phrasing from earlier turns. Full transcript is always preserved in MD/JSON output files.
+
+### Mechanism Flow Control
+
+Mechanisms return structured JSON decisions alongside their conversation append:
+- **Friction** returns `{recommendation: "deepen|redirect|continue", inject_lens: "..."}` - can inject a specific lens to break stuck patterns
+- **Transcendence** returns `{has_breakthrough: bool, recommendation: "compress|continue|ground_early"}` - can skip to grounding
+- **Bias** returns `{biases_detected: [...], recommendation: "..."}` - identifies cognitive biases as creative fuel
+- **Void** returns `{territories: [...], pattern_of_avoidance: "...", recommendation: "redirect_to_void|note_and_continue|void_is_intentional"}` - maps unexplored territory and can redirect a lens into the dark patches
+
+**Mechanism memory** (`MECHANISM_MEMORY` array in `lib/call_lens.sh`): Each mechanism appends its findings to a structured log. Subsequent mechanisms receive a MECHANISM HISTORY section listing prior findings, with the instruction to focus on what's new or evolved. This prevents amnesiac re-discovery of the same tensions. The conductor's state summary also includes mechanism memory.
+
+Flow control helpers in `lib/call_lens.sh`: `handle_friction_decision()`, `handle_transcendence_decision()`, `handle_void_decision()`.
+
+### Zeitgeist Context
+
+When web search is enabled during provocation generation, Claude may return source citations alongside provocations. These are captured as `ZEITGEIST_SOURCES` and built into a `ZEITGEIST_CONTEXT` block representing "known territory" - what broader discourse already covers. This context is threaded into:
+- **Seed prep** (fracture/tune/appraise) - external anchors for assumption grounding
+- **Sensory mechanism** - re-injected mid-session as `=== KNOWN TERRITORY ===` alongside ground truth
+- **Void mechanism** - contrasts known discourse against session territory for sharper void detection
+- **Review prosecution** - head start on prior art identification
+
+Lenses do not receive zeitgeist directly - they encounter it through mechanisms, keeping lens calls clean.
+
+### Provocation Review Gate
+
+When multiple provocations are generated (`--autonomous` mode), they're reviewed for distinctness before sessions begin. Similar provocations get merged, weak ones get reframed. Each provocation should open territory the others cannot reach.
+
+### Session Reviewer
+
+Adversarial quality gate (`mechanisms/review.sh`) using a prosecution/defense/verdict pattern:
+1. **Prosecution** - Assumes the session failed. Scores novelty 1-10, names closest prior art for each major idea. Uses WebSearch.
+2. **Defense** - Concedes weak ideas, argues only for genuine divergence from prior art cited.
+3. **Verdict** - Decides restart/proceed from the adversarial exchange. Identifies unpushed tensions and provides a reframed seed if restart needed.
+
+Can trigger a **restart with mutations**: different mode, shuffled lens order, reframed seed. 2-run ceiling per provocation. Synthesises across both runs.
+
+### Verbose Session Log
+
+Every `claude_call*` invocation is logged to `$SESSION_DIR/log.jsonl` (JSONL format, one JSON object per line). Each entry captures: timestamp, caller identifier (e.g. `lens:empath`, `mechanism:void`, `conductor`), call type, prompt excerpt (first 500 chars), full response, exit code, and cap hit status. Callers set `VERBOSE_CALLER` before invoking `claude_call*`. Excludes the growing conversation context - just individual prompts and responses.
 
 ### Pipeline Flow
 
 1. **Seed prep with embedded grounding** - Fracture (dyslexic), tune (spiral), or appraise (lapidary). Each surfaces and web-verifies assumptions before preparing the seed
-3. **Rounds/spirals/passes** with interspersed mechanisms (friction, sensory, bias, transcendence)
-4. **Between-phase operations** - Re-seeding (spiral) or polish (lapidary)
-5. **Report generation** - Generate The Line (platform + expression at two altitudes), then creative brief, manifesto, and insight article. Optional .docx
+2. **Provocation review** (autonomous mode) - checks distinctness of generated provocations
+3. **Rounds/spirals/passes** (or conductor loop in autonomous mode) with interspersed mechanisms
+4. **Session review** (autonomous mode) - baseline test, novelty search, tension check. Can restart with mutations
+5. **Between-phase operations** - Re-seeding (spiral) or polish (lapidary)
+6. **Report generation** - Generate The Line (platform + expression at two altitudes), then creative brief, manifesto, and insight article. Optional .docx
 
 ### Key Directories
 
-- `agents/` - 20 agents across `perceivers/`, `cognitions/{fragmentary,deepening,evaluative}/`, `hybrids/`
-- `modes/` - Three composition orchestrators
+- `lenses/` - 20 lenses across `perceivers/`, `cognitions/{fragmentary,deepening,evaluative}/`, `hybrids/`, plus `conductor.sh`
+- `modes/` - Three composition orchestrators (used in non-autonomous mode, become conductor presets in autonomous mode)
 - `context/` - Input handling (gather, ground preamble, provoke, fracture, tune, appraise)
-- `mechanisms/` - Meta-cognitive operations (friction, sensory, bias, transcendence, reseed, polish)
-- `lib/` - Shared utilities (dispatch, JSON/MD transcript output, markers)
+- `mechanisms/` - Meta-cognitive operations (friction, sensory, bias, transcendence, void, reseed, polish, review)
+- `lib/` - Shared utilities (dispatch, conductor loop, JSON/MD transcript output, markers)
 - `report/` - Presentation generation, synthesis, and format converters (docx, html)
 - `report/html-template/` - Astro project for developing the HTML template (`npm run dev` for hot reload)
 
@@ -105,9 +181,10 @@ A global `$CONVERSATION` string accumulates all agent responses. Each agent read
 Sessions produce files in `./think-different-output/<slug>_<timestamp>/`:
 - `presentation.md` - Combined output: The Line (platform + expression), creative brief, manifesto, insight article (controlled by `--type`)
 - `presentation.docx` - Branded Word document (if python-docx available)
-- `presentation.html` - Cinematic scroll presentation with GSAP ScrollTrigger (disable with `--no-html`)
+- `presentation.html` - Cinematic scroll presentation with GSAP ScrollTrigger (enable with `--html`, experimental)
 - `session.md` / `session.json` - Full transcript (markdown + machine-readable)
 - `session.state.json` - Session state for resume capability
+- `log.jsonl` - Verbose session log (every Claude call/response, JSONL format)
 - `context.md` - Project context brief (if gathered)
 
 ## Dependencies
@@ -119,10 +196,10 @@ Sessions produce files in `./think-different-output/<slug>_<timestamp>/`:
 ## Conventions
 
 - **Bash 3.2 compatibility is mandatory** - Array shuffling uses RANDOM, avoid associative arrays and other bash 4+ features. Recent bugs have been around unbound variables with empty arrays.
-- **No em-dashes** - Use hyphens or commas instead. Enforced in COMMON_RULES for all agent output.
-- **`set -euo pipefail`** in think.sh - Agents fail gracefully but pipeline errors halt execution.
-- **Phase labeling** - Three UNIT_LABEL types: "round" (dyslexic), "spiral" (spiral), "pass" (lapidary).
-- **Agent key-based dispatch** - Keys like `empath`, `provocateur` are decoupled from display names.
+- **No em-dashes** - Use hyphens or commas instead. Enforced in COMMON_RULES for all lens output.
+- **`set -euo pipefail`** in think.sh - Lenses fail gracefully but pipeline errors halt execution.
+- **Phase labeling** - Three UNIT_LABEL types: "round" (dyslexic), "spiral" (spiral), "pass" (lapidary), "turn" (conductor).
+- **Lens key-based dispatch** - Keys like `empath`, `provocateur` are decoupled from display names.
 - **Conversation markers** - Mechanism sections use `=== MECHANISM (unit type number) ===` headers.
 - **Temp file cleanup** - Uses `mktemp`, always cleaned up with `rm -f`.
 - **Plan-aware seed defaults** - `claude auth status` detects subscription type. Pro=1 seed, Max/Enterprise/Team=3 seeds. User `--seeds` flag always overrides.

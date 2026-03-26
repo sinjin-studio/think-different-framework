@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 450">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1150 620">
   <style>
     text { font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; }
-    .agent { font-size: 10px; font-weight: 500; fill: #334155; }
+    .lens { font-size: 10px; font-weight: 500; fill: #334155; }
     .title { font-size: 10px; font-weight: 700; fill: #b07d2e; }
     .sub { font-size: 8.5px; fill: #94a3b8; font-style: italic; }
     .mech { font-size: 9.5px; font-weight: 600; fill: #fff; }
@@ -27,12 +27,12 @@
   <rect x="102" y="18" width="130" height="152" rx="8" fill="#fffbeb" stroke="#fcd34d" stroke-width="1"/>
   <text class="title" x="112" y="36">Pass 1</text>
   <text class="sub" x="112" y="48">Rough Cut</text>
-  <text class="agent" x="112" y="68">⚖️ Appraiser</text>
-  <text class="agent" x="112" y="84">📜 Historian</text>
-  <text class="agent" x="112" y="100">❤️‍🔥 Empath</text>
-  <text class="agent" x="112" y="116">👁️ Observer</text>
-  <text class="agent" x="112" y="132">✂️ Editor</text>
-  <text class="agent" x="112" y="148">🏺 Connoisseur</text>
+  <text class="lens" x="112" y="68">⚖️ Appraiser</text>
+  <text class="lens" x="112" y="84">📜 Historian</text>
+  <text class="lens" x="112" y="100">❤️‍🔥 Empath</text>
+  <text class="lens" x="112" y="116">👁️ Observer</text>
+  <text class="lens" x="112" y="132">✂️ Editor</text>
+  <text class="lens" x="112" y="148">🏺 Connoisseur</text>
 
   <line x1="236" y1="94" x2="259" y2="94" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
 
@@ -40,81 +40,135 @@
   <rect x="264" y="82" width="56" height="24" rx="12" fill="#7b2d8e"/>
   <text class="mech" x="292" y="94" text-anchor="middle" dominant-baseline="central">Polish</text>
 
-  <line x1="324" y1="94" x2="347" y2="94" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
+  <line x1="322" y1="94" x2="324" y2="94" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
+
+  <!-- Void -->
+  <rect x="328" y="82" width="48" height="24" rx="12" fill="#0d9488"/>
+  <text class="mech" x="352" y="94" text-anchor="middle" dominant-baseline="central">Void</text>
+
+  <line x1="380" y1="94" x2="417" y2="94" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
 
   <!-- Pass 2 -->
-  <rect x="352" y="30" width="130" height="144" rx="8" fill="#fffbeb" stroke="#fcd34d" stroke-width="1"/>
-  <text class="title" x="362" y="48">Pass 2</text>
-  <text class="sub" x="362" y="60">Shape</text>
-  <text class="agent" x="362" y="80">📜 Historian</text>
-  <text class="agent" x="362" y="96">⚖️ Appraiser</text>
-  <text class="agent" x="362" y="112">🔥 Provocateur</text>
-  <text class="agent" x="362" y="128">🧩 Logician</text>
-  <text class="agent" x="362" y="144">✂️ Editor</text>
-  <text class="agent" x="362" y="160">🏺 Connoisseur</text>
+  <rect x="422" y="30" width="130" height="144" rx="8" fill="#fffbeb" stroke="#fcd34d" stroke-width="1"/>
+  <text class="title" x="432" y="48">Pass 2</text>
+  <text class="sub" x="432" y="60">Shape</text>
+  <text class="lens" x="432" y="80">📜 Historian</text>
+  <text class="lens" x="432" y="96">⚖️ Appraiser</text>
+  <text class="lens" x="432" y="112">🔥 Provocateur</text>
+  <text class="lens" x="432" y="128">🧩 Logician</text>
+  <text class="lens" x="432" y="144">✂️ Editor</text>
+  <text class="lens" x="432" y="160">🏺 Connoisseur</text>
 
-  <line x1="486" y1="94" x2="509" y2="94" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
+  <line x1="556" y1="94" x2="579" y2="94" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
 
   <!-- Friction -->
-  <rect x="514" y="82" width="62" height="24" rx="12" fill="#ff6b35"/>
-  <text class="mech" x="545" y="94" text-anchor="middle" dominant-baseline="central">Friction</text>
+  <rect x="584" y="82" width="62" height="24" rx="12" fill="#ff6b35"/>
+  <text class="mech" x="615" y="94" text-anchor="middle" dominant-baseline="central">Friction</text>
 
-  <line x1="580" y1="94" x2="603" y2="94" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
+  <line x1="650" y1="94" x2="673" y2="94" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
 
   <!-- Polish 2 -->
-  <rect x="608" y="82" width="56" height="24" rx="12" fill="#7b2d8e"/>
-  <text class="mech" x="636" y="94" text-anchor="middle" dominant-baseline="central">Polish</text>
+  <rect x="678" y="82" width="56" height="24" rx="12" fill="#7b2d8e"/>
+  <text class="mech" x="706" y="94" text-anchor="middle" dominant-baseline="central">Polish</text>
 
   <!-- Wrap arrow row 1 to row 2 -->
-  <path d="M668,94 Q694,94 694,186 Q694,280 668,280" fill="none" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
-
-  <!-- Transcendence -->
-  <rect x="670" y="177" width="80" height="18" rx="9" fill="#d4a017"/>
-  <text class="mech" x="710" y="186" text-anchor="middle" dominant-baseline="central">Transcend</text>
+  <path d="M738,94 Q764,94 764,186 Q764,280 738,280" fill="none" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
 
   <!-- ═══ ROW 2 ═══ -->
 
   <!-- Pass 3 -->
-  <rect x="530" y="216" width="130" height="160" rx="8" fill="#fffbeb" stroke="#fcd34d" stroke-width="1"/>
-  <text class="title" x="540" y="234">Pass 3</text>
-  <text class="sub" x="540" y="246">Facet</text>
-  <text class="agent" x="540" y="266">⚖️ Appraiser</text>
-  <text class="agent" x="540" y="282">📜 Historian</text>
-  <text class="agent" x="540" y="298">🧿 Skeptic</text>
-  <text class="agent" x="540" y="314">🕯️ Achala</text>
-  <text class="agent" x="540" y="330">⏳ Mortal</text>
-  <text class="agent" x="540" y="346">✂️ Editor</text>
-  <text class="agent" x="540" y="362">🏺 Connoisseur</text>
+  <rect x="600" y="216" width="130" height="160" rx="8" fill="#fffbeb" stroke="#fcd34d" stroke-width="1"/>
+  <text class="title" x="610" y="234">Pass 3</text>
+  <text class="sub" x="610" y="246">Facet</text>
+  <text class="lens" x="610" y="266">⚖️ Appraiser</text>
+  <text class="lens" x="610" y="282">📜 Historian</text>
+  <text class="lens" x="610" y="298">🧿 Skeptic</text>
+  <text class="lens" x="610" y="314">🕯️ Achala</text>
+  <text class="lens" x="610" y="330">⏳ Mortal</text>
+  <text class="lens" x="610" y="346">✂️ Editor</text>
+  <text class="lens" x="610" y="362">🏺 Connoisseur</text>
 
-  <line x1="526" y1="280" x2="503" y2="280" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
+  <line x1="596" y1="280" x2="573" y2="280" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
+
+  <!-- Friction 3 -->
+  <rect x="507" y="268" width="62" height="24" rx="12" fill="#ff6b35"/>
+  <text class="mech" x="538" y="280" text-anchor="middle" dominant-baseline="central">Friction</text>
+
+  <line x1="503" y1="280" x2="489" y2="280" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
+
+  <!-- Polish 3 -->
+  <rect x="431" y="268" width="56" height="24" rx="12" fill="#7b2d8e"/>
+  <text class="mech" x="459" y="280" text-anchor="middle" dominant-baseline="central">Polish</text>
+
+  <line x1="427" y1="280" x2="413" y2="280" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
+
+  <!-- Void Check -->
+  <rect x="359" y="268" width="50" height="24" rx="12" fill="#0d9488"/>
+  <text class="mech" x="384" y="280" text-anchor="middle" dominant-baseline="central">Void</text>
+
+  <line x1="355" y1="280" x2="341" y2="280" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
+
+  <!-- Transcendence Check (two-strike) -->
+  <rect x="245" y="268" width="92" height="24" rx="12" fill="#d4a017"/>
+  <text class="mech" x="291" y="280" text-anchor="middle" dominant-baseline="central">Transcend</text>
+  <text font-size="7" fill="#94a3b8" x="291" y="302" text-anchor="middle">two-strike</text>
+
+  <line x1="241" y1="280" x2="227" y2="280" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
+
+  <!-- Passes 4-5 (Extended) -->
+  <rect x="26" y="240" width="196" height="68" rx="8" fill="#fffbeb" stroke="#fcd34d" stroke-width="1" stroke-dasharray="4 3"/>
+  <text class="title" x="36" y="258">Passes 4-5</text>
+  <text class="sub" x="36" y="270">Extended Refinement</text>
+  <text class="lens" x="36" y="290">⚖️ → 📜 → ✂️ → 🏺</text>
+  <text class="sub" x="36" y="302">+ Friction, Polish, Void, Transcendence</text>
+
+  <!-- Arrow from Passes 4-5 down to Row 3 -->
+  <path d="M124,312 Q124,340 124,354" fill="none" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
+
+  <!-- ═══ ROW 3 ═══ -->
 
   <!-- Bias Check -->
-  <rect x="437" y="268" width="62" height="24" rx="12" fill="#9b59b6"/>
-  <text class="mech" x="468" y="280" text-anchor="middle" dominant-baseline="central">Bias</text>
+  <rect x="94" y="358" width="62" height="24" rx="12" fill="#9b59b6"/>
+  <text class="mech" x="125" y="370" text-anchor="middle" dominant-baseline="central">Bias</text>
 
-  <line x1="433" y1="280" x2="410" y2="280" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
+  <line x1="160" y1="370" x2="176" y2="370" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
 
   <!-- Ground -->
-  <rect x="310" y="248" width="92" height="64" rx="8" fill="#ecfdf5" stroke="#86efac" stroke-width="1"/>
-  <text class="ground-title" x="320" y="266">Ground</text>
-  <text class="agent" x="320" y="286">❤️‍🔥 Empath</text>
-  <text class="agent" x="320" y="302">✂️ Editor</text>
+  <rect x="180" y="338" width="92" height="64" rx="8" fill="#ecfdf5" stroke="#86efac" stroke-width="1"/>
+  <text class="ground-title" x="190" y="356">Ground</text>
+  <text class="lens" x="190" y="376">❤️‍🔥 Empath</text>
+  <text class="lens" x="190" y="392">✂️ Editor</text>
 
-  <line x1="306" y1="280" x2="283" y2="280" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
+  <line x1="276" y1="370" x2="292" y2="370" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
 
   <!-- Presentation -->
-  <rect x="180" y="265" width="100" height="30" rx="15" fill="#2d6a4f"/>
-  <text class="mech" x="230" y="280" text-anchor="middle" dominant-baseline="central">Presentation</text>
+  <rect x="296" y="355" width="100" height="30" rx="15" fill="#2d6a4f"/>
+  <text class="mech" x="346" y="370" text-anchor="middle" dominant-baseline="central">Presentation</text>
+
+  <!-- Mechanism memory: dashed arrows showing state threading between mechanism checks across passes -->
+  <!-- Polish 1 -> Friction (memory across pass boundary) -->
+  <path d="M292,108 C292,140 615,140 615,108" fill="none" stroke="#6b7280" stroke-width="1" stroke-dasharray="3 2" opacity="0.5"/>
+  <text font-size="7" fill="#6b7280" x="454" y="148" text-anchor="middle" opacity="0.7">memory</text>
+
+  <!-- Friction -> Friction 3 (memory across row wrap) -->
+  <path d="M615,108 C630,160 570,220 538,266" fill="none" stroke="#6b7280" stroke-width="1" stroke-dasharray="3 2" opacity="0.5"/>
 
   <!-- Legend -->
-  <g transform="translate(780, 360)">
+  <g transform="translate(450, 530)">
     <rect x="0" y="0" width="12" height="12" rx="3" fill="#7b2d8e"/>
     <text font-size="9" fill="#64748b" x="18" y="10">Polish</text>
-    <rect x="70" y="0" width="12" height="12" rx="3" fill="#ff6b35"/>
-    <text font-size="9" fill="#64748b" x="88" y="10">Friction</text>
-    <rect x="145" y="0" width="12" height="12" rx="3" fill="#9b59b6"/>
-    <text font-size="9" fill="#64748b" x="163" y="10">Bias</text>
-    <rect x="220" y="0" width="12" height="12" rx="3" fill="#d4a017"/>
-    <text font-size="9" fill="#64748b" x="238" y="10">Transcendence</text>
+    <rect x="70" y="0" width="12" height="12" rx="3" fill="#0d9488"/>
+    <text font-size="9" fill="#64748b" x="88" y="10">Void</text>
+    <rect x="125" y="0" width="12" height="12" rx="3" fill="#ff6b35"/>
+    <text font-size="9" fill="#64748b" x="143" y="10">Friction</text>
+    <rect x="200" y="0" width="12" height="12" rx="3" fill="#9b59b6"/>
+    <text font-size="9" fill="#64748b" x="218" y="10">Bias</text>
+    <rect x="255" y="0" width="12" height="12" rx="3" fill="#d4a017"/>
+    <text font-size="9" fill="#64748b" x="273" y="10">Transcendence</text>
+
+    <line x1="0" y1="26" x2="30" y2="26" stroke="#6b7280" stroke-width="1" stroke-dasharray="3 2"/>
+    <text font-size="9" fill="#64748b" x="36" y="30">Mechanism Memory</text>
+    <rect x="170" y="18" width="60" height="12" rx="3" fill="none" stroke="#fcd34d" stroke-width="1" stroke-dasharray="4 3"/>
+    <text font-size="9" fill="#64748b" x="238" y="28">Extended (variable)</text>
   </g>
 </svg>

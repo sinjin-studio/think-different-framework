@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 900">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 940">
   <style>
     text { font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; }
-    .agent { font-size: 10px; font-weight: 500; fill: #1e293b; }
+    .lens { font-size: 10px; font-weight: 500; fill: #1e293b; }
     .mech { font-size: 9px; font-weight: 600; fill: #fff; }
     .ring-label { font-size: 10px; font-weight: 700; letter-spacing: 0.3px; }
     .ring-sub { font-size: 8.5px; fill: #94a3b8; font-style: italic; }
@@ -25,105 +25,97 @@
   <circle cx="430" cy="430" r="340" fill="none" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4 3"/>
   <circle cx="430" cy="430" r="240" fill="none" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4 3"/>
   <circle cx="430" cy="430" r="150" fill="none" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4 3"/>
+  <circle cx="430" cy="430" r="70" fill="none" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4 3"/>
 
   <!-- ═══ ARC BANDS (colored background arcs) ═══ -->
 
   <!-- Spiral 1 arc band: 250deg to 10deg (120deg clockwise) at r=340 -->
-  <!-- Start: (430+340*cos250, 430+340*sin250) = (314, 110) -->
-  <!-- End: (430+340*cos10, 430+340*sin10) = (765, 489) -->
   <path d="M314,110 A340,340 0 0,1 765,489" fill="none" stroke="#c084fc" stroke-width="28" opacity="0.12" stroke-linecap="round"/>
 
   <!-- Spiral 2 arc band: 30deg to 180deg (150deg clockwise) at r=240 -->
-  <!-- Start: (430+240*cos30, 430+240*sin30) = (638, 550) -->
-  <!-- End: (430+240*cos180, 430+240*sin180) = (190, 430) -->
   <path d="M638,550 A240,240 0 0,1 190,430" fill="none" stroke="#c084fc" stroke-width="28" opacity="0.08" stroke-linecap="round"/>
 
   <!-- Spiral 3 arc band: 200deg to 80deg (240deg clockwise, large arc) at r=150 -->
-  <!-- Start: (430+150*cos200, 430+150*sin200) = (289, 379) -->
-  <!-- End: (430+150*cos80, 430+150*sin80) = (456, 578) -->
   <path d="M289,379 A150,150 0 1,1 456,578" fill="none" stroke="#c084fc" stroke-width="28" opacity="0.05" stroke-linecap="round"/>
 
   <!-- ═══ SPIRAL 1 - Outer ring (r=340) ═══ -->
-  <!-- 7 agents from 250deg to 370deg(=10deg), step ~20deg -->
 
   <!-- Tune Seed (at 250deg, starting point) -->
   <rect x="278" y="98" width="72" height="24" rx="12" fill="#faf5ff" stroke="#7b2d8e" stroke-width="1.5"/>
-  <text class="agent" x="314" y="110" text-anchor="middle" dominant-baseline="central">Tune Seed</text>
+  <text class="lens" x="314" y="110" text-anchor="middle" dominant-baseline="central">Tune Seed</text>
 
   <!-- Spiral 1 label -->
   <text class="ring-label" x="430" y="54" text-anchor="middle" fill="#7b2d8e">Spiral 1</text>
 
   <!-- 270deg: (430, 90) - Diverger x3 -->
   <rect x="384" y="78" width="92" height="24" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
-  <text class="agent" x="430" y="90" text-anchor="middle" dominant-baseline="central">🧭 Diverger x3</text>
+  <text class="lens" x="430" y="90" text-anchor="middle" dominant-baseline="central">🧭 Diverger x3</text>
 
   <!-- 290deg: (546, 110) - Analogiser x2 -->
   <rect x="492" y="98" width="108" height="24" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
-  <text class="agent" x="546" y="110" text-anchor="middle" dominant-baseline="central">🔮 Analogiser x2</text>
+  <text class="lens" x="546" y="110" text-anchor="middle" dominant-baseline="central">🔮 Analogiser x2</text>
 
   <!-- 310deg: (649, 170) - Empath -->
   <rect x="610" y="158" width="78" height="24" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
-  <text class="agent" x="649" y="170" text-anchor="middle" dominant-baseline="central">❤️‍🔥 Empath</text>
+  <text class="lens" x="649" y="170" text-anchor="middle" dominant-baseline="central">❤️‍🔥 Empath</text>
 
   <!-- 330deg: (725, 260) - Includer -->
   <rect x="686" y="248" width="78" height="24" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
-  <text class="agent" x="725" y="260" text-anchor="middle" dominant-baseline="central">🪑 Includer</text>
+  <text class="lens" x="725" y="260" text-anchor="middle" dominant-baseline="central">🪑 Includer</text>
 
   <!-- 350deg: (765, 371) - Provocateur -->
   <rect x="718" y="359" width="94" height="24" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
-  <text class="agent" x="765" y="371" text-anchor="middle" dominant-baseline="central">🔥 Provocateur</text>
+  <text class="lens" x="765" y="371" text-anchor="middle" dominant-baseline="central">🔥 Provocateur</text>
 
   <!-- 10deg: (765, 489) - Observer -->
   <rect x="722" y="477" width="86" height="24" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
-  <text class="agent" x="765" y="489" text-anchor="middle" dominant-baseline="central">👁️ Observer</text>
+  <text class="lens" x="765" y="489" text-anchor="middle" dominant-baseline="central">👁️ Observer</text>
 
   <!-- 25deg: ~(738, 537) - Integrator (end of Spiral 1) -->
   <rect x="692" y="525" width="92" height="24" rx="12" fill="#faf5ff" stroke="#a855f7" stroke-width="1.5"/>
-  <text class="agent" x="738" y="537" text-anchor="middle" dominant-baseline="central">🧐 Integrator</text>
+  <text class="lens" x="738" y="537" text-anchor="middle" dominant-baseline="central">🧐 Integrator</text>
 
   <!-- ═══ RESEED 1 (Spiral 1 -> Spiral 2) ═══ -->
-  <!-- Curved arrow from Integrator down to Spiral 2 start -->
   <path d="M738,553 Q740,580 700,590 Q660,598 638,574" fill="none" stroke="#7b2d8e" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arr-purple)"/>
   <rect x="704" y="570" width="52" height="20" rx="10" fill="#7b2d8e"/>
   <text class="mech" x="730" y="580" text-anchor="middle" dominant-baseline="central">Reseed</text>
 
   <!-- ═══ SPIRAL 2 - Middle ring (r=240) ═══ -->
-  <!-- 6 agents from 30deg to 180deg, step ~30deg -->
 
   <!-- Spiral 2 label -->
   <text class="ring-label" x="610" y="648" text-anchor="middle" fill="#7b2d8e">Spiral 2</text>
 
   <!-- 30deg: (638, 550) - Diverger x2 -->
   <rect x="589" y="538" width="98" height="24" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
-  <text class="agent" x="638" y="550" text-anchor="middle" dominant-baseline="central">🧭 Diverger x2</text>
+  <text class="lens" x="638" y="550" text-anchor="middle" dominant-baseline="central">🧭 Diverger x2</text>
 
   <!-- 60deg: (550, 638) - Skeptic -->
   <rect x="510" y="626" width="80" height="24" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
-  <text class="agent" x="550" y="638" text-anchor="middle" dominant-baseline="central">🧿 Skeptic</text>
+  <text class="lens" x="550" y="638" text-anchor="middle" dominant-baseline="central">🧿 Skeptic</text>
 
   <!-- 90deg: (430, 670) - Analogiser x2 -->
   <rect x="376" y="658" width="108" height="24" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
-  <text class="agent" x="430" y="670" text-anchor="middle" dominant-baseline="central">🔮 Analogiser x2</text>
+  <text class="lens" x="430" y="670" text-anchor="middle" dominant-baseline="central">🔮 Analogiser x2</text>
 
   <!-- 120deg: (310, 638) - Empath -->
   <rect x="271" y="626" width="78" height="24" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
-  <text class="agent" x="310" y="638" text-anchor="middle" dominant-baseline="central">❤️‍🔥 Empath</text>
+  <text class="lens" x="310" y="638" text-anchor="middle" dominant-baseline="central">❤️‍🔥 Empath</text>
 
   <!-- 135deg: (260, 600) - Achala -->
   <rect x="221" y="588" width="78" height="24" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
-  <text class="agent" x="260" y="600" text-anchor="middle" dominant-baseline="central">🕯️ Achala</text>
+  <text class="lens" x="260" y="600" text-anchor="middle" dominant-baseline="central">🕯️ Achala</text>
 
-  <!-- 142deg: (240, 578) - Mortal (Urgency phase after Devote) -->
+  <!-- 142deg: (240, 578) - Mortal -->
   <rect x="148" y="566" width="78" height="24" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
-  <text class="agent" x="187" y="578" text-anchor="middle" dominant-baseline="central">⏳ Mortal</text>
+  <text class="lens" x="187" y="578" text-anchor="middle" dominant-baseline="central">⏳ Mortal</text>
 
   <!-- 150deg: (222, 550) - Provocateur -->
   <rect x="175" y="538" width="94" height="24" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
-  <text class="agent" x="222" y="550" text-anchor="middle" dominant-baseline="central">🔥 Provocateur</text>
+  <text class="lens" x="222" y="550" text-anchor="middle" dominant-baseline="central">🔥 Provocateur</text>
 
   <!-- 180deg: (190, 430) - Integrator -->
   <rect x="144" y="418" width="92" height="24" rx="12" fill="#faf5ff" stroke="#a855f7" stroke-width="1.5"/>
-  <text class="agent" x="190" y="430" text-anchor="middle" dominant-baseline="central">🧐 Integrator</text>
+  <text class="lens" x="190" y="430" text-anchor="middle" dominant-baseline="central">🧐 Integrator</text>
 
   <!-- ═══ FRICTION + RESEED 2 (Spiral 2 -> Spiral 3) ═══ -->
   <path d="M175,414 Q160,390 170,370 Q180,350 220,345 Q260,340 280,358" fill="none" stroke="#7b2d8e" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arr-purple)"/>
@@ -134,68 +126,77 @@
   <rect x="204" y="330" width="52" height="18" rx="9" fill="#7b2d8e"/>
   <text class="mech" x="230" y="339" text-anchor="middle" dominant-baseline="central">Reseed</text>
 
-  <rect x="108" y="341" width="80" height="18" rx="9" fill="#d4a017"/>
-  <text class="mech" x="148" y="350" text-anchor="middle" dominant-baseline="central">Transcend</text>
+  <rect x="168" y="356" width="42" height="18" rx="9" fill="#0d9488"/>
+  <text class="mech" x="189" y="365" text-anchor="middle" dominant-baseline="central">Void</text>
 
   <!-- ═══ SPIRAL 3 - Inner ring (r=150) ═══ -->
-  <!-- 6 agents from 200deg to 80deg (240deg clockwise, wrapping), step ~48deg -->
 
   <!-- Spiral 3 label -->
   <text class="ring-label" x="320" y="290" text-anchor="middle" fill="#7b2d8e">Spiral 3</text>
 
   <!-- 200deg: (289, 379) - Diverger x2 -->
   <rect x="240" y="367" width="98" height="24" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
-  <text class="agent" x="289" y="379" text-anchor="middle" dominant-baseline="central">🧭 Diverger x2</text>
+  <text class="lens" x="289" y="379" text-anchor="middle" dominant-baseline="central">🧭 Diverger x2</text>
 
-  <!-- 248deg: (430+150*cos248, 430+150*sin248) = (430-56, 430-139) = (374, 291) -->
-  <!-- Analogiser x2 -->
+  <!-- 248deg: (374, 291) - Analogiser x2 -->
   <rect x="303" y="279" width="108" height="24" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
-  <text class="agent" x="357" y="291" text-anchor="middle" dominant-baseline="central">🔮 Analogiser x2</text>
+  <text class="lens" x="357" y="291" text-anchor="middle" dominant-baseline="central">🔮 Analogiser x2</text>
 
-  <!-- 296deg: (430+150*cos296, 430+150*sin296) = (430+66, 430-135) = (496, 295) -->
-  <!-- Empath -->
+  <!-- 296deg: (496, 295) - Empath -->
   <rect x="457" y="283" width="78" height="24" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
-  <text class="agent" x="496" y="295" text-anchor="middle" dominant-baseline="central">❤️‍🔥 Empath</text>
+  <text class="lens" x="496" y="295" text-anchor="middle" dominant-baseline="central">❤️‍🔥 Empath</text>
 
   <!-- 320deg: (545, 334) - Achala -->
   <rect x="506" y="322" width="78" height="24" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
-  <text class="agent" x="545" y="334" text-anchor="middle" dominant-baseline="central">🕯️ Achala</text>
+  <text class="lens" x="545" y="334" text-anchor="middle" dominant-baseline="central">🕯️ Achala</text>
 
-  <!-- 332deg: Mortal (Urgency phase after Devote) -->
+  <!-- 332deg: Mortal -->
   <rect x="526" y="352" width="78" height="24" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
-  <text class="agent" x="565" y="364" text-anchor="middle" dominant-baseline="central">⏳ Mortal</text>
+  <text class="lens" x="565" y="364" text-anchor="middle" dominant-baseline="central">⏳ Mortal</text>
 
-  <!-- 344deg: (430+150*cos344, 430+150*sin344) = (430+144, 430-41) = (574, 389) -->
-  <!-- Skeptic -->
+  <!-- 344deg: (574, 389) - Skeptic -->
   <rect x="534" y="377" width="80" height="24" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
-  <text class="agent" x="574" y="389" text-anchor="middle" dominant-baseline="central">🧿 Skeptic</text>
+  <text class="lens" x="574" y="389" text-anchor="middle" dominant-baseline="central">🧿 Skeptic</text>
 
-  <!-- 32deg: (430+150*cos32, 430+150*sin32) = (430+127, 430+79) = (557, 509) -->
-  <!-- Bias Check -->
+  <!-- 32deg: (557, 509) - Bias Check -->
   <rect x="520" y="497" width="74" height="24" rx="12" fill="#9b59b6"/>
   <text class="mech" x="557" y="509" text-anchor="middle" dominant-baseline="central">Bias</text>
 
-  <!-- 80deg: (430+150*cos80, 430+150*sin80) = (430+26, 430+148) = (456, 578) -->
-  <!-- Integrator (end of Spiral 3) -->
+  <!-- Void + Transcendence after Spiral 3 (two-strike) -->
+  <rect x="480" y="527" width="42" height="18" rx="9" fill="#0d9488"/>
+  <text class="mech" x="501" y="536" text-anchor="middle" dominant-baseline="central">Void</text>
+
+  <rect x="526" y="527" width="72" height="18" rx="9" fill="#d4a017"/>
+  <text class="mech" x="562" y="536" text-anchor="middle" dominant-baseline="central">Transcend</text>
+  <text font-size="7" fill="#94a3b8" x="562" y="552" text-anchor="middle">two-strike</text>
+
+  <!-- 80deg: (456, 578) - Integrator (end of Spiral 3) -->
   <rect x="410" y="566" width="92" height="24" rx="12" fill="#faf5ff" stroke="#a855f7" stroke-width="1.5"/>
-  <text class="agent" x="456" y="578" text-anchor="middle" dominant-baseline="central">🧐 Integrator</text>
+  <text class="lens" x="456" y="578" text-anchor="middle" dominant-baseline="central">🧐 Integrator</text>
 
-  <!-- ═══ GROUND (center) ═══ -->
+  <!-- ═══ SPIRALS 4-5 (innermost, variable) ═══ -->
+  <!-- Shown as a dashed inner zone -->
+  <circle cx="430" cy="430" r="70" fill="none" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="6 4" opacity="0.4"/>
+  <text class="ring-label" x="430" y="420" text-anchor="middle" fill="#7b2d8e" opacity="0.7">Spirals</text>
+  <text class="ring-label" x="430" y="434" text-anchor="middle" fill="#7b2d8e" opacity="0.7">4-5</text>
+  <text font-size="8" fill="#94a3b8" x="430" y="450" text-anchor="middle">+ Friction, Void</text>
+  <text font-size="8" fill="#94a3b8" x="430" y="462" text-anchor="middle">Transcendence</text>
+
+  <!-- ═══ GROUND (below center) ═══ -->
   <!-- Arrow from Spiral 3 Integrator to Ground -->
-  <path d="M446,562 Q440,530 435,500" fill="none" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
+  <path d="M446,594 Q440,620 435,640" fill="none" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
 
-  <rect x="386" y="445" width="88" height="52" rx="8" fill="#ecfdf5" stroke="#86efac" stroke-width="1"/>
-  <text font-size="10" font-weight="700" fill="#2d6a4f" x="396" y="462">Ground</text>
-  <text class="agent" x="396" y="478">❤️‍🔥 Empath</text>
-  <text class="agent" x="396" y="492">🧐 Integrator</text>
+  <rect x="386" y="645" width="88" height="52" rx="8" fill="#ecfdf5" stroke="#86efac" stroke-width="1"/>
+  <text font-size="10" font-weight="700" fill="#2d6a4f" x="396" y="662">Ground</text>
+  <text class="lens" x="396" y="678">❤️‍🔥 Empath</text>
+  <text class="lens" x="396" y="692">🧐 Integrator</text>
 
   <!-- ═══ PRESENTATION ═══ -->
-  <path d="M430,500 Q430,515 430,524" fill="none" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
-  <rect x="380" y="530" width="100" height="28" rx="14" fill="#2d6a4f"/>
-  <text class="mech" x="430" y="544" text-anchor="middle" dominant-baseline="central">Presentation</text>
+  <path d="M430,700 Q430,715 430,724" fill="none" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
+  <rect x="380" y="730" width="100" height="28" rx="14" fill="#2d6a4f"/>
+  <text class="mech" x="430" y="744" text-anchor="middle" dominant-baseline="central">Presentation</text>
 
-  <!-- ═══ FLOW ARROWS along arcs (subtle directional cues) ═══ -->
-  <!-- Small arrow hints along each spiral arc -->
+  <!-- ═══ FLOW ARROWS along arcs ═══ -->
   <!-- Spiral 1: clockwise from top -->
   <path d="M475,82 Q490,80 505,82" fill="none" stroke="#c084fc" stroke-width="1.5" opacity="0.4" marker-end="url(#arr-purple)"/>
   <path d="M645,195 Q655,205 660,218" fill="none" stroke="#c084fc" stroke-width="1.5" opacity="0.4" marker-end="url(#arr-purple)"/>
@@ -209,8 +210,12 @@
   <path d="M350,312 Q365,305 380,300" fill="none" stroke="#c084fc" stroke-width="1.2" opacity="0.3" marker-end="url(#arr-purple)"/>
   <path d="M555,420 Q558,440 555,460" fill="none" stroke="#c084fc" stroke-width="1.2" opacity="0.3" marker-end="url(#arr-purple)"/>
 
+  <!-- Mechanism memory -->
+  <path d="M160,393 C130,410 130,360 148,350" fill="none" stroke="#6b7280" stroke-width="1" stroke-dasharray="3 2" opacity="0.5"/>
+  <text font-size="7" fill="#6b7280" x="115" y="375" text-anchor="middle" opacity="0.7">memory</text>
+
   <!-- ═══ LEGEND ═══ -->
-  <g transform="translate(260, 845)">
+  <g transform="translate(130, 890)">
     <line x1="0" y1="6" x2="20" y2="6" stroke="#c084fc" stroke-width="3" opacity="0.12"/>
     <text class="legend-text" x="26" y="10">Spiral phase</text>
 
@@ -225,7 +230,16 @@
 
     <rect x="298" y="0" width="12" height="12" rx="3" fill="#d4a017"/>
     <text class="legend-text" x="316" y="10">Transcendence</text>
+
+    <rect x="390" y="0" width="12" height="12" rx="3" fill="#0d9488"/>
+    <text class="legend-text" x="408" y="10">Void</text>
+
+    <line x1="440" y1="6" x2="470" y2="6" stroke="#6b7280" stroke-width="1" stroke-dasharray="3 2"/>
+    <text class="legend-text" x="476" y="10">Mechanism Memory</text>
+
+    <circle cx="590" cy="6" r="8" fill="none" stroke="#a855f7" stroke-width="1" stroke-dasharray="4 3" opacity="0.4"/>
+    <text class="legend-text" x="604" y="10">Extended (variable)</text>
   </g>
 
-  <text font-size="9" fill="#94a3b8" x="430" y="870" text-anchor="middle" letter-spacing="0.5">OUTER: SPIRAL 1 (widest) - MIDDLE: SPIRAL 2 - INNER: SPIRAL 3 (deepest)</text>
+  <text font-size="9" fill="#94a3b8" x="430" y="920" text-anchor="middle" letter-spacing="0.5">OUTER: SPIRAL 1 (widest) - MIDDLE: SPIRAL 2 - INNER: SPIRAL 3 (deepest) - CENTER: SPIRALS 4-5</text>
 </svg>
