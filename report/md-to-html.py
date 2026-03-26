@@ -39,13 +39,15 @@ def parse_markdown(text):
                 the_lines.append(line)
 
     # Split by ## headers to find typed sections
-    type_sections = re.split(r'\n## (Insight|Creative Brief|Manifesto)\s*\n', text)
+    type_sections = re.split(r'\n## (The Experiment|Insight|Creative Brief|Manifesto)\s*\n', text)
     i = 1
     while i < len(type_sections) - 1:
         section_type = type_sections[i].strip().lower()
         section_content = type_sections[i + 1].strip()
         if section_type == 'creative brief':
             section_type = 'brief'
+        elif section_type == 'the experiment':
+            section_type = 'experiment'
         # Trim content at next --- or ## boundary
         section_content = re.split(r'\n---\s*$', section_content, maxsplit=1, flags=re.MULTILINE)[0].strip()
         sections[section_type] = section_content
@@ -213,6 +215,26 @@ def build_brief_html(content):
     return '\n'.join(cards)
 
 
+def build_experiment_html(content):
+    """Build HTML for experiment section - hypothesis, experiment, success signal."""
+    if not content:
+        return ''
+
+    paragraphs = content.split('\n\n')
+    result = []
+
+    for para in paragraphs:
+        para = para.strip()
+        if not para:
+            continue
+        # Handle bold
+        para = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', para)
+        para = re.sub(r'\*(.+?)\*', r'<em>\1</em>', para)
+        result.append(f'<p class="para-reveal text-lg leading-relaxed mb-6">{para}</p>')
+
+    return '\n'.join(result)
+
+
 def build_manifesto_html(content):
     """Build HTML for manifesto with pinning paragraphs."""
     if not content:
@@ -254,6 +276,12 @@ def inject_into_template(template, replacements):
         )
 
     # Hide empty sections by removing their containers if content is empty
+    # Experiment section
+    if not replacements.get('EXPERIMENT_CONTENT', '').strip():
+        result = re.sub(
+            r'<section data-section="experiment".*?</section>',
+            '', result, flags=re.DOTALL
+        )
     # Brief section
     if not replacements.get('BRIEF_CONTENT', '').strip():
         result = re.sub(
@@ -335,6 +363,7 @@ def main():
         'WORD_COUNT': html.escape(metadata.get('words', '')),
         'SOURCE_INFO': html.escape(metadata.get('source', '')),
         'THE_LINES': build_lines_html(the_lines),
+        'EXPERIMENT_CONTENT': build_experiment_html(sections.get('experiment', '')),
         'INSIGHT_CONTENT': build_insight_html(sections.get('insight', '')),
         'BRIEF_CONTENT': build_brief_html(sections.get('brief', '')),
         'MANIFESTO_CONTENT': build_manifesto_html(sections.get('manifesto', '')),

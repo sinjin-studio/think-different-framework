@@ -47,8 +47,8 @@ def parse_markdown(text):
                 the_lines.append(line)
 
     # Split by ## headers to find typed sections
-    type_sections = re.split(r'\n## (Insight|Creative Brief|Manifesto)\s*\n', text)
-    # type_sections: [preamble, "Insight", content, "Creative Brief", content, ...]
+    type_sections = re.split(r'\n## (The Experiment|Insight|Creative Brief|Manifesto)\s*\n', text)
+    # type_sections: [preamble, "Section", content, ...]
     i = 1
     while i < len(type_sections) - 1:
         section_type = type_sections[i].strip().lower()
@@ -56,6 +56,8 @@ def parse_markdown(text):
         # Normalize type key
         if section_type == 'creative brief':
             section_type = 'brief'
+        elif section_type == 'the experiment':
+            section_type = 'experiment'
         sections[section_type] = section_content
         i += 2
 
@@ -225,13 +227,14 @@ def create_docx(metadata, the_lines, sections, output_path):
                 run.font.name = BODY_FONT
 
     type_labels = {
+        'experiment': 'The Experiment',
         'insight': 'Insight',
         'brief': 'Creative Brief',
         'manifesto': 'Manifesto'
     }
 
     is_first = True
-    for type_key in ['insight', 'brief', 'manifesto']:
+    for type_key in ['experiment', 'insight', 'brief', 'manifesto']:
         if type_key not in sections:
             continue
 

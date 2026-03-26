@@ -107,10 +107,12 @@ allocate_budget() {
       insight) has_insight="true" ;;
     esac
   done
+  IFS=$' \t\n'
 
   BUDGET_BRIEF=0
   BUDGET_MANIFESTO=0
   BUDGET_INSIGHT=0
+  BUDGET_EXPERIMENT=0
   ACTIVE_TYPES=""
 
   # If user explicitly set --type, respect all their choices
@@ -136,15 +138,17 @@ allocate_budget() {
         BUDGET_INSIGHT=$((total * 65 / 100))
       fi
     else
-      # All three requested
+      # All three requested (experiment always gets 10%, taken from insight)
       if [ "$total" -gt 1000 ]; then
+        BUDGET_EXPERIMENT=$((total * 10 / 100))
         BUDGET_BRIEF=$((total * 35 / 100))
         BUDGET_MANIFESTO=$((total * 20 / 100))
-        BUDGET_INSIGHT=$((total * 45 / 100))
+        BUDGET_INSIGHT=$((total * 35 / 100))
       else
+        BUDGET_EXPERIMENT=$((total * 10 / 100))
         BUDGET_BRIEF=$((total * 40 / 100))
         BUDGET_MANIFESTO=$((total * 25 / 100))
-        BUDGET_INSIGHT=$((total * 35 / 100))
+        BUDGET_INSIGHT=$((total * 25 / 100))
       fi
     fi
 
@@ -167,22 +171,24 @@ allocate_budget() {
     ACTIVE_TYPES="brief"
     echo "  Budget (${total}w): brief only" >&2
   elif [ "$total" -lt 600 ]; then
-    # Brief + manifesto
-    BUDGET_BRIEF=$((total * 65 / 100))
-    BUDGET_MANIFESTO=$((total * 35 / 100))
-    ACTIVE_TYPES="brief,manifesto"
-    echo "  Budget (${total}w): brief + manifesto (insight dropped)" >&2
+    # Brief + experiment
+    BUDGET_EXPERIMENT=$((total * 20 / 100))
+    BUDGET_BRIEF=$((total * 80 / 100))
+    ACTIVE_TYPES="brief"
+    echo "  Budget (${total}w): experiment + brief (insight, manifesto dropped)" >&2
   elif [ "$total" -le 1000 ]; then
-    # All three, balanced for medium
+    # All sections, balanced for medium
+    BUDGET_EXPERIMENT=$((total * 10 / 100))
     BUDGET_BRIEF=$((total * 40 / 100))
     BUDGET_MANIFESTO=$((total * 25 / 100))
-    BUDGET_INSIGHT=$((total * 35 / 100))
+    BUDGET_INSIGHT=$((total * 25 / 100))
     ACTIVE_TYPES="brief,manifesto,insight"
   else
-    # All three, insight-heavy for long form
+    # All sections, insight gets more room for long form
+    BUDGET_EXPERIMENT=$((total * 10 / 100))
     BUDGET_BRIEF=$((total * 35 / 100))
     BUDGET_MANIFESTO=$((total * 20 / 100))
-    BUDGET_INSIGHT=$((total * 45 / 100))
+    BUDGET_INSIGHT=$((total * 35 / 100))
     ACTIVE_TYPES="brief,manifesto,insight"
   fi
 }
@@ -287,12 +293,84 @@ Write the lines. Platform first, then expression. Each angle should carry the in
   echo "$line_prompt" > "$tmpfile"
 
   local the_lines=""
-  if claude_call "$tmpfile" "$LINE_SYSTEM"; then
+  VERBOSE_CALLER="report:generate"
+  if claude_call_no_cap "$tmpfile" "$LINE_SYSTEM"; then
     the_lines="$CLAUDE_RESPONSE"
+  else
+    echo "    ! The Line generation failed (exit=${LAST_CLAUDE_EXIT_CODE})" >&2
+    [ -n "$LAST_CLAUDE_ERROR" ] && echo "    ! stderr: $(echo "$LAST_CLAUDE_ERROR" | head -c 200)" >&2
   fi
   rm -f "$tmpfile"
 
   echo "$the_lines"
+}
+
+# ── Generate experiment (standalone section with hypothesis + success signal) ──
+generate_experiment() {
+  local conversation_text="$1"
+  local seed="$2"
+  local words="$3"
+  local the_lines="${4:-}"
+
+  local low=$((words - words / 10))
+  local high=$((words + words / 10))
+
+read -r -d '' EXPERIMENT_SYSTEM << EXPERIMENTSYS || true
+You are a strategist distilling a creative thinking session into one concrete experiment. Not a strategy. Not a campaign. One thing someone could start tomorrow.
+
+CRITICAL: Write as if you arrived at this yourself. No references to sessions, lenses, transcripts, or any process. You sat with this problem and you know what to try.
+
+${STYLE_RULES}
+
+Structure (no section headers, just flow):
+
+1. A hypothesis line: "We believe [X] because [Y]." One sentence. What you think will happen and why.
+
+2. The experiment itself: the smallest brave thing you could do tomorrow. Specific enough to act on, wild enough to be worth doing. 2-4 sentences. Be concrete - name the channel, the format, the audience, the gesture. Not a roadmap, not a phased plan. One thing.
+
+3. A success signal: "You would know it is working if [Z]." One sentence. What you would observe, not a KPI. A human signal, not a dashboard metric.
+
+Stay within ${low}-${high} words. The whole thing should fit on a postcard.
+EXPERIMENTSYS
+
+  local dedup_block=""
+  if [ -n "$the_lines" ]; then
+    dedup_block="
+THE LINE(S) (already written - do not repeat these phrases):
+${the_lines}
+
+---
+
+"
+  fi
+
+  local experiment_prompt="Here are research notes on the following topic. Distil them into one concrete experiment worth trying.
+
+TOPIC: ${seed}
+
+RESEARCH NOTES:
+${conversation_text}
+
+---
+${dedup_block}
+Write the experiment. Hypothesis, the thing to try, success signal. No headers."
+
+  local tmpfile
+  tmpfile=$(mktemp)
+  echo "$experiment_prompt" > "$tmpfile"
+
+  local result=""
+  VERBOSE_CALLER="report:generate"
+  if claude_call_no_cap "$tmpfile" "$EXPERIMENT_SYSTEM"; then
+    result="$CLAUDE_RESPONSE"
+  else
+    local err_detail=""
+    [ -n "$LAST_CLAUDE_ERROR" ] && err_detail=" $(echo "$LAST_CLAUDE_ERROR" | head -c 200)"
+    result="[Experiment generation failed (exit=${LAST_CLAUDE_EXIT_CODE}).${err_detail} The transcript is available for manual review.]"
+  fi
+  rm -f "$tmpfile"
+
+  echo "$result"
 }
 
 # ── Generate insight article ──
@@ -300,7 +378,7 @@ generate_insight() {
   local conversation_text="$1"
   local seed="$2"
   local words="$3"
-  local prior_brief="${4:-}"
+  local prior_sections="${4:-}"
 
   local length_guidance=""
   case "$words" in
@@ -318,7 +396,6 @@ generate_insight() {
   local landscape_guide="3-5 sentences."
   local insight_guide="4-6 sentences."
   local tension_guide="2-4 sentences."
-  local experiment_guide="2-3 sentences."
 
   local numeric_words="${words%%-*}"
   if [ "$numeric_words" -gt 1200 ] 2>/dev/null; then
@@ -326,20 +403,18 @@ generate_insight() {
     landscape_guide="5-8 sentences. What did you actually notice? Not a literature review."
     insight_guide="6-10 sentences. Develop the argument fully. Use examples or analogies."
     tension_guide="4-6 sentences. What keeps you up at night about this idea?"
-    experiment_guide="3-5 sentences. Be specific enough that someone could act on it tomorrow."
   fi
   if [ "$numeric_words" -gt 2000 ] 2>/dev/null; then
     provocation_guide="4-6 sentences. Build the case for why this question matters now."
     landscape_guide="8-12 sentences. Tell the story of what you found. Let the reader feel the turns."
     insight_guide="10-15 sentences. This is the centrepiece. Develop it like a short essay section."
     tension_guide="6-10 sentences. Give the counter-position real weight. Make it uncomfortable."
-    experiment_guide="4-8 sentences. Multiple concrete steps if warranted."
   fi
 
 read -r -d '' INSIGHT_SYSTEM << INSIGHTSYS || true
 You are a writer turning research notes into a short, original article. Your job is the ANALYTICAL dimension. Go where a brief cannot - into history, cultural theory, uncomfortable questions, systemic tensions. Do not describe the audience or write proof points. That is the brief's job. You are here to say something the brief cannot.
 
-CRITICAL: You are writing as someone who HAD the insight, not someone who WATCHED a process generate it. The reader must never know these ideas came from a multi-agent session. No references to "the session", "the conversation", "the agents", "the transcript", "the thinking", "the exploration", or any language that describes a process of discovery. Write as if you sat with this question for a long time and arrived at something worth sharing.
+CRITICAL: You are writing as someone who HAD the insight, not someone who WATCHED a process generate it. The reader must never know these ideas came from a multi-lens session. No references to "the session", "the conversation", "the lenses", "the transcript", "the thinking", "the exploration", or any language that describes a process of discovery. Write as if you sat with this question for a long time and arrived at something worth sharing.
 
 Do not be self-reflective about the act of thinking. Just deliver the ideas themselves.
 ${AUDIENCE_TEXT:+
@@ -363,10 +438,7 @@ The core discovery. Say it plainly. If you need a parenthetical to explain what 
 **The Tension**
 The honest objection. What keeps you up at night about this idea? Present it as something you wrestled with yourself. ${tension_guide}
 
-**The Experiment**
-What would you actually build or try? Be concrete enough that someone could start tomorrow morning. ${experiment_guide}
-
-After the five sections, add:
+After the four sections, add:
 
 **Sources and Threads**
 Distinguish between established knowledge and your own analogical leaps. For real sources (published thinkers, named research, historical precedents), write "I drew on [source]." For your own cross-domain connections or original analogies, write "I found a useful frame in [concept] - [what it illuminated]." Do not present original synthesis at the same epistemic weight as published work.
@@ -381,7 +453,7 @@ SVG rules:
 - Add class="diagram-node" on clickable shapes (circles, rects), class="diagram-edge" on connecting lines/paths, class="diagram-label" on text elements
 - Add data-node-id="unique-id" on each node, data-from="id" data-to="id" on each edge, data-label-for="id" on labels
 - Keep the diagram under 5KB total
-- Diagram type: a journey/flow showing Provocation -> Landscape -> Insight -> Tension -> Experiment as connected nodes, with the core insight node visually emphasised
+- Diagram type: a journey/flow showing Provocation -> Landscape -> Insight -> Tension as connected nodes, with the core insight node visually emphasised
 - Short labels only (2-4 words per node, extracted from your actual content)
 - No decorative elements - clean, minimal, functional
 
@@ -389,13 +461,12 @@ ${length_guidance}
 INSIGHTSYS
 
   local dedup_block=""
-  if [ -n "$prior_brief" ]; then
+  if [ -n "$prior_sections" ]; then
     dedup_block="
-TERRITORY ALREADY COVERED:
-A creative brief has already been written covering audience, proposition, and proof points. Your article MUST NOT repeat the same arguments, examples, or proof points. Find DIFFERENT angles - cultural implications, historical parallels, systemic tensions the brief couldn't reach.
+ALREADY USED - DO NOT REPEAT:
+The following sections have already been written. Scan them for specific images, characters, scenes, phrases, and arguments. If you find yourself reaching for any of them, stop. Find completely different material from the transcript. Your article must add genuinely new territory - cultural implications, historical parallels, systemic tensions the other sections could not reach.
 
-BRIEF (already written):
-${prior_brief}
+${prior_sections}
 
 ---
 
@@ -411,17 +482,20 @@ ${conversation_text}
 
 ---
 ${dedup_block}
-Write the article. ${length_guidance} Six sections. First person voice. No lists, no filler. No meta-commentary about the research process."
+Write the article. ${length_guidance} Four sections plus sources. First person voice. No lists, no filler. No meta-commentary about the research process."
 
   local tmpfile
   tmpfile=$(mktemp)
   echo "$insight_prompt" > "$tmpfile"
 
   local result=""
-  if claude_call "$tmpfile" "$INSIGHT_SYSTEM"; then
+  VERBOSE_CALLER="report:generate"
+  if claude_call_no_cap "$tmpfile" "$INSIGHT_SYSTEM"; then
     result="$CLAUDE_RESPONSE"
   else
-    result="[Insight generation failed. The transcript is available for manual review.]"
+    local err_detail=""
+    [ -n "$LAST_CLAUDE_ERROR" ] && err_detail=" $(echo "$LAST_CLAUDE_ERROR" | head -c 200)"
+    result="[Insight generation failed (exit=${LAST_CLAUDE_EXIT_CODE}).${err_detail} The transcript is available for manual review.]"
   fi
   rm -f "$tmpfile"
 
@@ -445,7 +519,7 @@ generate_brief() {
 read -r -d '' BRIEF_SYSTEM << BRIEFSYS || true
 You are a strategist writing a creative brief. Not a deck. Not a document. A brief. Your job is the ACTIONABLE dimension. Who to reach, what to say, why it's true, and how to execute. Stay in the world of the brief - what a creative team needs to do their job. Leave the cultural analysis and theory for elsewhere.
 
-CRITICAL: Write as if you arrived at these conclusions yourself. No references to sessions, agents, transcripts, or any process. You spent time with this problem and you know what needs to happen.
+CRITICAL: Write as if you arrived at these conclusions yourself. No references to sessions, lenses, transcripts, or any process. You spent time with this problem and you know what needs to happen.
 ${AUDIENCE_TEXT:+
 The target audience is: ${AUDIENCE_TEXT}. Ground everything in reaching them. The Audience section should start from this and go deeper.}
 
@@ -503,10 +577,13 @@ Write the brief. Be direct. Every word earns its place."
   echo "$brief_prompt" > "$tmpfile"
 
   local result=""
-  if claude_call "$tmpfile" "$BRIEF_SYSTEM"; then
+  VERBOSE_CALLER="report:generate"
+  if claude_call_no_cap "$tmpfile" "$BRIEF_SYSTEM"; then
     result="$CLAUDE_RESPONSE"
   else
-    result="[Brief generation failed. The transcript is available for manual review.]"
+    local err_detail=""
+    [ -n "$LAST_CLAUDE_ERROR" ] && err_detail=" $(echo "$LAST_CLAUDE_ERROR" | head -c 200)"
+    result="[Brief generation failed (exit=${LAST_CLAUDE_EXIT_CODE}).${err_detail} The transcript is available for manual review.]"
   fi
   rm -f "$tmpfile"
 
@@ -519,7 +596,7 @@ generate_manifesto() {
   local seed="$2"
   local the_line="$3"
   local words="${4:-400}"
-  local prior_brief="${5:-}"
+  local prior_sections="${5:-}"
   local low=$((words - words / 10))
   local high=$((words + words / 10))
 
@@ -528,7 +605,7 @@ You are a writer crafting a manifesto. Not a mission statement. Not a vision doc
 
 Stay within ${low}-${high} words.
 
-CRITICAL: Write as if these are your deepest convictions. No references to sessions, agents, research, or process. You believe this. You are putting a stake in the ground.
+CRITICAL: Write as if these are your deepest convictions. No references to sessions, lenses, research, or process. You believe this. You are putting a stake in the ground.
 ${AUDIENCE_TEXT:+
 This manifesto speaks to: ${AUDIENCE_TEXT}. Write as if they are reading it. The conviction must be about something they care about.}
 
@@ -547,13 +624,12 @@ Do not use section headers. This is one continuous piece. The structure is: the 
 MANIFESTOSYS
 
   local dedup_block=""
-  if [ -n "$prior_brief" ]; then
+  if [ -n "$prior_sections" ]; then
     dedup_block="
-TERRITORY ALREADY CLAIMED:
-A creative brief has already been written. It painted specific characters, scenes, and emotional ground. Your manifesto MUST NOT re-use the same characters, re-play the same scenes, or cover the same emotional territory. The brief describes who they are. You declare what we believe. Find DIFFERENT emotional ground - escalate from conviction, not from character portraits.
+ALREADY USED - DO NOT REPEAT:
+The following sections have already been written. Scan them for specific images, characters, scenes, phrases, and arguments. If you find yourself reaching for any of them, stop. Find completely different material from the transcript. Your manifesto declares what we believe - find DIFFERENT emotional ground from what has already been covered.
 
-BRIEF (already written):
-${prior_brief}
+${prior_sections}
 
 ---
 "
@@ -577,10 +653,13 @@ Write the manifesto. Open with the line in bold. Build conviction. End with a ca
   echo "$manifesto_prompt" > "$tmpfile"
 
   local result=""
-  if claude_call "$tmpfile" "$MANIFESTO_SYSTEM"; then
+  VERBOSE_CALLER="report:generate"
+  if claude_call_no_cap "$tmpfile" "$MANIFESTO_SYSTEM"; then
     result="$CLAUDE_RESPONSE"
   else
-    result="[Manifesto generation failed. The transcript is available for manual review.]"
+    local err_detail=""
+    [ -n "$LAST_CLAUDE_ERROR" ] && err_detail=" $(echo "$LAST_CLAUDE_ERROR" | head -c 200)"
+    result="[Manifesto generation failed (exit=${LAST_CLAUDE_EXIT_CODE}).${err_detail} The transcript is available for manual review.]"
   fi
   rm -f "$tmpfile"
 
@@ -605,7 +684,7 @@ generate_presentation() {
   echo "  Target: ${words} words (total)"
   echo "  Types: ${output_type}"
   if [ "$BUDGET_BRIEF" -gt 0 ] || [ "$BUDGET_MANIFESTO" -gt 0 ] || [ "$BUDGET_INSIGHT" -gt 0 ]; then
-    echo "  Budget: brief=${BUDGET_BRIEF}w manifesto=${BUDGET_MANIFESTO}w insight=${BUDGET_INSIGHT}w"
+    echo "  Budget: experiment=${BUDGET_EXPERIMENT}w brief=${BUDGET_BRIEF}w insight=${BUDGET_INSIGHT}w manifesto=${BUDGET_MANIFESTO}w"
   fi
   echo ""
 
@@ -632,11 +711,13 @@ generate_presentation() {
     fi
   fi
 
-  # ── Step 2: Generate in fixed order (brief -> manifesto -> insight) ──
-  # Brief first so its content can be passed to insight for dedup
-  local insight_content=""
+  # ── Step 2: Generate sections ──
+  # Order: Experiment -> Brief -> Insight -> Manifesto (each receives prior content for dedup)
+  local experiment_content=""
   local brief_content=""
+  local insight_content=""
   local manifesto_content=""
+  local prior_sections=""
 
   # Check which types are active
   local do_brief="" do_manifesto="" do_insight=""
@@ -648,29 +729,58 @@ generate_presentation() {
       insight) do_insight="true" ;;
     esac
   done
+  IFS=$' \t\n'
 
-  # Brief (always first - feeds into insight dedup)
+  # Experiment (always generated when budget allows)
+  if [ "$BUDGET_EXPERIMENT" -gt 0 ]; then
+    start_spinner "🧪 Writing experiment (~${BUDGET_EXPERIMENT}w)"
+    experiment_content=$(generate_experiment "$conversation_text" "$seed" "$BUDGET_EXPERIMENT" "$the_lines")
+    stop_spinner "done"
+    [ -n "$experiment_content" ] && prior_sections="EXPERIMENT:
+${experiment_content}"
+  fi
+
+  # Brief
   if [ -n "$do_brief" ] && [ "$BUDGET_BRIEF" -gt 0 ]; then
     start_spinner "📋 Writing creative brief (~${BUDGET_BRIEF}w)"
     brief_content=$(generate_brief "$conversation_text" "$seed" "$BUDGET_BRIEF")
     stop_spinner "done"
+    [ -n "$brief_content" ] && prior_sections="${prior_sections:+${prior_sections}
+
+---
+
+}BRIEF:
+${brief_content}"
   fi
 
-  # Manifesto
-  if [ -n "$do_manifesto" ] && [ "$BUDGET_MANIFESTO" -gt 0 ]; then
-    start_spinner "🔥 Writing manifesto (~${BUDGET_MANIFESTO}w)"
-    manifesto_content=$(generate_manifesto "$conversation_text" "$seed" "$first_line" "$BUDGET_MANIFESTO" "$brief_content")
-    stop_spinner "done"
-  fi
-
-  # Insight (last - receives brief content for dedup)
+  # Insight (receives experiment + brief for dedup)
   if [ -n "$do_insight" ] && [ "$BUDGET_INSIGHT" -gt 0 ]; then
     start_spinner "📝 Writing insight article (~${BUDGET_INSIGHT}w)"
-    insight_content=$(generate_insight "$conversation_text" "$seed" "$BUDGET_INSIGHT" "$brief_content")
+    insight_content=$(generate_insight "$conversation_text" "$seed" "$BUDGET_INSIGHT" "$prior_sections")
+    stop_spinner "done"
+    [ -n "$insight_content" ] && prior_sections="${prior_sections:+${prior_sections}
+
+---
+
+}INSIGHT:
+${insight_content}"
+  fi
+
+  # Manifesto (receives all prior for dedup)
+  if [ -n "$do_manifesto" ] && [ "$BUDGET_MANIFESTO" -gt 0 ]; then
+    start_spinner "🔥 Writing manifesto (~${BUDGET_MANIFESTO}w)"
+    manifesto_content=$(generate_manifesto "$conversation_text" "$seed" "$first_line" "$BUDGET_MANIFESTO" "$prior_sections")
     stop_spinner "done"
   fi
 
   # ── Step 3: Assemble output ──
+  local mode_label=""
+  case "${MODE:-dyslexic}" in
+    spiral) mode_label="🌀🌿 spiral" ;;
+    lapidary) mode_label="🪨✨ lapidary" ;;
+    *) mode_label="💫🔀 dyslexic" ;;
+  esac
+
   cat > "$output_file" << PRESHEADER
 # Think Different Presentation
 
@@ -680,13 +790,13 @@ generate_presentation() {
 ${turn_info:+> **Source:** ${turn_info}}
 ${BRAND_NAME:+> **Brand:** ${BRAND_NAME}}
 ${AUDIENCE_TEXT:+> **Audience:** ${AUDIENCE_TEXT}}
-${MODE:+> **Mode:** ${MODE}}
+${MODE:+> **Mode:** ${mode_label}}
 
 ---
 
 PRESHEADER
 
-  # The Line(s) - always first if we have them
+  # The Line(s) - the rallying cry
   if [ -n "$the_lines" ]; then
     echo "" >> "$output_file"
     echo "## The Line" >> "$output_file"
@@ -696,8 +806,28 @@ PRESHEADER
     echo "---" >> "$output_file"
   fi
 
-  # Creative brief (audience-actionable)
+  # The Experiment - hypothesis + what to try + success signal
+  if [ -n "$experiment_content" ]; then
+    echo "" >> "$output_file"
+    echo "## The Experiment" >> "$output_file"
+    echo "" >> "$output_file"
+    echo "$experiment_content" >> "$output_file"
+    echo "" >> "$output_file"
+    echo "---" >> "$output_file"
+  fi
+
+  # Insight article - the analytical why
+  if [ -n "$insight_content" ]; then
+    echo "" >> "$output_file"
+    echo "## Insight" >> "$output_file"
+    echo "" >> "$output_file"
+    echo "$insight_content" >> "$output_file"
+    echo "" >> "$output_file"
+  fi
+
+  # Creative brief - the how
   if [ -n "$brief_content" ]; then
+    echo "---" >> "$output_file"
     echo "" >> "$output_file"
     echo "## Creative Brief" >> "$output_file"
     echo "" >> "$output_file"
@@ -705,7 +835,7 @@ PRESHEADER
     echo "" >> "$output_file"
   fi
 
-  # Manifesto (audience-facing declaration)
+  # Manifesto - emotional declaration / the close
   if [ -n "$manifesto_content" ]; then
     echo "---" >> "$output_file"
     echo "" >> "$output_file"
@@ -715,22 +845,12 @@ PRESHEADER
     echo "" >> "$output_file"
   fi
 
-  # Insight article (analytical deep-dive)
-  if [ -n "$insight_content" ]; then
-    echo "---" >> "$output_file"
-    echo "" >> "$output_file"
-    echo "## Insight" >> "$output_file"
-    echo "" >> "$output_file"
-    echo "$insight_content" >> "$output_file"
-    echo "" >> "$output_file"
-  fi
-
   # Branded footer
   cat >> "$output_file" << 'FOOTER'
 
 ---
 
-<p align="center"><sub>Document prepared using the <a href="https://www.npmjs.com/package/@sinjin/think-different-framework">Think Different Framework</a> by <a href="https://sinjin.studio">Sinjin Studio</a></sub></p>
+*Document prepared using the [Think Different Framework](https://www.npmjs.com/package/@sinjin/think-different-framework) by [Sinjin Studio](https://sinjin.studio)*
 FOOTER
 
   # Return combined content for transcript embedding
@@ -738,6 +858,24 @@ FOOTER
   if [ -n "$the_lines" ]; then
     combined="THE LINE(S):
 ${the_lines}"
+  fi
+  if [ -n "$experiment_content" ]; then
+    combined="${combined}
+
+---
+
+THE EXPERIMENT:
+
+${experiment_content}"
+  fi
+  if [ -n "$insight_content" ]; then
+    combined="${combined}
+
+---
+
+INSIGHT:
+
+${insight_content}"
   fi
   if [ -n "$brief_content" ]; then
     combined="${combined}
@@ -756,15 +894,6 @@ ${brief_content}"
 MANIFESTO:
 
 ${manifesto_content}"
-  fi
-  if [ -n "$insight_content" ]; then
-    combined="${combined}
-
----
-
-INSIGHT:
-
-${insight_content}"
   fi
   echo "$combined"
 }
