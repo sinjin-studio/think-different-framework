@@ -5,25 +5,25 @@
 # 3 spirals, each ~10 turns + ground = ~34 steps
 #
 # Depends on:
-#   agents/cognitions/deepening/*.sh
-#   agents/perceivers/empath.sh, provocateur.sh, observer.sh, skeptic.sh
+#   lenses/cognitions/deepening/*.sh
+#   lenses/perceivers/empath.sh, provocateur.sh, observer.sh, skeptic.sh
 #   context/gather.sh, context/tune.sh
 #   mechanisms/friction.sh, mechanisms/reseed.sh, mechanisms/bias.sh
 
 run_session() {
   UNIT_LABEL="spiral"
 
-  # Source agents - conditional on is_agent_active
-  is_agent_active "diverger" && source "${SCRIPT_DIR}/agents/cognitions/deepening/diverger.sh"
-  is_agent_active "analogiser" && source "${SCRIPT_DIR}/agents/cognitions/deepening/analogiser.sh"
-  is_agent_active "integrator" && source "${SCRIPT_DIR}/agents/cognitions/deepening/integrator.sh"
-  is_agent_active "empath" && source "${SCRIPT_DIR}/agents/perceivers/empath.sh"
-  is_agent_active "provocateur" && source "${SCRIPT_DIR}/agents/perceivers/provocateur.sh"
-  is_agent_active "observer" && source "${SCRIPT_DIR}/agents/perceivers/observer.sh"
-  is_agent_active "skeptic" && source "${SCRIPT_DIR}/agents/perceivers/skeptic.sh"
-  is_agent_active "includer" && source "${SCRIPT_DIR}/agents/perceivers/includer.sh"
-  is_agent_active "achala" && source "${SCRIPT_DIR}/agents/perceivers/achala.sh"
-  is_agent_active "mortal" && source "${SCRIPT_DIR}/agents/perceivers/mortal.sh"
+  # Source lenses - conditional on is_lens_active
+  is_lens_active "diverger" && source "${SCRIPT_DIR}/lenses/cognitions/deepening/diverger.sh"
+  is_lens_active "analogiser" && source "${SCRIPT_DIR}/lenses/cognitions/deepening/analogiser.sh"
+  is_lens_active "integrator" && source "${SCRIPT_DIR}/lenses/cognitions/deepening/integrator.sh"
+  is_lens_active "empath" && source "${SCRIPT_DIR}/lenses/perceivers/empath.sh"
+  is_lens_active "provocateur" && source "${SCRIPT_DIR}/lenses/perceivers/provocateur.sh"
+  is_lens_active "observer" && source "${SCRIPT_DIR}/lenses/perceivers/observer.sh"
+  is_lens_active "skeptic" && source "${SCRIPT_DIR}/lenses/perceivers/skeptic.sh"
+  is_lens_active "includer" && source "${SCRIPT_DIR}/lenses/perceivers/includer.sh"
+  is_lens_active "achala" && source "${SCRIPT_DIR}/lenses/perceivers/achala.sh"
+  is_lens_active "mortal" && source "${SCRIPT_DIR}/lenses/perceivers/mortal.sh"
 
   # Source context and mechanisms
   source "${SCRIPT_DIR}/context/gather.sh"
@@ -33,6 +33,7 @@ run_session() {
   source "${SCRIPT_DIR}/mechanisms/reseed.sh"
   source "${SCRIPT_DIR}/mechanisms/bias.sh"
   source "${SCRIPT_DIR}/mechanisms/transcendence.sh"
+  source "${SCRIPT_DIR}/mechanisms/void.sh"
 
   # Gather context, then tune (grounding is embedded in tuning)
   gather_project_context || true
@@ -41,7 +42,7 @@ run_session() {
   [ "$CAP_LIMIT_HIT" = "true" ] && return 0
 
   # Determine spiral count (default 3)
-  local total_spirals="${SPIRAL_COUNT:-3}"
+  local total_spirals="${SPIRAL_COUNT:-5}"
 
   # ── SPIRAL 1 ──
   if [ "$total_spirals" -ge 1 ]; then
@@ -82,7 +83,7 @@ run_session() {
 
     mark_phase "Integrate" "Naming the Unnamed"
     dispatch_round \
-      "integrator:integrate:1:CRYSTALLISE. Name the thing that is forming in the negative space between these positions. Find the insight none of the individual agents could have reached. If you can coin a term or identify a productive paradox, do it. This will be used to re-seed the next spiral."
+      "integrator:integrate:1:CRYSTALLISE. Name the thing that is forming in the negative space between these positions. Find the insight none of the individual lenses could have reached. If you can coin a term or identify a productive paradox, do it. This will be used to re-seed the next spiral."
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
 
     # Reseed
@@ -135,11 +136,16 @@ run_session() {
       "integrator:integrate:2:Two spirals of thinking. What has emerged that nobody planned? What pattern is forming across the spirals themselves, not just within them? Name it precisely."
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
 
-    # Friction + transcendence + reseed
+    # Friction + void + transcendence + reseed
     detect_prediction_errors 2 || true
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
-    transcendence_check 2 || true
+    handle_friction_decision 2
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    map_negative_space 2 || true
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    handle_void_decision 2
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    # Transcendence moved to after spiral 3 in extended spirals loop
     if [ "$total_spirals" -ge 3 ]; then
       local RESEED_2
       RESEED_2=$(extract_reseed 2)
@@ -228,8 +234,29 @@ run_session() {
 
     detect_prediction_errors "$s" || true
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    handle_friction_decision "$s"
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
     detect_cognitive_bias "$s" || true
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+
+    # Transcendence + void checks from spiral 3 onwards
+    if [ "$s" -ge 3 ]; then
+      if [ "$VOID_ENABLED" = "true" ]; then
+        map_negative_space "$s" || true
+        [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+        handle_void_decision "$s"
+        [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+      fi
+      if [ "$TRANSCENDENCE_ENABLED" = "true" ]; then
+        transcendence_check "$s" || true
+        [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+        handle_transcendence_decision
+        if [ "$MECHANISM_SKIP_TO_GROUND" = "true" ]; then
+          s=$((s + 1))
+          break
+        fi
+      fi
+    fi
 
     mark_phase "Integrate" "Crystallisation"
     dispatch_round \
@@ -246,12 +273,12 @@ run_session() {
 
   local final_spiral="$total_spirals"
   mark_phase "Ground" "Landing the Insight"
-  if is_agent_active "empath"; then
-    call_agent "empath" "ground" "$final_spiral" "The session is ending. What is new here? What would actually change behaviour? Strip away every metaphor and say what remains. Identify the 1-3 ideas that pass the simplicity test. For each one: what is the smallest experiment someone could do tomorrow?" || true
+  if is_lens_active "empath"; then
+    call_lens "empath" "ground" "$final_spiral" "The session is ending. What is new here? What would actually change behaviour? Strip away every metaphor and say what remains. Identify the 1-3 ideas that pass the simplicity test. For each one: what is the smallest experiment someone could do tomorrow?" || true
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
   fi
-  if is_agent_active "integrator"; then
-    call_agent "integrator" "ground" "$final_spiral" "Final word. Name the single most important insight. State it simply. Then state it even more simply. Make it count." || true
+  if is_lens_active "integrator"; then
+    call_lens "integrator" "ground" "$final_spiral" "Final word. Name the single most important insight. State it simply. Then state it even more simply. Make it count." || true
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
   fi
 }

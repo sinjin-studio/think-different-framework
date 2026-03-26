@@ -10,30 +10,30 @@
 # 3 passes + ground = ~23 steps
 #
 # Depends on:
-#   agents/cognitions/evaluative/*.sh
-#   agents/hybrids/logician.sh
-#   agents/perceivers/empath.sh, connoisseur.sh, provocateur.sh, observer.sh, skeptic.sh
+#   lenses/cognitions/evaluative/*.sh
+#   lenses/hybrids/logician.sh
+#   lenses/perceivers/empath.sh, connoisseur.sh, provocateur.sh, observer.sh, skeptic.sh
 #   context/gather.sh, context/appraise.sh
 #   mechanisms/friction.sh, mechanisms/polish.sh, mechanisms/bias.sh
-#   lib/call_agent.sh, lib/markers.sh
+#   lib/call_lens.sh, lib/markers.sh
 
 run_session() {
   UNIT_LABEL="pass"
 
-  # Source evaluative cognitions - conditional on is_agent_active
-  is_agent_active "appraiser" && source "${SCRIPT_DIR}/agents/cognitions/evaluative/appraiser.sh"
-  is_agent_active "historian" && source "${SCRIPT_DIR}/agents/cognitions/evaluative/historian.sh"
-  is_agent_active "editor" && source "${SCRIPT_DIR}/agents/cognitions/evaluative/editor.sh"
+  # Source evaluative cognitions - conditional on is_lens_active
+  is_lens_active "appraiser" && source "${SCRIPT_DIR}/lenses/cognitions/evaluative/appraiser.sh"
+  is_lens_active "historian" && source "${SCRIPT_DIR}/lenses/cognitions/evaluative/historian.sh"
+  is_lens_active "editor" && source "${SCRIPT_DIR}/lenses/cognitions/evaluative/editor.sh"
 
   # Source perceivers
-  is_agent_active "empath" && source "${SCRIPT_DIR}/agents/perceivers/empath.sh"
-  is_agent_active "connoisseur" && source "${SCRIPT_DIR}/agents/perceivers/connoisseur.sh"
-  is_agent_active "provocateur" && source "${SCRIPT_DIR}/agents/perceivers/provocateur.sh"
-  is_agent_active "observer" && source "${SCRIPT_DIR}/agents/perceivers/observer.sh"
-  is_agent_active "skeptic" && source "${SCRIPT_DIR}/agents/perceivers/skeptic.sh"
-  is_agent_active "achala" && source "${SCRIPT_DIR}/agents/perceivers/achala.sh"
-  is_agent_active "mortal" && source "${SCRIPT_DIR}/agents/perceivers/mortal.sh"
-  is_agent_active "logician" && source "${SCRIPT_DIR}/agents/hybrids/logician.sh"
+  is_lens_active "empath" && source "${SCRIPT_DIR}/lenses/perceivers/empath.sh"
+  is_lens_active "connoisseur" && source "${SCRIPT_DIR}/lenses/perceivers/connoisseur.sh"
+  is_lens_active "provocateur" && source "${SCRIPT_DIR}/lenses/perceivers/provocateur.sh"
+  is_lens_active "observer" && source "${SCRIPT_DIR}/lenses/perceivers/observer.sh"
+  is_lens_active "skeptic" && source "${SCRIPT_DIR}/lenses/perceivers/skeptic.sh"
+  is_lens_active "achala" && source "${SCRIPT_DIR}/lenses/perceivers/achala.sh"
+  is_lens_active "mortal" && source "${SCRIPT_DIR}/lenses/perceivers/mortal.sh"
+  is_lens_active "logician" && source "${SCRIPT_DIR}/lenses/hybrids/logician.sh"
 
   # Source context and mechanisms
   source "${SCRIPT_DIR}/context/gather.sh"
@@ -43,6 +43,7 @@ run_session() {
   source "${SCRIPT_DIR}/mechanisms/polish.sh"
   source "${SCRIPT_DIR}/mechanisms/bias.sh"
   source "${SCRIPT_DIR}/mechanisms/transcendence.sh"
+  source "${SCRIPT_DIR}/mechanisms/void.sh"
 
   # Gather context, then appraise (grounding is embedded in appraisal)
   gather_project_context || true
@@ -51,7 +52,7 @@ run_session() {
   [ "$CAP_LIMIT_HIT" = "true" ] && return 0
 
   # Determine pass count (default 3)
-  local total_passes="${PASS_COUNT:-3}"
+  local total_passes="${PASS_COUNT:-5}"
 
   # ── PASS 1: Rough Cut ──
   # Establish the material, first quality judgement
@@ -67,8 +68,12 @@ run_session() {
       "connoisseur:evaluate:1:First quality assessment. Is this material worth making well? Not every seed is. Be honest. What is the quality of the raw material after this first rough cut? Where do you sense potential for something that could sing?"
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
 
-    # Polish between passes 1 and 2
+    # Polish + void between passes 1 and 2
     polish 1 || true
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    map_negative_space 1 || true
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    handle_void_decision 1
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
   fi
 
@@ -89,10 +94,11 @@ run_session() {
     # Friction + polish between passes 2 and 3
     detect_prediction_errors 2 || true
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    handle_friction_decision 2
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
     polish 2 || true
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
-    transcendence_check 2 || true
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    # Transcendence moved to after pass 3 in extended passes loop
   fi
 
   # ── PASS 3: Facet ──
@@ -129,8 +135,30 @@ run_session() {
 
     detect_prediction_errors "$p" || true
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    handle_friction_decision "$p"
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
     polish "$p" || true
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+
+    # Transcendence + void checks from pass 3 onwards
+    if [ "$p" -ge 3 ]; then
+      if [ "$VOID_ENABLED" = "true" ]; then
+        map_negative_space "$p" || true
+        [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+        handle_void_decision "$p"
+        [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+      fi
+      if [ "$TRANSCENDENCE_ENABLED" = "true" ]; then
+        transcendence_check "$p" || true
+        [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+        handle_transcendence_decision
+        if [ "$MECHANISM_SKIP_TO_GROUND" = "true" ]; then
+          p=$((p + 1))
+          break
+        fi
+      fi
+    fi
+
     p=$((p + 1))
   done
 
@@ -142,12 +170,12 @@ run_session() {
 
   local final_pass="$total_passes"
   mark_phase "Ground" "Landing the Insight"
-  if is_agent_active "empath"; then
-    call_agent "empath" "ground" "$final_pass" "The session is ending. Three passes of refinement have shaped this material. Forget the craft for a moment. What does the person at the centre of this actually need? What would change their behaviour? Strip away everything and say what remains. Identify the 1-3 ideas that pass the simplicity test. For each: what is the smallest experiment someone could do tomorrow?" || true
+  if is_lens_active "empath"; then
+    call_lens "empath" "ground" "$final_pass" "The session is ending. Three passes of refinement have shaped this material. Forget the craft for a moment. What does the person at the centre of this actually need? What would change their behaviour? Strip away everything and say what remains. Identify the 1-3 ideas that pass the simplicity test. For each: what is the smallest experiment someone could do tomorrow?" || true
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
   fi
-  if is_agent_active "editor"; then
-    call_agent "editor" "ground" "$final_pass" "Final word. The Empath has landed the insight in human terms. Now give it its final form. State the single most important insight from this session in the most precise, economical language you can. Then state it again even more simply. Both versions should be true. Make every word load-bearing." || true
+  if is_lens_active "editor"; then
+    call_lens "editor" "ground" "$final_pass" "Final word. The Empath has landed the insight in human terms. Now give it its final form. State the single most important insight from this session in the most precise, economical language you can. Then state it again even more simply. Both versions should be true. Make every word load-bearing." || true
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
   fi
 }

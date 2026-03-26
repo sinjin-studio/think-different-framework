@@ -3,42 +3,42 @@
 # Fragmentary thinking: decompose, associate, scale, reify
 # Perceivers: empath, provocateur, observer, mortal, child, includer
 # Skeptic excluded by default but can be force-included (placed in Round 3)
-# ~25 agent turns + 3 friction + 1 sensory + 1 bias = ~30 steps
+# ~25 lens turns + 3 friction + 1 sensory + 1 bias = ~30 steps
 #
 # Depends on:
-#   agents/cognitions/fragmentary/*.sh
-#   agents/hybrids/logician.sh
-#   agents/perceivers/empath.sh, provocateur.sh, observer.sh, mortal.sh, child.sh
+#   lenses/cognitions/fragmentary/*.sh
+#   lenses/hybrids/logician.sh
+#   lenses/perceivers/empath.sh, provocateur.sh, observer.sh, mortal.sh, child.sh
 #   context/gather.sh, context/fracture.sh
 #   mechanisms/friction.sh, mechanisms/sensory.sh, mechanisms/bias.sh
-#   lib/call_agent.sh, lib/markers.sh
+#   lib/call_lens.sh, lib/markers.sh
 
 run_session() {
   UNIT_LABEL="round"
 
-  # Source agents - conditional on is_agent_active
-  is_agent_active "decomposer" && source "${SCRIPT_DIR}/agents/cognitions/fragmentary/decomposer.sh"
-  is_agent_active "associator" && source "${SCRIPT_DIR}/agents/cognitions/fragmentary/associator.sh"
-  is_agent_active "scaler" && source "${SCRIPT_DIR}/agents/cognitions/fragmentary/scaler.sh"
-  is_agent_active "reifier" && source "${SCRIPT_DIR}/agents/cognitions/fragmentary/reifier.sh"
-  is_agent_active "empath" && source "${SCRIPT_DIR}/agents/perceivers/empath.sh"
-  is_agent_active "provocateur" && source "${SCRIPT_DIR}/agents/perceivers/provocateur.sh"
-  is_agent_active "observer" && source "${SCRIPT_DIR}/agents/perceivers/observer.sh"
-  is_agent_active "mortal" && source "${SCRIPT_DIR}/agents/perceivers/mortal.sh"
-  is_agent_active "child" && source "${SCRIPT_DIR}/agents/perceivers/child.sh"
-  is_agent_active "includer" && source "${SCRIPT_DIR}/agents/perceivers/includer.sh"
-  is_agent_active "achala" && source "${SCRIPT_DIR}/agents/perceivers/achala.sh"
-  is_agent_active "logician" && source "${SCRIPT_DIR}/agents/hybrids/logician.sh"
+  # Source lenses - conditional on is_lens_active
+  is_lens_active "decomposer" && source "${SCRIPT_DIR}/lenses/cognitions/fragmentary/decomposer.sh"
+  is_lens_active "associator" && source "${SCRIPT_DIR}/lenses/cognitions/fragmentary/associator.sh"
+  is_lens_active "scaler" && source "${SCRIPT_DIR}/lenses/cognitions/fragmentary/scaler.sh"
+  is_lens_active "reifier" && source "${SCRIPT_DIR}/lenses/cognitions/fragmentary/reifier.sh"
+  is_lens_active "empath" && source "${SCRIPT_DIR}/lenses/perceivers/empath.sh"
+  is_lens_active "provocateur" && source "${SCRIPT_DIR}/lenses/perceivers/provocateur.sh"
+  is_lens_active "observer" && source "${SCRIPT_DIR}/lenses/perceivers/observer.sh"
+  is_lens_active "mortal" && source "${SCRIPT_DIR}/lenses/perceivers/mortal.sh"
+  is_lens_active "child" && source "${SCRIPT_DIR}/lenses/perceivers/child.sh"
+  is_lens_active "includer" && source "${SCRIPT_DIR}/lenses/perceivers/includer.sh"
+  is_lens_active "achala" && source "${SCRIPT_DIR}/lenses/perceivers/achala.sh"
+  is_lens_active "logician" && source "${SCRIPT_DIR}/lenses/hybrids/logician.sh"
 
   # Skeptic: excluded by default in dyslexic, but --include skeptic overrides
   local skeptic_included="false"
-  if [ ${#INCLUDE_AGENTS[@]} -gt 0 ]; then
-  for inc in "${INCLUDE_AGENTS[@]}"; do
+  if [ ${#INCLUDE_LENSES[@]} -gt 0 ]; then
+  for inc in "${INCLUDE_LENSES[@]}"; do
     [ "$inc" = "skeptic" ] && skeptic_included="true"
   done
   fi
   if [ "$skeptic_included" = "true" ]; then
-    source "${SCRIPT_DIR}/agents/perceivers/skeptic.sh"
+    source "${SCRIPT_DIR}/lenses/perceivers/skeptic.sh"
   fi
 
   # Source context and mechanisms
@@ -49,6 +49,7 @@ run_session() {
   source "${SCRIPT_DIR}/mechanisms/sensory.sh"
   source "${SCRIPT_DIR}/mechanisms/bias.sh"
   source "${SCRIPT_DIR}/mechanisms/transcendence.sh"
+  source "${SCRIPT_DIR}/mechanisms/void.sh"
 
   # Gather context, then fracture (grounding is embedded in fracture)
   gather_project_context || true
@@ -57,7 +58,7 @@ run_session() {
   [ "$CAP_LIMIT_HIT" = "true" ] && return 0
 
   # Determine round count (default 4)
-  local total_rounds="${ROUND_COUNT:-4}"
+  local total_rounds="${ROUND_COUNT:-7}"
 
   # ── ROUND 1: First Fragments ──
   if [ "$total_rounds" -ge 1 ]; then
@@ -74,6 +75,8 @@ run_session() {
 
     # Friction between rounds 1 and 2
     detect_prediction_errors 1 || true
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    handle_friction_decision 1
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
   fi
 
@@ -101,8 +104,8 @@ run_session() {
   if [ "$total_rounds" -ge 3 ]; then
     mark_round 3 "Deep Fragments"
 
-    # Build round 3 agents - skeptic placed here if force-included
-    local round3_agents=(
+    # Build round 3 lenses - skeptic placed here if force-included
+    local round3_lenses=(
       "decomposer:decompose:3:Two rounds of thinking are loaded and friction has been identified twice. Go back to the original seed and fragment it again, but this time you see differently. The blind spots and contradictions from previous rounds are your guide. What piece of the seed looks completely different now?"
       "mortal:urgency:3:Three rounds of thinking. What is being deferred? What is the conversation assuming there is time for that there might not be? If the person at the centre had one year to act on this, which of these ideas would survive and which would fall away? Name the cost of waiting in lived time."
       "associator:associate:3:Three rounds of fragments, scale shifts, and reality checks. Two rounds of friction. What is the most daring connection you can make? Connect something from round 1 to something from round 3 through a domain nobody has mentioned."
@@ -113,19 +116,22 @@ run_session() {
 
     # Insert skeptic in Round 3 if force-included
     if [ "$skeptic_included" = "true" ]; then
-      round3_agents+=("skeptic:question:3:The conversation has been building for three rounds. You see what doesn't fit. What incongruence is everyone walking past? What is in plain sight but invisible because of how they are looking?")
+      round3_lenses+=("skeptic:question:3:The conversation has been building for three rounds. You see what doesn't fit. What incongruence is everyone walking past? What is in plain sight but invisible because of how they are looking?")
     fi
 
-    dispatch_round "${round3_agents[@]}"
+    dispatch_round "${round3_lenses[@]}"
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
 
-    # Friction + bias check
+    # Friction + void + bias check
     detect_prediction_errors 3 || true
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    map_negative_space 3 || true
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    handle_void_decision 3
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
     detect_cognitive_bias 3 || true
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
-    transcendence_check 3 || true
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    # Transcendence moved to after round 5 in extended rounds loop
   fi
 
   # ── Additional middle rounds if --rounds > 4 ──
@@ -142,6 +148,26 @@ run_session() {
 
     detect_prediction_errors "$r" || true
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+
+    # Transcendence + void checks from round 5 onwards
+    if [ "$r" -ge 5 ]; then
+      if [ "$VOID_ENABLED" = "true" ]; then
+        map_negative_space "$r" || true
+        [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+        handle_void_decision "$r"
+        [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+      fi
+      if [ "$TRANSCENDENCE_ENABLED" = "true" ]; then
+        transcendence_check "$r" || true
+        [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+        handle_transcendence_decision
+        if [ "$MECHANISM_SKIP_TO_GROUND" = "true" ]; then
+          r=$((r + 1))
+          break
+        fi
+      fi
+    fi
+
     r=$((r + 1))
   done
 
@@ -151,7 +177,7 @@ run_session() {
   mark_round "$final_round" "Constellation"
 
   dispatch_round \
-    "reifier:reify:${final_round}:This is your moment. Multiple rounds of fragments, connections, scale shifts, and reality checks. The mismatches between agents' views are the most important signal. Step back and look at all of it. What is the constellation? What shape connects the most surprising CONTRADICTIONS, not just the agreements? Name the thing." \
+    "reifier:reify:${final_round}:This is your moment. Multiple rounds of fragments, connections, scale shifts, and reality checks. The mismatches between lenses' views are the most important signal. Step back and look at all of it. What is the constellation? What shape connects the most surprising CONTRADICTIONS, not just the agreements? Name the thing." \
     "associator:associate:${final_round}:The Reifier just drew a constellation. What adjacent thing does that constellation look like? What else in the world has this same shape? One final connection that makes the named insight feel inevitable rather than invented." \
     "achala:devotion:${final_round}:The constellation has been named. Now ask: is this worthy of devotion? Would someone give their time, their reputation, their sleep to this? If not, what would make it worthy?" \
     "mortal:urgency:${final_round}:Achala named what is sacred. Now name the cost of not acting on it. What is being lost while this remains an idea instead of a thing in the world? If this constellation is true, what is the price of another quarter of deliberation?" \
@@ -164,12 +190,12 @@ run_session() {
   md_append_section 2 "Grounding"
 
   mark_phase "Ground" "Landing the Insight"
-  if is_agent_active "empath"; then
-    call_agent "empath" "ground" "$final_round" "This is the end. Deliver the verdict. What is new here? What would actually change behaviour, create value, solve a real problem? Strip away the metaphors. Say what remains. Identify the 1-3 ideas that pass the simplicity test. For each one: what is the smallest experiment someone could take tomorrow?" || true
+  if is_lens_active "empath"; then
+    call_lens "empath" "ground" "$final_round" "This is the end. Deliver the verdict. What is new here? What would actually change behaviour, create value, solve a real problem? Strip away the metaphors. Say what remains. Identify the 1-3 ideas that pass the simplicity test. For each one: what is the smallest experiment someone could take tomorrow?" || true
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
   fi
-  if is_agent_active "reifier"; then
-    call_agent "reifier" "ground" "$final_round" "Final word. State the single most important insight from this entire session. State it once with nuance. Then state it again in one sentence a child could understand. Both versions should be true. Make it portable enough to carry into real work." || true
+  if is_lens_active "reifier"; then
+    call_lens "reifier" "ground" "$final_round" "Final word. State the single most important insight from this entire session. State it once with nuance. Then state it again in one sentence a child could understand. Both versions should be true. Make it portable enough to carry into real work." || true
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
   fi
 }
