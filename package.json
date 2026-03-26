@@ -1,7 +1,10 @@
 {
   "name": "@sinjin/think-different-framework",
   "version": "0.3.0",
-  "description": "Multi-agent structured divergence framework for Claude Code CLI. Multiple AI agents with different cognitive modes think together, then distil their collisions into insight.",
+  "description": "Multi-lens structured divergence framework for Claude Code CLI. Multiple cognitive lenses think together, then distil their collisions into insight.",
+  "scripts": {
+    "harness": "node bin/harness.js"
+  },
   "bin": {
     "think-different": "bin/think-different.js",
     "td": "bin/think-different.js"
@@ -10,12 +13,13 @@
     "think.sh",
     "bin/",
     "lib/",
-    "agents/",
+    "lenses/",
     "context/",
     "mechanisms/",
     "modes/",
     "report/",
     "docs/",
+    "harness/",
     "taxonomy.svg",
     "README.md",
     "LICENSE"
@@ -24,7 +28,7 @@
     "claude",
     "ai",
     "divergent-thinking",
-    "multi-agent",
+    "multi-lens",
     "dyslexic-thinking",
     "creative-framework",
     "claude-code"

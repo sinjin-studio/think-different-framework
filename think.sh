@@ -5,7 +5,7 @@
 #  Here's to the crazy ones. The misfits. The rebels.
 #  The troublemakers. The round pegs in square holes.
 #
-#  Multi-agent structured divergence via Claude Code CLI.
+#  Multi-lens structured divergence via Claude Code CLI.
 #  Three-level taxonomy: perceivers, cognitions, compositions.
 #
 #  Usage:
@@ -52,13 +52,17 @@ PICK_MODE=""
 RESUME_FILE=""
 
 # ── Experimental composition flags ──
-INCLUDE_AGENTS=()
-EXCLUDE_AGENTS=()
+INCLUDE_LENSES=()
+EXCLUDE_LENSES=()
 FRICTION_ENABLED="true"
 BIAS_ENABLED="true"
 SENSORY_ENABLED="true"
 TRANSCENDENCE_ENABLED="true"
+VOID_ENABLED="true"
 SHUFFLE_ENABLED="false"
+AUTONOMOUS_MODE="true"
+SKIP_STRICT=""
+COMPACT_ENABLED="false"
 GROUND_ENABLED="true"
 GROUND_ONLY=""
 SEED_COUNT=""
@@ -72,7 +76,7 @@ OUTPUT_TYPE="insight,brief,manifesto"
 TYPE_EXPLICIT=""
 LINE_COUNT=3
 LINE_PRACTITIONERS=""
-HTML_ENABLED="true"
+HTML_ENABLED="false"
 REPORT_FORMATS="all"
 
 show_help() {
@@ -109,14 +113,14 @@ show_help() {
   echo "    --notes TEXT     Generate provocations from working notes"
   echo "    --audience TEXT  Target audience (auto-inferred from input if not set)"
   echo "    --seeds N        Number of provocations to generate (default: 3, max: 12)"
-  echo "    --tone TONE      Provocation tone: provocative (default), generous, intimate,"
+  echo "    --tone TONE      Provocation tone: provocative (default), generous, personal,"
   echo "                     absurd, daydream, mixed. Comma-separated for custom mix"
   echo "    --type TYPES     Output types: insight,brief,manifesto (default: all three)"
   echo "                     Comma-separated list. Each type is a section in the output"
   echo "    --lines N        Number of rallying lines to generate (default: 3, max: 7)"
   echo "    --practitioners  Comma-separated list of creative practitioners as quality bar"
   echo "                     (default: random 3 from built-in pool)"
-  echo "    --no-html        Skip HTML presentation generation"
+  echo "    --html           Enable HTML presentation generation (experimental, off by default)"
   echo "    --formats LIST   Output formats for --report-only: all, md, doc, html"
   echo "                     (comma-separated. doc/html skip token usage if .md exists)"
   echo "    --pick           Interactively select which provocations to run"
@@ -126,16 +130,23 @@ show_help() {
   echo "    --help           Show this help"
   echo ""
   echo "  Experimental:"
-  echo "    --include A,B    Force-include agents by key (e.g. skeptic,mortal)"
-  echo "    --exclude A,B    Force-exclude agents by key"
+  echo "    --include A,B    Force-include lenses by key (e.g. skeptic,mortal)"
+  echo "    --exclude A,B    Force-exclude lenses by key"
   echo "    --no-friction    Skip friction detection between rounds"
   echo "    --no-bias        Skip cognitive bias checks"
   echo "    --no-sensory     Skip sensory/context re-injection"
   echo "    --no-transcendence  Skip transcendence check"
-  echo "    --rounds N       Number of rounds (dyslexic default: 4)"
-  echo "    --spirals N      Number of spirals (spiral default: 3)"
-  echo "    --passes N       Number of passes (lapidary default: 3)"
-  echo "    --shuffle        Randomize agent order within each round/phase"
+  echo "    --no-void        Skip negative space mapping"
+  echo "    --rounds N       Number of rounds (dyslexic default: 7)"
+  echo "    --spirals N      Number of spirals (spiral default: 5)"
+  echo "    --passes N       Number of passes (lapidary default: 5)"
+  echo "    --turns N        Max turns for autonomous conductor (default: 35)"
+  echo "    --min-turns N    Min turns before conductor can end session (default: 15)"
+  echo "    --shuffle        Randomize lens order within each round/phase"
+  echo "    --autonomous     Enable agentic mode (default: on)"
+  echo "    --no-autonomous  Disable agentic mode, use hardcoded composition sequences"
+  echo "    --skip-strict    Use separate pre-call for skip-turn (default: inline detection)"
+  echo "    --compact        Enable context compaction (off by default, opt in for very long sessions)"
   echo "    --no-ground      Skip assumption grounding embedded in seed prep"
   echo "    --ground-only    Run only the grounding step, then exit"
   echo "    --allowedTools T Tools for Claude CLI (default: \"WebSearch,WebFetch\", use \"\" to disable)"
@@ -194,12 +205,12 @@ while [ $# -gt 0 ]; do
       ;;
     --include)
       shift
-      IFS=',' read -ra INCLUDE_AGENTS <<< "$1"
+      IFS=',' read -ra INCLUDE_LENSES <<< "$1"
       shift
       ;;
     --exclude)
       shift
-      IFS=',' read -ra EXCLUDE_AGENTS <<< "$1"
+      IFS=',' read -ra EXCLUDE_LENSES <<< "$1"
       shift
       ;;
     --no-friction)
@@ -218,6 +229,10 @@ while [ $# -gt 0 ]; do
       TRANSCENDENCE_ENABLED="false"
       shift
       ;;
+    --no-void)
+      VOID_ENABLED="false"
+      shift
+      ;;
     --rounds)
       shift
       ROUND_COUNT="$1"
@@ -233,8 +248,36 @@ while [ $# -gt 0 ]; do
       PASS_COUNT="$1"
       shift
       ;;
+    --turns)
+      shift
+      CONDUCTOR_MAX_TURNS="$1"
+      export CONDUCTOR_MAX_TURNS
+      shift
+      ;;
+    --min-turns)
+      shift
+      CONDUCTOR_MIN_TURNS="$1"
+      export CONDUCTOR_MIN_TURNS
+      shift
+      ;;
     --shuffle)
       SHUFFLE_ENABLED="true"
+      shift
+      ;;
+    --autonomous)
+      AUTONOMOUS_MODE="true"
+      shift
+      ;;
+    --no-autonomous)
+      AUTONOMOUS_MODE="false"
+      shift
+      ;;
+    --skip-strict)
+      SKIP_STRICT="true"
+      shift
+      ;;
+    --compact)
+      COMPACT_ENABLED="true"
       shift
       ;;
     --no-ground)
@@ -299,8 +342,8 @@ while [ $# -gt 0 ]; do
       LINE_PRACTITIONERS="$1"
       shift
       ;;
-    --no-html)
-      HTML_ENABLED="false"
+    --html)
+      HTML_ENABLED="true"
       shift
       ;;
     --formats)
@@ -360,14 +403,14 @@ fi
 
 # Expand "mixed" shorthand and validate tone(s)
 if [ "$PROVOCATION_TONE" = "mixed" ]; then
-  PROVOCATION_TONE="provocative,generous,intimate,absurd,daydream"
+  PROVOCATION_TONE="provocative,generous,personal,absurd,daydream"
 fi
 IFS=',' read -ra _TONE_CHECK <<< "$PROVOCATION_TONE"
 for _t in "${_TONE_CHECK[@]}"; do
   case "$_t" in
-    provocative|generous|intimate|absurd|daydream) ;;
+    provocative|generous|personal|absurd|daydream) ;;
     *)
-      echo "Error: unknown tone '$_t'. Use: provocative, generous, intimate, absurd, daydream, or mixed"
+      echo "Error: unknown tone '$_t'. Use: provocative, generous, personal, absurd, daydream, or mixed"
       exit 1
       ;;
   esac
@@ -462,7 +505,8 @@ source "${SCRIPT_DIR}/lib/json.sh"
 source "${SCRIPT_DIR}/lib/md.sh"
 source "${SCRIPT_DIR}/lib/markers.sh"
 source "${SCRIPT_DIR}/lib/cap_check.sh"
-source "${SCRIPT_DIR}/lib/call_agent.sh"
+source "${SCRIPT_DIR}/lib/call_lens.sh"
+source "${SCRIPT_DIR}/lib/conductor_loop.sh"
 source "${SCRIPT_DIR}/lib/spinner.sh"
 source "${SCRIPT_DIR}/report/generate.sh"
 
@@ -681,11 +725,16 @@ for entry in data:
   echo "  🪟 THINK DIFFERENT FRAMEWORK - Resuming"
   echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo "  Seed: ${SEED_TOPIC:0:80}"
-  echo "  Mode: $MODE"
+  local mode_emoji="💫🔀"
+  case "$MODE" in
+    spiral)   mode_emoji="🌀🌿" ;;
+    lapidary) mode_emoji="🪨✨" ;;
+  esac
+  echo "  Mode: ${mode_emoji} $MODE"
   echo "  Resuming from turn: $RESUME_FROM_TURN"
   echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-  # Source and run the mode (skip logic handled by call_agent)
+  # Source and run the mode (skip logic handled by call_lens)
   source "${SCRIPT_DIR}/modes/${MODE}.sh"
   run_session || true
 
@@ -748,16 +797,18 @@ source "${SCRIPT_DIR}/report/synthesise.sh"
 CONVERSATION=""
 TURN_COUNT=0
 PROJECT_CONTEXT=""
+ZEITGEIST_CONTEXT=""
+ZEITGEIST_SOURCES=()
 
 # ── Build experiment banner lines ──
 EXPERIMENT_LINES=()
-if [ ${#INCLUDE_AGENTS[@]} -gt 0 ]; then
-for inc in "${INCLUDE_AGENTS[@]}"; do
+if [ ${#INCLUDE_LENSES[@]} -gt 0 ]; then
+for inc in "${INCLUDE_LENSES[@]}"; do
   EXPERIMENT_LINES+=("    + ${inc} (included via --include)")
 done
 fi
-if [ ${#EXCLUDE_AGENTS[@]} -gt 0 ]; then
-for exc in "${EXCLUDE_AGENTS[@]}"; do
+if [ ${#EXCLUDE_LENSES[@]} -gt 0 ]; then
+for exc in "${EXCLUDE_LENSES[@]}"; do
   EXPERIMENT_LINES+=("    - ${exc} (excluded via --exclude)")
 done
 fi
@@ -765,10 +816,21 @@ fi
 [ "$BIAS_ENABLED" != "true" ] && EXPERIMENT_LINES+=("    - bias (disabled via --no-bias)")
 [ "$SENSORY_ENABLED" != "true" ] && EXPERIMENT_LINES+=("    - sensory (disabled via --no-sensory)")
 [ "$TRANSCENDENCE_ENABLED" != "true" ] && EXPERIMENT_LINES+=("    - transcendence (disabled via --no-transcendence)")
+[ "$VOID_ENABLED" != "true" ] && EXPERIMENT_LINES+=("    - void (disabled via --no-void)")
 [ -n "$ROUND_COUNT" ] && EXPERIMENT_LINES+=("    ~ rounds: ${ROUND_COUNT} (via --rounds)")
 [ -n "$SPIRAL_COUNT" ] && EXPERIMENT_LINES+=("    ~ spirals: ${SPIRAL_COUNT} (via --spirals)")
 [ -n "$PASS_COUNT" ] && EXPERIMENT_LINES+=("    ~ passes: ${PASS_COUNT} (via --passes)")
-[ "$SHUFFLE_ENABLED" = "true" ] && EXPERIMENT_LINES+=("    ~ shuffle (agent order randomized)")
+[ -n "${CONDUCTOR_MAX_TURNS:-}" ] && EXPERIMENT_LINES+=("    ~ turns: ${CONDUCTOR_MAX_TURNS} (via --turns)")
+[ "$SHUFFLE_ENABLED" = "true" ] && EXPERIMENT_LINES+=("    ~ shuffle (lens order randomized)")
+if [ "$AUTONOMOUS_MODE" = "true" ]; then
+  if [ "$SKIP_STRICT" = "true" ]; then
+    EXPERIMENT_LINES+=("    ~ autonomous (strict skip-turn: separate pre-call)")
+  else
+    EXPERIMENT_LINES+=("    ~ autonomous (inline skip-turn: lenses self-skip)")
+  fi
+fi
+[ "$COMPACT_ENABLED" = "true" ] && EXPERIMENT_LINES+=("    + compaction (enabled via --compact)")
+[ -n "${CONDUCTOR_MIN_TURNS:-}" ] && EXPERIMENT_LINES+=("    ~ min-turns: ${CONDUCTOR_MIN_TURNS} (via --min-turns)")
 [ "$GROUND_ENABLED" != "true" ] && EXPERIMENT_LINES+=("    - ground (disabled via --no-ground)")
 if [ -n "$ALLOWED_TOOLS" ]; then
   EXPERIMENT_LINES+=("    + tools: ${ALLOWED_TOOLS}")
@@ -821,6 +883,7 @@ INPUT TYPE: ${input_type}
 INPUT: ${INPUT_MATERIAL}
 ${PROJECT_CONTEXT:+CONTEXT: ${PROJECT_CONTEXT}}
 INFER_EOF
+  VERBOSE_CALLER="infer:audience"
   if claude_call "$infer_tmp"; then
     if [ "$CLAUDE_RESPONSE" != "UNKNOWN" ] && [ -n "$CLAUDE_RESPONSE" ]; then
       AUDIENCE_TEXT="$CLAUDE_RESPONSE"
@@ -846,9 +909,14 @@ case "$input_type" in
   notes) echo "  Notes: ${NOTES_TEXT:0:60}..." ;;
   project) echo "  Source: auto-detect from project" ;;
 esac
-echo "  Mode: $MODE"
+mode_emoji="💫🔀"
+case "$MODE" in
+  spiral)   mode_emoji="🌀🌿" ;;
+  lapidary) mode_emoji="🪨✨" ;;
+esac
+echo "  Mode: ${mode_emoji} $MODE"
 if [ -n "$AUDIENCE_TEXT" ]; then
-  echo "  Audience: ${AUDIENCE_TEXT:0:80}"
+  echo "  Audience: ${AUDIENCE_TEXT}"
 fi
 if [ "$PROVOCATION_TONE" != "provocative" ]; then
   echo "  Tone: $PROVOCATION_TONE"
@@ -882,6 +950,8 @@ if [ -n "$GROUND_ONLY" ]; then
 
   SESSION_DIR="$OUTPUT_DIR/$(slugify_seed "$SEED_TOPIC")_${TIMESTAMP}"
   mkdir -p "$SESSION_DIR"
+  VERBOSE_LOG="$SESSION_DIR/log.jsonl"
+  : > "$VERBOSE_LOG"
   TRANSCRIPT_MD="$SESSION_DIR/session.md"
   TRANSCRIPT_JSON="$SESSION_DIR/session.json"
   md_init_header "Ground Check" "$SEED_TOPIC"
@@ -924,11 +994,22 @@ fi
 
 SEEDS=("${PROVOCATIONS[@]}")
 
+# ── 2b. Build zeitgeist context from captured sources ──
+if [ ${#ZEITGEIST_SOURCES[@]} -gt 0 ]; then
+  ZEITGEIST_CONTEXT="=== KNOWN TERRITORY (zeitgeist) ===
+These sources represent what is already being discussed in broader discourse. The session should be grounded in these realities but push beyond them into territory these articles cannot reach.
+$(printf '%s\n' "${ZEITGEIST_SOURCES[@]}")"
+fi
+
 # ── 3. Pick (optional, any input type) ──
 if [ -n "$PICK_MODE" ]; then
   pick_provocations
   SEEDS=("${PROVOCATIONS[@]}")
 fi
+
+# ── 3b. Review provocations for distinctness (autonomous mode) ──
+review_provocations
+SEEDS=("${PROVOCATIONS[@]}")
 
 # ── 4. Warn if many seeds ──
 if [ ${#SEEDS[@]} -gt 5 ]; then
@@ -945,6 +1026,10 @@ fi
 # ── 5. Run sessions ──
 SESSION_DIR="$OUTPUT_DIR/$(slugify_seed "${SEEDS[0]}")_${TIMESTAMP}"
 mkdir -p "$SESSION_DIR"
+
+# Initialize verbose session log
+VERBOSE_LOG="$SESSION_DIR/log.jsonl"
+: > "$VERBOSE_LOG"
 
 # Copy deferred context into session folder
 if [ -n "$PROJECT_CONTEXT" ] && [ ! -f "$SESSION_DIR/context.md" ]; then
@@ -978,9 +1063,16 @@ for seed in "${SEEDS[@]}"; do
   md_init_header "Think Different Session (Seed ${seed_num})" "$SEED_TOPIC"
   json_open
 
-  # Source and run the mode
-  source "${SCRIPT_DIR}/modes/${MODE}.sh"
-  run_session || true
+  # Source review mechanism
+  source "${SCRIPT_DIR}/mechanisms/review.sh"
+
+  # Source and run the mode (conductor in autonomous mode, hardcoded otherwise)
+  if [ "$AUTONOMOUS_MODE" = "true" ]; then
+    run_conductor_session || true
+  else
+    source "${SCRIPT_DIR}/modes/${MODE}.sh"
+    run_session || true
+  fi
 
   # Final flush (always valid, even on cap hit)
   json_flush
@@ -990,10 +1082,88 @@ for seed in "${SEEDS[@]}"; do
     break
   fi
 
-  # Mark session complete
-  complete_state
+  # ── Session review (autonomous mode only) ──
+  if [ "$AUTONOMOUS_MODE" = "true" ]; then
+    review_session || true
 
-  TRANSCRIPT_FILES+=("$TRANSCRIPT_MD")
+    review_verdict=$(get_review_verdict)
+
+    if [ "$review_verdict" = "restart" ] && [ "$CAP_LIMIT_HIT" != "true" ]; then
+      # Save first run transcript
+      first_run_transcript="$TRANSCRIPT_MD"
+      complete_state
+
+      # Get mutations
+      mutation_mode=$(get_mutation_mode "$MODE")
+      reframed_seed=$(get_reframed_seed)
+
+      echo ""
+      echo "  ↻ Restarting session with mutations"
+      old_emoji="💫🔀"; new_emoji="💫🔀"
+      case "$MODE" in spiral) old_emoji="🌀🌿" ;; lapidary) old_emoji="🪨✨" ;; esac
+      case "$mutation_mode" in spiral) new_emoji="🌀🌿" ;; lapidary) new_emoji="🪨✨" ;; esac
+      echo "    Mode: ${old_emoji} ${MODE} -> ${new_emoji} ${mutation_mode}"
+      [ -n "$reframed_seed" ] && echo "    Seed: reframed"
+      echo ""
+
+      # Set up fresh session for run 2
+      CONVERSATION=""
+      TURN_COUNT=0
+      if [ -n "$reframed_seed" ]; then
+        SEED_TOPIC="$reframed_seed"
+      fi
+
+      # New transcript files for run 2
+      if [ ${#SEEDS[@]} -gt 1 ]; then
+        TRANSCRIPT_MD="$SESSION_DIR/session_s${seed_num}_r2.md"
+        TRANSCRIPT_JSON="$SESSION_DIR/session_s${seed_num}_r2.json"
+        STATE_FILE="$SESSION_DIR/session_s${seed_num}_r2.state.json"
+      else
+        TRANSCRIPT_MD="$SESSION_DIR/session_r2.md"
+        TRANSCRIPT_JSON="$SESSION_DIR/session_r2.json"
+        STATE_FILE="$SESSION_DIR/session_r2.state.json"
+      fi
+
+      md_init_header "Think Different Session (Seed ${seed_num}, Run 2 - ${mutation_mode})" "$SEED_TOPIC"
+      json_open
+
+      # Run with mutated mode and shuffle enabled
+      original_shuffle="$SHUFFLE_ENABLED"
+      original_mode="$MODE"
+      SHUFFLE_ENABLED="true"
+      MODE="$mutation_mode"
+      if [ "$AUTONOMOUS_MODE" = "true" ]; then
+        run_conductor_session || true
+      else
+        source "${SCRIPT_DIR}/modes/${mutation_mode}.sh"
+        run_session || true
+      fi
+      SHUFFLE_ENABLED="$original_shuffle"
+      MODE="$original_mode"
+
+      json_flush
+      md_flush
+
+      if [ "$CAP_LIMIT_HIT" != "true" ]; then
+        complete_state
+        # Both runs become synthesis inputs
+        TRANSCRIPT_FILES+=("$first_run_transcript")
+        TRANSCRIPT_FILES+=("$TRANSCRIPT_MD")
+      else
+        TRANSCRIPT_FILES+=("$first_run_transcript")
+        TRANSCRIPT_FILES+=("$TRANSCRIPT_MD")
+        break
+      fi
+    else
+      complete_state
+      TRANSCRIPT_FILES+=("$TRANSCRIPT_MD")
+    fi
+  else
+    # Mark session complete (non-autonomous mode)
+    complete_state
+    TRANSCRIPT_FILES+=("$TRANSCRIPT_MD")
+  fi
+
   seed_num=$((seed_num + 1))
 done
 

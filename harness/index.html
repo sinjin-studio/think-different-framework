@@ -1,0 +1,1760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Think Different Framework - Test Harness</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600;7..72,700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #181818;
+  --bg-surface: #222;
+  --bg-elevated: #2a2a2a;
+  --bg-input: #1e1e1e;
+  --border: #333;
+  --border-focus: #169B62;
+  --text: #e0e0e0;
+  --text-muted: #777;
+  --text-dim: #555;
+  --green: #169B62;
+  --green-dim: #0d6b42;
+  --green-glow: rgba(22, 155, 98, 0.15);
+  --orange: #FF8200;
+  --orange-dim: #cc6800;
+  --red: #e74c3c;
+  --font: 'Literata', Georgia, serif;
+  --mono: 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
+  --radius: 6px;
+  --radius-lg: 10px;
+}
+html { font-size: 17px; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+header {
+  padding: 1.2rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+header h1 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+header h1 span { color: var(--green); }
+header .version {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-family: var(--mono);
+}
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 0;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+.form-col {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  overflow-y: auto;
+}
+.preview-col {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  padding: 1.5rem 1.5rem 1.5rem 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1rem;
+}
+section {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.2rem;
+}
+section h2 {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--green);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.field { margin-bottom: 1rem; }
+.field:last-child { margin-bottom: 0; }
+.field-row {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 0.8rem;
+}
+.field-row:last-child { margin-bottom: 0; }
+label {
+  font-size: 1.0rem;
+  font-weight: 600;
+  color: var(--text);
+  display: block;
+  margin-bottom: 0.3rem;
+}
+label .flag {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 400;
+  margin-left: 0.4rem;
+}
+.help {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+input[type="text"],
+input[type="number"],
+textarea {
+  width: 100%;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.85rem;
+  padding: 0.5rem 0.7rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+input:focus, textarea:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 2px var(--green-glow);
+}
+textarea { resize: vertical; min-height: 60px; }
+input[type="number"] { width: 80px; }
+input[type="range"] {
+  flex: 1;
+  accent-color: var(--green);
+  height: 4px;
+}
+
+/* Radio cards for input mode */
+.radio-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.5rem;
+}
+.radio-card {
+  position: relative;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.7rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 0.8rem;
+}
+.radio-card:hover { border-color: var(--text-muted); }
+.radio-card.active {
+  border-color: var(--green);
+  background: var(--green-glow);
+}
+.radio-card input { display: none; }
+.radio-card .card-label { font-weight: 600; }
+.radio-card .card-flag {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 0.15rem;
+}
+
+/* Segmented control */
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.segmented button {
+  background: var(--bg-elevated);
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.45rem 1rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  border-right: 1px solid var(--border);
+}
+.segmented button:last-child { border-right: none; }
+.segmented button:hover { color: var(--text); }
+.segmented button.active {
+  background: var(--green);
+  color: #fff;
+}
+
+/* Toggle switch */
+.toggle-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.toggle {
+  position: relative;
+  width: 38px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.toggle input { display: none; }
+.toggle .slider {
+  position: absolute;
+  inset: 0;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.toggle .slider::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background: var(--text-muted);
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+.toggle input:checked + .slider {
+  background: var(--green-dim);
+  border-color: var(--green);
+}
+.toggle input:checked + .slider::after {
+  transform: translateX(18px);
+  background: var(--green);
+}
+.toggle-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.toggle-help {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* Chips */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.chip {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+.chip:hover { border-color: var(--text-muted); }
+.chip.active {
+  background: var(--green-glow);
+  border-color: var(--green);
+  color: var(--green);
+}
+.chip.active-orange {
+  background: rgba(255, 130, 0, 0.12);
+  border-color: var(--orange);
+  color: var(--orange);
+}
+.chip .chip-x {
+  display: inline-block;
+  margin-left: 0.3rem;
+  opacity: 0.5;
+  font-size: 0.7rem;
+  vertical-align: middle;
+}
+.chip .chip-x:hover { opacity: 1; }
+.practitioner-add-row {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+.practitioner-add-row input {
+  flex: 1;
+  font-size: 1.0rem;
+  padding: 0.3rem 0.6rem;
+}
+.practitioner-add-row .btn {
+  font-size: 0.8rem;
+  padding: 0.3rem 0.6rem;
+}
+
+/* Checkboxes */
+.checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+}
+.checkbox-item input[type="checkbox"] {
+  accent-color: var(--green);
+  width: 14px;
+  height: 14px;
+}
+.checkbox-item span {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* Lens groups */
+.lens-group { margin-bottom: 0.8rem; }
+.lens-group:last-child { margin-bottom: 0; }
+.lens-group-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  margin-bottom: 0.35rem;
+}
+.lens-chip {
+  font-size: 0.9rem;
+  padding: 0.25rem 0.55rem;
+}
+.lens-chip[title] { cursor: help; }
+
+/* Collapsible */
+.collapsible-header {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.collapsible-header .arrow {
+  transition: transform 0.2s;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+}
+.collapsible-header.open .arrow { transform: rotate(90deg); }
+.collapsible-body {
+  display: none;
+  padding-top: 1rem;
+}
+.collapsible-body.open { display: block; }
+
+/* Mechanisms row */
+.mechanisms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.8rem;
+}
+.mechanism-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.7rem;
+  transition: all 0.15s;
+}
+.mechanism-card.disabled {
+  opacity: 0.5;
+  border-color: var(--border);
+}
+
+/* Command preview */
+.preview-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: 50vh;
+}
+.preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.preview-header h2 {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--green);
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+.prefix-toggle {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.prefix-toggle button {
+  background: var(--bg-elevated);
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+  border-right: 1px solid var(--border);
+}
+.prefix-toggle button:last-child { border-right: none; }
+.prefix-toggle button.active {
+  background: var(--green-dim);
+  color: #fff;
+}
+.preview-code {
+  flex: 1;
+  padding: 1rem;
+  overflow: auto;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: var(--green);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.copy-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0.7rem;
+  background: var(--green);
+  border: none;
+  color: #fff;
+  font-family: var(--font);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.copy-btn:hover { background: var(--green-dim); }
+.copy-btn.copied {
+  background: var(--orange);
+}
+
+/* Config management */
+.config-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+}
+.config-box h3 {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 0.7rem;
+}
+.config-save-row {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.7rem;
+}
+.config-save-row input {
+  flex: 1;
+  font-size: 0.8rem;
+  padding: 0.4rem 0.6rem;
+}
+.config-load-row {
+  display: flex;
+  gap: 0.4rem;
+}
+.config-load-row select {
+  flex: 1;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.8rem;
+  padding: 0.4rem 0.6rem;
+  outline: none;
+}
+.config-load-row select:focus {
+  border-color: var(--border-focus);
+}
+.btn {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.4rem 0.7rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.btn:hover { border-color: var(--text-muted); }
+.btn-green { background: var(--green-dim); border-color: var(--green); color: #fff; }
+.btn-green:hover { background: var(--green); }
+.btn-red { color: var(--red); }
+.btn-red:hover { border-color: var(--red); }
+.config-list {
+  margin-top: 0.5rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.config-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem 0.5rem;
+  border-radius: var(--radius);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.config-item:hover { background: var(--bg-elevated); }
+.config-item .config-name { font-weight: 600; flex: 1; }
+.config-item .config-actions {
+  display: flex;
+  gap: 0.3rem;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+.config-item:hover .config-actions { opacity: 1; }
+.config-action-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  cursor: pointer;
+  padding: 0.15rem 0.3rem;
+  border-radius: 3px;
+}
+.config-action-btn:hover { color: var(--text); background: var(--bg-surface); }
+.config-action-btn.delete:hover { color: var(--red); }
+
+/* Browse button next to file inputs */
+.file-input-row {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+.file-input-row input[type="text"] { flex: 1; }
+.file-input-row .btn { flex-shrink: 0; padding: 0.5rem 0.7rem; }
+.file-input-row input[type="file"] { display: none; }
+
+/* Hidden */
+.hidden { display: none !important; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  .preview-col {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: auto;
+    max-height: 50vh;
+    padding: 0;
+    z-index: 100;
+    flex-direction: column;
+  }
+  .preview-box { border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+  .config-box { display: none; }
+  .form-col { padding-bottom: 180px; }
+  .preview-code { max-height: 25vh; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span>Think Different</span> Framework</h1>
+  <span class="version">Test Harness</span>
+</header>
+
+<div class="layout">
+  <div class="form-col">
+
+    <!-- 1. Input -->
+    <section id="sec-input">
+      <h2>1. Input</h2>
+      <div class="field">
+        <div class="chips" id="workflow-chips">
+          <span class="chip active" data-value="session">Session</span>
+          <span class="chip" data-value="report-only">Report Only</span>
+          <span class="chip" data-value="synthesise">Synthesise</span>
+          <span class="chip" data-value="resume">Resume</span>
+        </div>
+      </div>
+
+      <div id="session-inputs">
+        <div class="field">
+          <label>Seed Topic <span class="flag">positional</span></label>
+          <input type="text" id="seedTopic" placeholder='How might luxury wellness appeal to Gen Z?'>
+        </div>
+        <div class="field">
+          <label>Brief <span class="flag">--brief</span></label>
+          <div class="file-input-row">
+            <input type="text" id="briefFile" placeholder="./client-brief.pdf">
+            <input type="file" id="briefFile-picker">
+            <button class="btn" data-browse="briefFile">Browse</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Brand <span class="flag">--brand</span></label>
+          <input type="text" id="brandName" placeholder="Nike">
+        </div>
+        <div class="field">
+          <label>Notes <span class="flag">--notes</span></label>
+          <textarea id="notesText" placeholder="luxury wellness, Gen Z, sustainability"></textarea>
+        </div>
+      </div>
+
+      <div id="postprocess-inputs" class="hidden">
+        <div id="input-report-only" class="hidden">
+          <div class="field">
+            <label>Transcript file <span class="flag">--report-only</span></label>
+            <div class="file-input-row">
+              <input type="text" id="reportOnlyFile" placeholder="./session.md">
+              <input type="file" id="reportOnlyFile-picker">
+              <button class="btn" data-browse="reportOnlyFile">Browse</button>
+            </div>
+          </div>
+          <div class="field" id="formats-field">
+            <label>Report Formats <span class="flag">--formats</span></label>
+            <div class="checkbox-group" id="format-checks">
+              <label class="checkbox-item"><input type="checkbox" value="all" checked><span>All</span></label>
+              <label class="checkbox-item"><input type="checkbox" value="md"><span>MD</span></label>
+              <label class="checkbox-item"><input type="checkbox" value="doc"><span>DOCX</span></label>
+              <label class="checkbox-item"><input type="checkbox" value="html"><span>HTML</span></label>
+            </div>
+          </div>
+        </div>
+        <div id="input-synthesise" class="hidden">
+          <div class="field">
+            <label>Transcript files (one per line) <span class="flag">--synthesise</span></label>
+            <textarea id="synthesiseFiles" placeholder="./run1/session.md&#10;./run2/session.md"></textarea>
+          </div>
+        </div>
+        <div id="input-resume" class="hidden">
+          <div class="field">
+            <label>State file <span class="flag">--resume</span></label>
+            <div class="file-input-row">
+              <input type="text" id="resumeFile" placeholder="./session.state.json">
+              <input type="file" id="resumeFile-picker">
+              <button class="btn" data-browse="resumeFile">Browse</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Seed Preparation -->
+    <section id="sec-seed-prep" class="session-section">
+      <h2>2. Seed Preparation</h2>
+
+      <div class="field">
+        <label>Context File <span class="flag">--context</span></label>
+        <div class="file-input-row">
+          <input type="text" id="contextFile" placeholder="Auto-detected if not set">
+          <input type="file" id="contextFile-picker">
+          <button class="btn" data-browse="contextFile">Browse</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Seeds <span class="flag">--seeds</span></label>
+        <div class="field-row">
+          <div class="toggle-wrap">
+            <label class="toggle">
+              <input type="checkbox" id="seedsAuto" checked>
+              <span class="slider"></span>
+            </label>
+            <span class="toggle-label">Auto</span>
+            <span class="toggle-help">Pro=1, Max/Team=3</span>
+          </div>
+          <div id="seeds-num-wrap" class="hidden">
+            <input type="number" id="seeds" min="1" max="12" value="3" style="width: 65px;">
+          </div>
+          <div class="toggle-wrap" id="pick-wrap">
+            <label class="toggle">
+              <input type="checkbox" id="pick">
+              <span class="slider"></span>
+            </label>
+            <span class="toggle-label">Pick</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Tone <span class="flag">--tone</span></label>
+        <div class="chips" id="tone-chips">
+          <span class="chip active" data-value="provocative">provocative</span>
+          <span class="chip" data-value="generous">generous</span>
+          <span class="chip" data-value="personal">personal</span>
+          <span class="chip" data-value="absurd">absurd</span>
+          <span class="chip" data-value="daydream">daydream</span>
+          <span class="chip" data-value="mixed">mixed</span>
+        </div>
+        <div class="help">Multiple allowed. "mixed" selects all five.</div>
+      </div>
+
+      <div class="field">
+        <label>Audience <span class="flag">--audience</span></label>
+        <input type="text" id="audience" placeholder="Auto-inferred from input if not set">
+      </div>
+    </section>
+
+    <!-- 3. Composition / Mode -->
+    <section id="sec-composition" class="session-section">
+      <h2>3. Composition</h2>
+
+      <div class="field">
+        <label>Mode <span class="flag">--mode</span></label>
+        <div class="segmented" id="mode-control">
+          <button class="active" data-value="dyslexic">Dyslexic</button>
+          <button data-value="spiral">Spiral</button>
+          <button data-value="lapidary">Lapidary</button>
+        </div>
+        <div class="help">Dyslexic: collision-driven leaps. Spiral: widening cycles. Lapidary: iterative polish.</div>
+      </div>
+
+      <div class="field-row">
+        <div class="toggle-wrap">
+          <label class="toggle">
+            <input type="checkbox" id="autonomous" checked>
+            <span class="slider"></span>
+          </label>
+          <span class="toggle-label">Autonomous Mode</span>
+        </div>
+      </div>
+      <div class="help" style="margin-bottom: 0.8rem;">Conductor orchestrates lenses with autonomous decision-making.</div>
+
+      <div class="field" id="turns-field">
+        <label>Max Turns <span class="flag">--turns</span></label>
+        <div class="field-row">
+          <input type="range" id="turnsRange" min="5" max="100" step="5" value="35">
+          <input type="number" id="turnsNum" min="5" max="100" step="5" value="35" style="width: 65px;">
+        </div>
+      </div>
+
+      <div class="field hidden" id="rounds-field">
+        <label>Rounds <span class="flag">--rounds</span></label>
+        <input type="number" id="rounds" min="1" max="20" value="4" style="width: 65px;">
+        <div class="help">Dyslexic mode: collision rounds. Default: 4.</div>
+      </div>
+
+      <div class="field hidden" id="spirals-field">
+        <label>Spirals <span class="flag">--spirals</span></label>
+        <input type="number" id="spirals" min="1" max="20" value="3" style="width: 65px;">
+        <div class="help">Spiral mode: widening cycles. Default: 3.</div>
+      </div>
+
+      <div class="field hidden" id="passes-field">
+        <label>Passes <span class="flag">--passes</span></label>
+        <input type="number" id="passes" min="1" max="20" value="3" style="width: 65px;">
+        <div class="help">Lapidary mode: refinement passes. Default: 3.</div>
+      </div>
+    </section>
+
+    <!-- 4. Mechanisms -->
+    <section id="sec-mechanisms" class="session-section">
+      <h2>4. Mechanisms</h2>
+      <div class="mechanisms-grid" id="mechanisms">
+        <div class="mechanism-card" data-mechanism="friction">
+          <div class="toggle-wrap">
+            <label class="toggle"><input type="checkbox" checked data-key="friction"><span class="slider"></span></label>
+            <span class="toggle-label">Friction</span>
+          </div>
+          <div class="help" style="margin-top: 0.3rem;">Detects stuck patterns</div>
+        </div>
+        <div class="mechanism-card" data-mechanism="bias">
+          <div class="toggle-wrap">
+            <label class="toggle"><input type="checkbox" checked data-key="bias"><span class="slider"></span></label>
+            <span class="toggle-label">Bias</span>
+          </div>
+          <div class="help" style="margin-top: 0.3rem;">Cognitive bias as fuel</div>
+        </div>
+        <div class="mechanism-card" data-mechanism="sensory">
+          <div class="toggle-wrap">
+            <label class="toggle"><input type="checkbox" checked data-key="sensory"><span class="slider"></span></label>
+            <span class="toggle-label">Sensory</span>
+          </div>
+          <div class="help" style="margin-top: 0.3rem;">Re-grounds in source</div>
+        </div>
+        <div class="mechanism-card" data-mechanism="transcendence">
+          <div class="toggle-wrap">
+            <label class="toggle"><input type="checkbox" checked data-key="transcendence"><span class="slider"></span></label>
+            <span class="toggle-label">Transcendence</span>
+          </div>
+          <div class="help" style="margin-top: 0.3rem;">Detects breakthroughs</div>
+        </div>
+        <div class="mechanism-card" data-mechanism="void">
+          <div class="toggle-wrap">
+            <label class="toggle"><input type="checkbox" checked data-key="void"><span class="slider"></span></label>
+            <span class="toggle-label">Void</span>
+          </div>
+          <div class="help" style="margin-top: 0.3rem;">Maps dark territory</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Output -->
+    <section id="sec-output" class="session-section">
+      <h2>5. Output</h2>
+
+      <div class="field">
+        <label>Output Types <span class="flag">--type</span></label>
+        <div class="checkbox-group" id="type-checks">
+          <label class="checkbox-item"><input type="checkbox" value="insight" checked><span>Insight</span></label>
+          <label class="checkbox-item"><input type="checkbox" value="brief" checked><span>Brief</span></label>
+          <label class="checkbox-item"><input type="checkbox" value="manifesto" checked><span>Manifesto</span></label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Lines <span class="flag">--lines</span></label>
+        <div class="field-row">
+          <input type="range" id="linesRange" min="1" max="7" step="1" value="3">
+          <input type="number" id="linesNum" min="1" max="7" value="3" style="width: 55px;">
+        </div>
+        <div class="help">Number of angles to generate. Each outputs Platform + Expression altitudes. Default: 3.</div>
+      </div>
+
+      <div class="field">
+        <label>Practitioners <span class="flag">--practitioners</span></label>
+        <div class="chips" id="practitioner-chips"></div>
+        <div class="practitioner-add-row">
+          <input type="text" id="practitioner-input" placeholder="Add a practitioner...">
+          <button class="btn" id="practitioner-add">Add</button>
+          <button class="btn" id="practitioner-reset">Reset</button>
+        </div>
+        <div class="help">All active = default (no flag set). Toggle off or add custom names.</div>
+      </div>
+
+      <div class="field">
+        <label>Word Budget <span class="flag">--words</span></label>
+        <div class="field-row">
+          <input type="range" id="wordsRange" min="100" max="5000" step="100" value="1500">
+          <input type="number" id="wordsNum" min="100" max="5000" step="100" value="1500" style="width: 70px;">
+        </div>
+        <div class="help">Total words across all presentation sections. Default: 1500.</div>
+      </div>
+
+      <div class="field">
+        <label>Output Directory <span class="flag">--output</span></label>
+        <input type="text" id="outputDir" placeholder="./think-different-output" value="">
+        <div class="help">Default: ./think-different-output</div>
+      </div>
+
+      <div class="field-row">
+        <div class="toggle-wrap">
+          <label class="toggle">
+            <input type="checkbox" id="html">
+            <span class="slider"></span>
+          </label>
+          <span class="toggle-label">HTML output</span>
+          <span class="toggle-help flag">--html</span>
+          <span class="help" style="margin: 0;">(experimental)</span>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Advanced -->
+    <section id="sec-advanced" class="session-section">
+      <div class="collapsible-header" id="advanced-toggle">
+        <h2 style="margin: 0; padding: 0; border: 0;">Advanced</h2>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <div class="collapsible-body" id="advanced-body">
+
+        <div class="field">
+          <label>Include Lenses <span class="flag">--include</span></label>
+          <div id="include-lenses"></div>
+          <div class="help" style="margin-top: 0.3rem;">Force specific lenses into the session.</div>
+        </div>
+
+        <div class="field">
+          <label>Exclude Lenses <span class="flag">--exclude</span></label>
+          <div id="exclude-lenses"></div>
+          <div class="help" style="margin-top: 0.3rem;">Remove specific lenses from the session.</div>
+        </div>
+
+        <div class="field" style="display: flex; flex-direction: column; gap: 0.6rem;">
+          <div class="toggle-wrap">
+            <label class="toggle"><input type="checkbox" id="shuffle"><span class="slider"></span></label>
+            <span class="toggle-label">Shuffle</span>
+            <span class="toggle-help flag">--shuffle</span>
+          </div>
+          <div class="toggle-wrap">
+            <label class="toggle"><input type="checkbox" id="skipStrict"><span class="slider"></span></label>
+            <span class="toggle-label">Skip Strict</span>
+            <span class="toggle-help flag">--skip-strict</span>
+          </div>
+          <div class="toggle-wrap">
+            <label class="toggle"><input type="checkbox" id="compact"><span class="slider"></span></label>
+            <span class="toggle-label">Compact</span>
+            <span class="toggle-help flag">--compact</span>
+          </div>
+          <div class="toggle-wrap">
+            <label class="toggle"><input type="checkbox" id="noGround"><span class="slider"></span></label>
+            <span class="toggle-label">No Ground</span>
+            <span class="toggle-help flag">--no-ground</span>
+          </div>
+          <div class="toggle-wrap">
+            <label class="toggle"><input type="checkbox" id="groundOnly"><span class="slider"></span></label>
+            <span class="toggle-label">Ground Only</span>
+            <span class="toggle-help flag">--ground-only</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Allowed Tools <span class="flag">--allowedTools</span></label>
+          <input type="text" id="allowedTools" value="WebSearch,WebFetch" placeholder="WebSearch,WebFetch">
+          <div class="help">Tools for Claude CLI. Empty string to disable.</div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Right column: Preview + Config -->
+  <div class="preview-col">
+    <div class="preview-box">
+      <div class="preview-header">
+        <h2>Command</h2>
+        <div class="prefix-toggle" id="prefix-toggle">
+          <button class="active" data-value="./think.sh">./think.sh</button>
+          <button data-value="td">td</button>
+        </div>
+      </div>
+      <div class="preview-code" id="command-output"></div>
+      <button class="copy-btn" id="copy-btn">Copy Command</button>
+    </div>
+
+    <div class="config-box">
+      <h3>Saved Configs</h3>
+      <div class="config-save-row">
+        <input type="text" id="config-name" placeholder="Config name...">
+        <button class="btn btn-green" id="config-save">Save</button>
+      </div>
+      <div class="config-list" id="config-list"></div>
+      <button class="btn btn-red" id="reset-all" style="width: 100%; margin-top: 0.7rem;">Reset All</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Data ──────────────────────────────────────────────
+const LENSES = {
+  perceivers: [
+    { key: 'achala', name: 'The Achala', bias: 'Devotion, Interconnection & the Sacred' },
+    { key: 'child', name: 'The Child', bias: 'Radical Naivety' },
+    { key: 'connoisseur', name: 'The Connoisseur', bias: 'Quality, Proportion & Resonance' },
+    { key: 'empath', name: 'The Empath', bias: 'Desire, Anxiety & Simplicity' },
+    { key: 'includer', name: 'The Includer', bias: 'Absence Perception' },
+    { key: 'mortal', name: 'The Mortal', bias: 'Finitude, Impermanence & Urgency' },
+    { key: 'observer', name: 'The Observer', bias: 'Literal & Precise' },
+    { key: 'provocateur', name: 'The Provocateur', bias: 'Compression & Confrontation' },
+    { key: 'skeptic', name: 'The Skeptic', bias: 'Incongruence Detection' },
+  ],
+  'cognitions - fragmentary': [
+    { key: 'associator', name: 'The Associator', bias: 'Adjacent & Absurd Links' },
+    { key: 'decomposer', name: 'The Decomposer', bias: 'Pieces & Partial Patterns' },
+    { key: 'reifier', name: 'The Reifier', bias: 'Shape & Constellation' },
+    { key: 'scaler', name: 'The Scaler', bias: 'Scale Shifts' },
+  ],
+  'cognitions - deepening': [
+    { key: 'analogiser', name: 'The Analogiser', bias: 'Rhyme & Resonance' },
+    { key: 'diverger', name: 'The Diverger', bias: 'Novelty & Divergence' },
+    { key: 'integrator', name: 'The Integrator', bias: 'Integration & Naming' },
+  ],
+  'cognitions - evaluative': [
+    { key: 'appraiser', name: 'The Appraiser', bias: 'Weight & Proportion' },
+    { key: 'editor', name: 'The Editor', bias: 'Economy & Precision' },
+    { key: 'historian', name: 'The Historian', bias: 'Lineage & Precedent' },
+  ],
+  hybrids: [
+    { key: 'logician', name: 'The Logician', bias: 'Structure, Causation & First Principles' },
+  ],
+};
+
+const PRACTITIONERS = [
+  'Paul Arden', 'Dave Trott', 'Bill Bernbach', 'John Hegarty',
+  'David Abbott', 'George Lois', 'Rory Sutherland', 'Mary Wells Lawrence'
+];
+
+const DEFAULTS = {
+  workflow: 'session',
+  seedTopic: '', briefFile: '', brandName: '', notesText: '',
+  reportOnlyFile: '', synthesiseFiles: '', resumeFile: '',
+  mode: 'dyslexic',
+  words: 1500,
+  outputDir: '',
+  contextFile: '',
+  seedsAuto: true,
+  seeds: 3,
+  pick: false,
+  tone: ['provocative'],
+  audience: '',
+  type: ['insight', 'brief', 'manifesto'],
+  lines: 3,
+  practitioners: [...PRACTITIONERS],
+  html: false,
+  formats: ['all'],
+  friction: true, bias: true, sensory: true, transcendence: true, void: true,
+  autonomous: true,
+  turns: 35,
+  rounds: 4, spirals: 3, passes: 3,
+  include: [], exclude: [],
+  shuffle: false, skipStrict: false, compact: false,
+  noGround: false, groundOnly: false,
+  allowedTools: 'WebSearch,WebFetch',
+  cmdPrefix: './think.sh',
+};
+
+let STATE = JSON.parse(JSON.stringify(DEFAULTS));
+
+// ── Init ──────────────────────────────────────────────
+function init() {
+  buildPractitionerChips();
+  buildLensSelectors();
+  loadLastState();
+  bindEvents();
+  initFilePicker();
+  render();
+}
+
+function buildPractitionerChips() {
+  const el = document.getElementById('practitioner-chips');
+  // Combine defaults + any custom names in state
+  const allNames = [...new Set([...PRACTITIONERS, ...STATE.practitioners])];
+  el.innerHTML = allNames.map(p => {
+    const isActive = STATE.practitioners.includes(p);
+    const isCustom = !PRACTITIONERS.includes(p);
+    const xBtn = isCustom ? `<span class="chip-x" data-delete="${p}">&times;</span>` : '';
+    return `<span class="chip${isActive ? ' active' : ''}" data-value="${p}">${p}${xBtn}</span>`;
+  }).join('');
+}
+
+function buildLensSelectors() {
+  buildLensGroup('include-lenses', 'include');
+  buildLensGroup('exclude-lenses', 'exclude');
+}
+
+function buildLensGroup(containerId, stateKey) {
+  const container = document.getElementById(containerId);
+  let html = '';
+  for (const [group, lenses] of Object.entries(LENSES)) {
+    html += `<div class="lens-group"><div class="lens-group-label">${group}</div><div class="chips">`;
+    for (const lens of lenses) {
+      html += `<span class="chip lens-chip" data-lens-group="${stateKey}" data-value="${lens.key}" title="${lens.name} - ${lens.bias}">${lens.key}</span>`;
+    }
+    html += '</div></div>';
+  }
+  container.innerHTML = html;
+}
+
+// ── Events ────────────────────────────────────────────
+function bindEvents() {
+  // Workflow chips (session / synthesise / resume)
+  document.querySelectorAll('#workflow-chips .chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('#workflow-chips .chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      STATE.workflow = chip.dataset.value;
+      render();
+    });
+  });
+
+  // Text/number inputs
+  const inputMap = {
+    seedTopic: 'seedTopic', briefFile: 'briefFile', brandName: 'brandName',
+    notesText: 'notesText', reportOnlyFile: 'reportOnlyFile',
+    synthesiseFiles: 'synthesiseFiles', resumeFile: 'resumeFile',
+    outputDir: 'outputDir', contextFile: 'contextFile', audience: 'audience',
+    allowedTools: 'allowedTools',
+  };
+  for (const [elId, key] of Object.entries(inputMap)) {
+    document.getElementById(elId).addEventListener('input', (e) => {
+      STATE[key] = e.target.value;
+      render();
+    });
+  }
+
+  // Seeds auto toggle + number
+  document.getElementById('seedsAuto').addEventListener('change', (e) => {
+    STATE.seedsAuto = e.target.checked;
+    document.getElementById('seeds-num-wrap').classList.toggle('hidden', e.target.checked);
+    render();
+  });
+  document.getElementById('seeds').addEventListener('input', (e) => {
+    STATE.seeds = +e.target.value;
+    render();
+  });
+
+  // Mode segmented
+  document.querySelectorAll('#mode-control button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#mode-control button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      STATE.mode = btn.dataset.value;
+      render();
+    });
+  });
+
+  // Words sync
+  const wordsRange = document.getElementById('wordsRange');
+  const wordsNum = document.getElementById('wordsNum');
+  wordsRange.addEventListener('input', () => { wordsNum.value = wordsRange.value; STATE.words = +wordsRange.value; render(); });
+  wordsNum.addEventListener('input', () => { wordsRange.value = wordsNum.value; STATE.words = +wordsNum.value; render(); });
+
+  // Lines sync
+  const linesRange = document.getElementById('linesRange');
+  const linesNum = document.getElementById('linesNum');
+  linesRange.addEventListener('input', () => { linesNum.value = linesRange.value; STATE.lines = +linesRange.value; render(); });
+  linesNum.addEventListener('input', () => { linesRange.value = linesNum.value; STATE.lines = +linesNum.value; render(); });
+
+  // Turns sync
+  const turnsRange = document.getElementById('turnsRange');
+  const turnsNum = document.getElementById('turnsNum');
+  turnsRange.addEventListener('input', () => { turnsNum.value = turnsRange.value; STATE.turns = +turnsRange.value; render(); });
+  turnsNum.addEventListener('input', () => { turnsRange.value = turnsNum.value; STATE.turns = +turnsNum.value; render(); });
+
+  // Rounds/spirals/passes
+  document.getElementById('rounds').addEventListener('input', (e) => { STATE.rounds = +e.target.value; render(); });
+  document.getElementById('spirals').addEventListener('input', (e) => { STATE.spirals = +e.target.value; render(); });
+  document.getElementById('passes').addEventListener('input', (e) => { STATE.passes = +e.target.value; render(); });
+
+  // Toggle checkboxes
+  const toggleMap = {
+    pick: 'pick', html: 'html', autonomous: 'autonomous',
+    shuffle: 'shuffle', skipStrict: 'skipStrict', compact: 'compact',
+    noGround: 'noGround', groundOnly: 'groundOnly',
+  };
+  for (const [elId, key] of Object.entries(toggleMap)) {
+    document.getElementById(elId).addEventListener('change', (e) => {
+      STATE[key] = e.target.checked;
+      // Mutual exclusion
+      if (key === 'noGround' && e.target.checked) { STATE.groundOnly = false; document.getElementById('groundOnly').checked = false; }
+      if (key === 'groundOnly' && e.target.checked) { STATE.noGround = false; document.getElementById('noGround').checked = false; }
+      render();
+    });
+  }
+
+  // Mechanism toggles
+  document.querySelectorAll('#mechanisms input[data-key]').forEach(input => {
+    input.addEventListener('change', (e) => {
+      STATE[e.target.dataset.key] = e.target.checked;
+      e.target.closest('.mechanism-card').classList.toggle('disabled', !e.target.checked);
+      render();
+    });
+  });
+
+  // Tone chips (multi-select)
+  document.querySelectorAll('#tone-chips .chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const val = chip.dataset.value;
+      if (val === 'mixed') {
+        // Toggle mixed: select all or clear all
+        if (chip.classList.contains('active')) {
+          STATE.tone = ['provocative'];
+        } else {
+          STATE.tone = ['provocative', 'generous', 'personal', 'absurd', 'daydream'];
+        }
+      } else {
+        const idx = STATE.tone.indexOf(val);
+        if (idx >= 0) {
+          STATE.tone.splice(idx, 1);
+          if (STATE.tone.length === 0) STATE.tone = ['provocative'];
+        } else {
+          STATE.tone.push(val);
+        }
+      }
+      syncToneChips();
+      render();
+    });
+  });
+
+  // Practitioner chips - toggle or delete
+  document.getElementById('practitioner-chips').addEventListener('click', (e) => {
+    // Handle delete button
+    const del = e.target.closest('[data-delete]');
+    if (del) {
+      const name = del.dataset.delete;
+      STATE.practitioners = STATE.practitioners.filter(p => p !== name);
+      buildPractitionerChips();
+      render();
+      return;
+    }
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    const val = chip.dataset.value;
+    const idx = STATE.practitioners.indexOf(val);
+    if (idx >= 0) { STATE.practitioners.splice(idx, 1); chip.classList.remove('active'); }
+    else { STATE.practitioners.push(val); chip.classList.add('active'); }
+    render();
+  });
+
+  // Add custom practitioner
+  function addPractitioner() {
+    const input = document.getElementById('practitioner-input');
+    const name = input.value.trim();
+    if (!name || STATE.practitioners.includes(name)) { input.value = ''; return; }
+    STATE.practitioners.push(name);
+    input.value = '';
+    buildPractitionerChips();
+    render();
+  }
+  document.getElementById('practitioner-add').addEventListener('click', addPractitioner);
+  document.getElementById('practitioner-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') addPractitioner();
+  });
+
+  // Reset practitioners to defaults
+  document.getElementById('practitioner-reset').addEventListener('click', () => {
+    STATE.practitioners = [...PRACTITIONERS];
+    buildPractitionerChips();
+    render();
+  });
+
+  // Output type checkboxes
+  document.querySelectorAll('#type-checks input').forEach(cb => {
+    cb.addEventListener('change', () => {
+      STATE.type = [...document.querySelectorAll('#type-checks input:checked')].map(c => c.value);
+      if (STATE.type.length === 0) STATE.type = ['insight', 'brief', 'manifesto'];
+      render();
+    });
+  });
+
+  // Format checkboxes
+  document.querySelectorAll('#format-checks input').forEach(cb => {
+    cb.addEventListener('change', () => {
+      STATE.formats = [...document.querySelectorAll('#format-checks input:checked')].map(c => c.value);
+      if (STATE.formats.length === 0) STATE.formats = ['all'];
+      render();
+    });
+  });
+
+  // Lens chips (include/exclude)
+  document.addEventListener('click', (e) => {
+    const chip = e.target.closest('.chip[data-lens-group]');
+    if (!chip) return;
+    const group = chip.dataset.lensGroup; // 'include' or 'exclude'
+    const val = chip.dataset.value;
+    const idx = STATE[group].indexOf(val);
+    if (idx >= 0) { STATE[group].splice(idx, 1); chip.classList.remove('active'); }
+    else { STATE[group].push(val); chip.classList.add('active'); }
+    render();
+  });
+
+  // Prefix toggle
+  document.querySelectorAll('#prefix-toggle button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#prefix-toggle button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      STATE.cmdPrefix = btn.dataset.value;
+      render();
+    });
+  });
+
+  // Copy button
+  document.getElementById('copy-btn').addEventListener('click', copyCommand);
+
+  // Collapsible
+  document.getElementById('advanced-toggle').addEventListener('click', () => {
+    document.getElementById('advanced-toggle').classList.toggle('open');
+    document.getElementById('advanced-body').classList.toggle('open');
+  });
+
+  // Config
+  document.getElementById('config-save').addEventListener('click', saveConfig);
+  document.getElementById('config-name').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') saveConfig();
+  });
+
+  // Reset all to defaults
+  document.getElementById('reset-all').addEventListener('click', () => {
+    localStorage.removeItem('tdf-last-state');
+    STATE = JSON.parse(JSON.stringify(DEFAULTS));
+    applyStateToUI();
+    render();
+  });
+
+  // Auto-save on unload
+  window.addEventListener('beforeunload', () => {
+    localStorage.setItem('tdf-last-state', JSON.stringify(STATE));
+  });
+}
+
+function syncToneChips() {
+  const allFive = ['provocative', 'generous', 'personal', 'absurd', 'daydream'];
+  const isMixed = allFive.every(t => STATE.tone.includes(t));
+  document.querySelectorAll('#tone-chips .chip').forEach(chip => {
+    const val = chip.dataset.value;
+    if (val === 'mixed') {
+      chip.classList.toggle('active', isMixed);
+    } else {
+      chip.classList.toggle('active', STATE.tone.includes(val));
+    }
+  });
+}
+
+// ── Render ────────────────────────────────────────────
+function render() {
+  updateVisibility();
+  updateCommandPreview();
+}
+
+function updateVisibility() {
+  const wf = STATE.workflow;
+  const isSession = wf === 'session';
+  const isPostProcess = !isSession;
+
+  // Session vs post-process inputs
+  document.getElementById('session-inputs').classList.toggle('hidden', !isSession);
+  document.getElementById('postprocess-inputs').classList.toggle('hidden', isSession);
+  if (!isSession) {
+    document.getElementById('input-report-only').classList.toggle('hidden', wf !== 'report-only');
+    document.getElementById('input-synthesise').classList.toggle('hidden', wf !== 'synthesise');
+    document.getElementById('input-resume').classList.toggle('hidden', wf !== 'resume');
+  }
+
+  // Session-only sections (seed prep, composition, mechanisms, advanced)
+  document.querySelectorAll('.session-section').forEach(sec => {
+    if (sec.id === 'sec-output') {
+      sec.classList.toggle('hidden', wf === 'resume');
+    } else {
+      sec.classList.toggle('hidden', isPostProcess);
+    }
+  });
+
+  // Seeds auto/manual
+  document.getElementById('seeds-num-wrap').classList.toggle('hidden', STATE.seedsAuto);
+
+  // Autonomous vs non-autonomous
+  const auto = STATE.autonomous;
+  document.getElementById('turns-field').classList.toggle('hidden', !auto);
+  document.getElementById('rounds-field').classList.toggle('hidden', auto || STATE.mode !== 'dyslexic');
+  document.getElementById('spirals-field').classList.toggle('hidden', auto || STATE.mode !== 'spiral');
+  document.getElementById('passes-field').classList.toggle('hidden', auto || STATE.mode !== 'lapidary');
+}
+
+function updateCommandPreview() {
+  const cmd = buildCommand();
+  document.getElementById('command-output').textContent = cmd;
+}
+
+// ── Build Command ─────────────────────────────────────
+function buildCommand() {
+  const parts = [STATE.cmdPrefix];
+
+  // Input
+  const wf = STATE.workflow;
+  if (wf === 'session') {
+    if (STATE.seedTopic) parts.push(q(STATE.seedTopic));
+    if (STATE.briefFile) parts.push('--brief', q(STATE.briefFile));
+    if (STATE.brandName) parts.push('--brand', q(STATE.brandName));
+    if (STATE.notesText) parts.push('--notes', q(STATE.notesText));
+  } else if (wf === 'report-only') {
+    if (STATE.reportOnlyFile) parts.push('--report-only', q(STATE.reportOnlyFile));
+  } else if (wf === 'synthesise') {
+    if (STATE.synthesiseFiles) {
+      parts.push('--synthesise');
+      STATE.synthesiseFiles.split('\n').filter(f => f.trim()).forEach(f => parts.push(q(f.trim())));
+    }
+  } else if (wf === 'resume') {
+    if (STATE.resumeFile) parts.push('--resume', q(STATE.resumeFile));
+  }
+
+  const isSession = wf === 'session';
+
+  if (isSession) {
+    if (STATE.mode !== 'dyslexic') parts.push('--mode', STATE.mode);
+    if (STATE.words !== 1500) parts.push('--words', '' + STATE.words);
+    if (STATE.outputDir) parts.push('--output', q(STATE.outputDir));
+    if (STATE.contextFile) parts.push('--context', q(STATE.contextFile));
+    if (!STATE.seedsAuto && STATE.seeds) parts.push('--seeds', '' + STATE.seeds);
+    if (STATE.pick) parts.push('--pick');
+    if (STATE.audience) parts.push('--audience', q(STATE.audience));
+
+    // Tone
+    const defaultTone = STATE.tone.length === 1 && STATE.tone[0] === 'provocative';
+    if (!defaultTone) parts.push('--tone', STATE.tone.join(','));
+
+    // Type
+    const allTypes = STATE.type.length === 3 && ['insight', 'brief', 'manifesto'].every(t => STATE.type.includes(t));
+    if (!allTypes) parts.push('--type', STATE.type.join(','));
+
+    if (STATE.lines !== 3) parts.push('--lines', '' + STATE.lines);
+    const practIsDefault = STATE.practitioners.length === PRACTITIONERS.length &&
+      PRACTITIONERS.every(p => STATE.practitioners.includes(p)) &&
+      STATE.practitioners.every(p => PRACTITIONERS.includes(p));
+    if (!practIsDefault && STATE.practitioners.length > 0) parts.push('--practitioners', q(STATE.practitioners.join(',')));
+    if (STATE.html) parts.push('--html');
+
+    // Mechanisms
+    if (!STATE.friction) parts.push('--no-friction');
+    if (!STATE.bias) parts.push('--no-bias');
+    if (!STATE.sensory) parts.push('--no-sensory');
+    if (!STATE.transcendence) parts.push('--no-transcendence');
+    if (!STATE.void) parts.push('--no-void');
+
+    // Autonomous
+    if (!STATE.autonomous) {
+      parts.push('--no-autonomous');
+      if (STATE.mode === 'dyslexic' && STATE.rounds !== 4) parts.push('--rounds', '' + STATE.rounds);
+      if (STATE.mode === 'spiral' && STATE.spirals !== 3) parts.push('--spirals', '' + STATE.spirals);
+      if (STATE.mode === 'lapidary' && STATE.passes !== 3) parts.push('--passes', '' + STATE.passes);
+    } else {
+      if (STATE.turns !== 35) parts.push('--turns', '' + STATE.turns);
+    }
+
+    // Advanced
+    if (STATE.include.length > 0) parts.push('--include', STATE.include.join(','));
+    if (STATE.exclude.length > 0) parts.push('--exclude', STATE.exclude.join(','));
+    if (STATE.shuffle) parts.push('--shuffle');
+    if (STATE.skipStrict) parts.push('--skip-strict');
+    if (STATE.compact) parts.push('--compact');
+    if (STATE.noGround) parts.push('--no-ground');
+    if (STATE.groundOnly) parts.push('--ground-only');
+    if (STATE.allowedTools !== 'WebSearch,WebFetch') {
+      parts.push('--allowedTools', STATE.allowedTools ? q(STATE.allowedTools) : '""');
+    }
+  } else {
+    // Non-session modes (report-only, synthesise, resume)
+    if (STATE.words !== 1500) parts.push('--words', '' + STATE.words);
+    if (STATE.outputDir) parts.push('--output', q(STATE.outputDir));
+    if (wf === 'report-only') {
+      const allFormats = STATE.formats.length === 1 && STATE.formats[0] === 'all';
+      if (!allFormats) parts.push('--formats', STATE.formats.join(','));
+      if (STATE.html) parts.push('--html');
+    }
+  }
+
+  // Format for display: wrap long commands
+  if (parts.length > 4) {
+    return parts[0] + ' ' + parts.slice(1).reduce((acc, part, i) => {
+      // Group flag + value pairs on the same line
+      const prev = parts[i]; // parts[i+1-1] = previous in slice(1)
+      if (i > 0 && !part.startsWith('-') && parts[i].startsWith('-')) {
+        return acc + ' ' + part;
+      }
+      if (i === 0) return part;
+      return acc + ' \\\n  ' + part;
+    }, '');
+  }
+  return parts.join(' ');
+}
+
+function q(s) {
+  if (/^[a-zA-Z0-9_.\/,-]+$/.test(s)) return s;
+  return '"' + s.replace(/"/g, '\\"') + '"';
+}
+
+function getCommandOneLine() {
+  const parts = [STATE.cmdPrefix];
+  const wf = STATE.workflow;
+
+  if (wf === 'session') {
+    if (STATE.seedTopic) parts.push(q(STATE.seedTopic));
+    if (STATE.briefFile) parts.push('--brief', q(STATE.briefFile));
+    if (STATE.brandName) parts.push('--brand', q(STATE.brandName));
+    if (STATE.notesText) parts.push('--notes', q(STATE.notesText));
+  } else if (wf === 'report-only') {
+    if (STATE.reportOnlyFile) parts.push('--report-only', q(STATE.reportOnlyFile));
+  } else if (wf === 'synthesise') {
+    if (STATE.synthesiseFiles) {
+      parts.push('--synthesise');
+      STATE.synthesiseFiles.split('\n').filter(f => f.trim()).forEach(f => parts.push(q(f.trim())));
+    }
+  } else if (wf === 'resume') {
+    if (STATE.resumeFile) parts.push('--resume', q(STATE.resumeFile));
+  }
+
+  const isSession = wf === 'session';
+
+  if (isSession) {
+    if (STATE.mode !== 'dyslexic') parts.push('--mode', STATE.mode);
+    if (STATE.words !== 1500) parts.push('--words', '' + STATE.words);
+    if (STATE.outputDir) parts.push('--output', q(STATE.outputDir));
+    if (STATE.contextFile) parts.push('--context', q(STATE.contextFile));
+    if (!STATE.seedsAuto && STATE.seeds) parts.push('--seeds', '' + STATE.seeds);
+    if (STATE.pick) parts.push('--pick');
+    if (STATE.audience) parts.push('--audience', q(STATE.audience));
+    const defaultTone = STATE.tone.length === 1 && STATE.tone[0] === 'provocative';
+    if (!defaultTone) parts.push('--tone', STATE.tone.join(','));
+    const allTypes = STATE.type.length === 3 && ['insight', 'brief', 'manifesto'].every(t => STATE.type.includes(t));
+    if (!allTypes) parts.push('--type', STATE.type.join(','));
+    if (STATE.lines !== 3) parts.push('--lines', '' + STATE.lines);
+    const practIsDefault = STATE.practitioners.length === PRACTITIONERS.length &&
+      PRACTITIONERS.every(p => STATE.practitioners.includes(p)) &&
+      STATE.practitioners.every(p => PRACTITIONERS.includes(p));
+    if (!practIsDefault && STATE.practitioners.length > 0) parts.push('--practitioners', q(STATE.practitioners.join(',')));
+    if (STATE.html) parts.push('--html');
+    if (!STATE.friction) parts.push('--no-friction');
+    if (!STATE.bias) parts.push('--no-bias');
+    if (!STATE.sensory) parts.push('--no-sensory');
+    if (!STATE.transcendence) parts.push('--no-transcendence');
+    if (!STATE.void) parts.push('--no-void');
+    if (!STATE.autonomous) {
+      parts.push('--no-autonomous');
+      if (STATE.mode === 'dyslexic' && STATE.rounds !== 4) parts.push('--rounds', '' + STATE.rounds);
+      if (STATE.mode === 'spiral' && STATE.spirals !== 3) parts.push('--spirals', '' + STATE.spirals);
+      if (STATE.mode === 'lapidary' && STATE.passes !== 3) parts.push('--passes', '' + STATE.passes);
+    } else {
+      if (STATE.turns !== 35) parts.push('--turns', '' + STATE.turns);
+    }
+    if (STATE.include.length > 0) parts.push('--include', STATE.include.join(','));
+    if (STATE.exclude.length > 0) parts.push('--exclude', STATE.exclude.join(','));
+    if (STATE.shuffle) parts.push('--shuffle');
+    if (STATE.skipStrict) parts.push('--skip-strict');
+    if (STATE.compact) parts.push('--compact');
+    if (STATE.noGround) parts.push('--no-ground');
+    if (STATE.groundOnly) parts.push('--ground-only');
+    if (STATE.allowedTools !== 'WebSearch,WebFetch') {
+      parts.push('--allowedTools', STATE.allowedTools ? q(STATE.allowedTools) : '""');
+    }
+  } else {
+    if (STATE.words !== 1500) parts.push('--words', '' + STATE.words);
+    if (STATE.outputDir) parts.push('--output', q(STATE.outputDir));
+    if (wf === 'report-only') {
+      const allFormats = STATE.formats.length === 1 && STATE.formats[0] === 'all';
+      if (!allFormats) parts.push('--formats', STATE.formats.join(','));
+      if (STATE.html) parts.push('--html');
+    }
+  }
+
+  return parts.join(' ');
+}
+
+// ── Copy ──────────────────────────────────────────────
+function copyCommand() {
+  const text = getCommandOneLine();
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy Command'; btn.classList.remove('copied'); }, 1500);
+  });
+}
+
+// ── Config Management ─────────────────────────────────
+function getConfigs() {
+  try { return JSON.parse(localStorage.getItem('tdf-configs') || '{}'); } catch { return {}; }
+}
+
+function saveConfig() {
+  const nameEl = document.getElementById('config-name');
+  const name = nameEl.value.trim();
+  if (!name) return;
+  const configs = getConfigs();
+  configs[name] = JSON.parse(JSON.stringify(STATE));
+  localStorage.setItem('tdf-configs', JSON.stringify(configs));
+  nameEl.value = '';
+  renderConfigList();
+}
+
+function loadConfig(name) {
+  const configs = getConfigs();
+  if (!configs[name]) return;
+  STATE = JSON.parse(JSON.stringify(configs[name]));
+  applyStateToUI();
+  render();
+}
+
+function deleteConfig(name) {
+  const configs = getConfigs();
+  delete configs[name];
+  localStorage.setItem('tdf-configs', JSON.stringify(configs));
+  renderConfigList();
+}
+
+function renderConfigList() {
+  const configs = getConfigs();
+  const list = document.getElementById('config-list');
+  const names = Object.keys(configs);
+  if (names.length === 0) {
+    list.innerHTML = '<div style="font-size: 0.8rem; color: var(--text-muted); padding: 0.3rem;">No saved configs</div>';
+    return;
+  }
+  list.innerHTML = names.map(name => `
+    <div class="config-item">
+      <span class="config-name" onclick="loadConfig('${name.replace(/'/g, "\\'")}')">${name}</span>
+      <span class="config-actions">
+        <button class="config-action-btn" onclick="loadConfig('${name.replace(/'/g, "\\'")}')">Load</button>
+        <button class="config-action-btn delete" onclick="deleteConfig('${name.replace(/'/g, "\\'")}')">Delete</button>
+      </span>
+    </div>
+  `).join('');
+}
+
+// ── State <-> UI Sync ─────────────────────────────────
+function applyStateToUI() {
+  // Workflow chips
+  document.querySelectorAll('#workflow-chips .chip').forEach(chip => {
+    chip.classList.toggle('active', chip.dataset.value === STATE.workflow);
+  });
+
+  // Text inputs
+  document.getElementById('seedTopic').value = STATE.seedTopic;
+  document.getElementById('briefFile').value = STATE.briefFile;
+  document.getElementById('brandName').value = STATE.brandName;
+  document.getElementById('notesText').value = STATE.notesText;
+  document.getElementById('reportOnlyFile').value = STATE.reportOnlyFile;
+  document.getElementById('synthesiseFiles').value = STATE.synthesiseFiles;
+  document.getElementById('resumeFile').value = STATE.resumeFile;
+  document.getElementById('outputDir').value = STATE.outputDir;
+  document.getElementById('contextFile').value = STATE.contextFile;
+  document.getElementById('audience').value = STATE.audience;
+  document.getElementById('allowedTools').value = STATE.allowedTools;
+  document.getElementById('seedsAuto').checked = STATE.seedsAuto;
+  document.getElementById('seeds-num-wrap').classList.toggle('hidden', STATE.seedsAuto);
+  document.getElementById('seeds').value = STATE.seeds;
+
+  // Mode
+  document.querySelectorAll('#mode-control button').forEach(b => {
+    b.classList.toggle('active', b.dataset.value === STATE.mode);
+  });
+
+  // Sliders
+  document.getElementById('wordsRange').value = STATE.words;
+  document.getElementById('wordsNum').value = STATE.words;
+  document.getElementById('linesRange').value = STATE.lines;
+  document.getElementById('linesNum').value = STATE.lines;
+  document.getElementById('turnsRange').value = STATE.turns;
+  document.getElementById('turnsNum').value = STATE.turns;
+  document.getElementById('rounds').value = STATE.rounds;
+  document.getElementById('spirals').value = STATE.spirals;
+  document.getElementById('passes').value = STATE.passes;
+
+  // Toggles
+  document.getElementById('pick').checked = STATE.pick;
+  document.getElementById('html').checked = STATE.html;
+  document.getElementById('autonomous').checked = STATE.autonomous;
+  document.getElementById('shuffle').checked = STATE.shuffle;
+  document.getElementById('skipStrict').checked = STATE.skipStrict;
+  document.getElementById('compact').checked = STATE.compact;
+  document.getElementById('noGround').checked = STATE.noGround;
+  document.getElementById('groundOnly').checked = STATE.groundOnly;
+
+  // Mechanisms
+  ['friction', 'bias', 'sensory', 'transcendence', 'void'].forEach(m => {
+    const input = document.querySelector(`input[data-key="${m}"]`);
+    if (input) {
+      input.checked = STATE[m];
+      input.closest('.mechanism-card').classList.toggle('disabled', !STATE[m]);
+    }
+  });
+
+  // Tone chips
+  syncToneChips();
+
+  // Practitioner chips (rebuild to include custom names)
+  buildPractitionerChips();
+
+  // Type checkboxes
+  document.querySelectorAll('#type-checks input').forEach(cb => {
+    cb.checked = STATE.type.includes(cb.value);
+  });
+
+  // Format checkboxes
+  document.querySelectorAll('#format-checks input').forEach(cb => {
+    cb.checked = STATE.formats.includes(cb.value);
+  });
+
+  // Lens chips
+  document.querySelectorAll('.chip[data-lens-group="include"]').forEach(chip => {
+    chip.classList.toggle('active', STATE.include.includes(chip.dataset.value));
+  });
+  document.querySelectorAll('.chip[data-lens-group="exclude"]').forEach(chip => {
+    chip.classList.toggle('active', STATE.exclude.includes(chip.dataset.value));
+  });
+
+  // Prefix toggle
+  document.querySelectorAll('#prefix-toggle button').forEach(b => {
+    b.classList.toggle('active', b.dataset.value === STATE.cmdPrefix);
+  });
+}
+
+function loadLastState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('tdf-last-state'));
+    if (saved) {
+      // Merge with defaults so new keys are present
+      STATE = { ...JSON.parse(JSON.stringify(DEFAULTS)), ...saved };
+      // Migrate legacy inputMode to workflow
+      if (STATE.inputMode) {
+        if (['seed', 'brief', 'brand', 'notes'].includes(STATE.inputMode)) {
+          STATE.workflow = 'session';
+        } else if (STATE.inputMode === 'report-only') {
+          STATE.workflow = 'report-only';
+        } else {
+          STATE.workflow = STATE.inputMode;
+        }
+        delete STATE.inputMode;
+      }
+      applyStateToUI();
+    }
+  } catch {}
+  renderConfigList();
+}
+
+// ── File Picker (native) ─────────────────────────────
+function initFilePicker() {
+  document.querySelectorAll('[data-browse]').forEach(btn => {
+    const targetId = btn.dataset.browse;
+    const picker = document.getElementById(targetId + '-picker');
+    if (!picker) return;
+
+    btn.addEventListener('click', () => picker.click());
+
+    picker.addEventListener('change', () => {
+      if (picker.files.length > 0) {
+        const input = document.getElementById(targetId);
+        input.value = picker.files[0].name;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      picker.value = '';
+    });
+  });
+}
+
+// ── Boot ──────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', init);
+</script>
+
+</body>
+</html>
