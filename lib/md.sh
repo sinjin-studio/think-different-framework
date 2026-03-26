@@ -22,7 +22,7 @@ md_init_header() {
   MD_BUFFER=""
 }
 
-md_append_agent() {
+md_append_lens() {
   local emoji="$1"
   local name="$2"
   local bias="$3"

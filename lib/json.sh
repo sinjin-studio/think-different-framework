@@ -20,7 +20,7 @@ json_close() {
 }
 
 json_append_entry() {
-  local agent_key="$1"
+  local lens_key="$1"
   local name="$2"
   local emoji="$3"
   local bias="$4"
@@ -33,8 +33,8 @@ json_append_entry() {
   escaped_content=$(echo "$content" | json_escape)
 
   local entry
-  entry=$(printf '{"agent":"%s","name":"%s","emoji":"%s","bias":"%s","phase":"%s","%s":%s,"turn":%s,"content":%s}' \
-    "$agent_key" "$name" "$emoji" "$bias" "$phase" "$UNIT_LABEL" "$unit_num" "$turn" "$escaped_content")
+  entry=$(printf '{"lens":"%s","name":"%s","emoji":"%s","bias":"%s","phase":"%s","%s":%s,"turn":%s,"content":%s}' \
+    "$lens_key" "$name" "$emoji" "$bias" "$phase" "$UNIT_LABEL" "$unit_num" "$turn" "$escaped_content")
 
   JSON_ENTRIES+=("$entry")
 }

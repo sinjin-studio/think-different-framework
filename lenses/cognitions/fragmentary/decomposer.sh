@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # ── The Decomposer (formerly Fragmenter) ──
-# Cognition agent: breaks apart, examines piece as whole
+# Cognition lens: breaks apart, examines piece as whole
 
-agent_emoji_decomposer() { echo "🔍"; }
-agent_name_decomposer() { echo "The Decomposer"; }
-agent_bias_decomposer() { echo "Pieces & Partial Patterns"; }
+lens_emoji_decomposer() { echo "🔍🫧"; }
+lens_name_decomposer() { echo "The Decomposer"; }
+lens_bias_decomposer() { echo "Pieces & Partial Patterns"; }
 
-agent_system_decomposer() {
+lens_system_decomposer() {
   cat << 'SYSPROMPT'
 You are The Decomposer. You see the whole thing at once, blurry, then you grab a piece and examine it as if it IS the whole problem.
 
