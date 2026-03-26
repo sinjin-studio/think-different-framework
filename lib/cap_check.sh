@@ -14,6 +14,42 @@ CAP_FAIL_COUNT=0
 CAP_FAIL_THRESHOLD=2
 CLAUDE_RESPONSE=""
 ALLOWED_TOOLS_FLAG=""
+LAST_CLAUDE_ERROR=""
+LAST_CLAUDE_EXIT_CODE=0
+
+# ── Verbose session log globals ──
+VERBOSE_LOG=""       # Path to log.jsonl - set after session dir creation
+VERBOSE_CALLER=""    # Set by callers before invoking claude_call* (e.g. "lens:empath")
+
+# ── Append a JSONL entry to the verbose log ──
+# Captures: caller, call type, prompt excerpt, full response, exit code, cap hit
+verbose_log_entry() {
+  [ -z "$VERBOSE_LOG" ] && return
+  local call_type="$1"
+  local prompt_file="$2"
+  local response="$3"
+  local exit_code="$4"
+  local cap_hit="$5"
+
+  local prompt_excerpt=""
+  if [ -f "$prompt_file" ]; then
+    prompt_excerpt=$(head -c 500 "$prompt_file")
+  fi
+
+  python3 -c "
+import sys, json, datetime
+entry = {
+    'ts': datetime.datetime.now().isoformat(timespec='seconds'),
+    'caller': sys.argv[1],
+    'type': sys.argv[2],
+    'prompt_excerpt': sys.argv[3],
+    'response': sys.argv[4],
+    'exit_code': int(sys.argv[5]),
+    'cap_hit': sys.argv[6] == 'true'
+}
+print(json.dumps(entry))
+" "${VERBOSE_CALLER:-unknown}" "$call_type" "$prompt_excerpt" "$response" "$exit_code" "$cap_hit" >> "$VERBOSE_LOG" 2>/dev/null || true
+}
 
 # ── Build --allowedTools flag from ALLOWED_TOOLS global ──
 build_tools_flag() {
@@ -39,11 +75,16 @@ is_cap_hit() {
     return 0
   fi
 
-  # Empty or whitespace-only response
+  # Empty or whitespace-only response - only a cap hit if there's also an error signal
   local trimmed
   trimmed=$(echo "$response" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
   if [ -z "$trimmed" ]; then
-    return 0
+    local trimmed_stderr
+    trimmed_stderr=$(echo "$stderr" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+    if [ -n "$trimmed_stderr" ]; then
+      return 0  # Empty response + stderr content = likely cap/error
+    fi
+    return 1  # Empty response but no error signal - not a cap hit
   fi
 
   # Check for error strings in response or stderr (bash 3.2 compatible)
@@ -58,6 +99,55 @@ is_cap_hit() {
   done
 
   return 1
+}
+
+# ── Wrapper for claude -p calls with structured JSON output ──
+# Usage: claude_call_json "$tmpfile" "$json_schema" ["$system_prompt"]
+# Sets: CLAUDE_RESPONSE (raw JSON string)
+# Returns: 0 on success, 1 on failure
+claude_call_json() {
+  local tmpfile="$1"
+  local json_schema="$2"
+  local system_prompt="${3:-}"
+
+  local stderr_file
+  stderr_file=$(mktemp)
+
+  local exit_code=0
+  local raw_response=""
+  if [ -n "$system_prompt" ]; then
+    raw_response=$(cat "$tmpfile" | claude -p --system-prompt "$system_prompt" --json-schema "$json_schema" --output-format json $ALLOWED_TOOLS_FLAG 2>"$stderr_file") || exit_code=$?
+  else
+    raw_response=$(cat "$tmpfile" | claude -p --json-schema "$json_schema" --output-format json $ALLOWED_TOOLS_FLAG 2>"$stderr_file") || exit_code=$?
+  fi
+
+  local stderr_content
+  stderr_content=$(cat "$stderr_file")
+  rm -f "$stderr_file"
+
+  # Extract structured_output from the wrapper JSON envelope
+  CLAUDE_RESPONSE=""
+  if [ "$exit_code" -eq 0 ] && [ -n "$raw_response" ]; then
+    CLAUDE_RESPONSE=$(echo "$raw_response" | python3 -c "import sys,json; so=json.load(sys.stdin).get('structured_output'); print(json.dumps(so) if so else '')" 2>/dev/null || echo "")
+  fi
+
+  if is_cap_hit "$exit_code" "$CLAUDE_RESPONSE" "$stderr_content"; then
+    LAST_CLAUDE_ERROR="$stderr_content"
+    LAST_CLAUDE_EXIT_CODE="$exit_code"
+    CAP_FAIL_COUNT=$((CAP_FAIL_COUNT + 1))
+    if [ "$CAP_FAIL_COUNT" -ge "$CAP_FAIL_THRESHOLD" ]; then
+      CAP_LIMIT_HIT="true"
+    fi
+    verbose_log_entry "claude_call_json" "$tmpfile" "" "$exit_code" "true"
+    CLAUDE_RESPONSE=""
+    return 1
+  fi
+
+  verbose_log_entry "claude_call_json" "$tmpfile" "$CLAUDE_RESPONSE" "0" "false"
+  LAST_CLAUDE_ERROR=""
+  LAST_CLAUDE_EXIT_CODE=0
+  CAP_FAIL_COUNT=0
+  return 0
 }
 
 # ── Wrapper for claude -p calls ──
@@ -83,16 +173,69 @@ claude_call() {
   rm -f "$stderr_file"
 
   if is_cap_hit "$exit_code" "$CLAUDE_RESPONSE" "$stderr_content"; then
+    LAST_CLAUDE_ERROR="$stderr_content"
+    LAST_CLAUDE_EXIT_CODE="$exit_code"
     CAP_FAIL_COUNT=$((CAP_FAIL_COUNT + 1))
     if [ "$CAP_FAIL_COUNT" -ge "$CAP_FAIL_THRESHOLD" ]; then
       CAP_LIMIT_HIT="true"
     fi
+    verbose_log_entry "claude_call" "$tmpfile" "" "$exit_code" "true"
     CLAUDE_RESPONSE=""
     return 1
   fi
 
-  # Success - reset counter
+  # Success - reset counter and error state
+  verbose_log_entry "claude_call" "$tmpfile" "$CLAUDE_RESPONSE" "0" "false"
+  LAST_CLAUDE_ERROR=""
+  LAST_CLAUDE_EXIT_CODE=0
   CAP_FAIL_COUNT=0
+  return 0
+}
+
+# ── Cap-free wrapper for deterministic pipelines (e.g. report generation) ──
+# Calls claude -p without cap tracking. Failures do not cascade.
+# Usage: claude_call_no_cap "$tmpfile" ["$system_prompt"]
+# Sets: CLAUDE_RESPONSE, LAST_CLAUDE_ERROR, LAST_CLAUDE_EXIT_CODE
+# Returns: 0 on success, 1 on failure
+claude_call_no_cap() {
+  local tmpfile="$1"
+  local system_prompt="${2:-}"
+
+  local stderr_file
+  stderr_file=$(mktemp)
+
+  local exit_code=0
+  if [ -n "$system_prompt" ]; then
+    CLAUDE_RESPONSE=$(cat "$tmpfile" | claude -p --system-prompt "$system_prompt" $ALLOWED_TOOLS_FLAG 2>"$stderr_file") || exit_code=$?
+  else
+    CLAUDE_RESPONSE=$(cat "$tmpfile" | claude -p $ALLOWED_TOOLS_FLAG 2>"$stderr_file") || exit_code=$?
+  fi
+
+  local stderr_content
+  stderr_content=$(cat "$stderr_file")
+  rm -f "$stderr_file"
+
+  LAST_CLAUDE_EXIT_CODE="$exit_code"
+  LAST_CLAUDE_ERROR="$stderr_content"
+
+  # Check for empty/failed response (no cap tracking)
+  if [ "$exit_code" -ne 0 ]; then
+    verbose_log_entry "claude_call_no_cap" "$tmpfile" "" "$exit_code" "false"
+    CLAUDE_RESPONSE=""
+    return 1
+  fi
+
+  local trimmed
+  trimmed=$(echo "$CLAUDE_RESPONSE" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+  if [ -z "$trimmed" ]; then
+    verbose_log_entry "claude_call_no_cap" "$tmpfile" "" "$exit_code" "false"
+    CLAUDE_RESPONSE=""
+    return 1
+  fi
+
+  verbose_log_entry "claude_call_no_cap" "$tmpfile" "$CLAUDE_RESPONSE" "0" "false"
+  LAST_CLAUDE_ERROR=""
+  LAST_CLAUDE_EXIT_CODE=0
   return 0
 }
 
@@ -121,11 +264,13 @@ save_state() {
   "project_context": ${escaped_context},
   "lens_context": ${escaped_lens},
   "status": "in_progress",
+  "last_compact_turn": ${LAST_COMPACT_TURN:-0},
   "flags": {
     "friction_enabled": ${FRICTION_ENABLED:-true},
     "bias_enabled": ${BIAS_ENABLED:-true},
     "sensory_enabled": ${SENSORY_ENABLED:-true},
     "shuffle_enabled": ${SHUFFLE_ENABLED:-false},
+    "compact_enabled": ${COMPACT_ENABLED:-true},
     "allowed_tools": "${ALLOWED_TOOLS:-}"
   }
 }
@@ -188,7 +333,9 @@ print('FRICTION_ENABLED=' + shlex.quote(str(state['flags']['friction_enabled']).
 print('BIAS_ENABLED=' + shlex.quote(str(state['flags']['bias_enabled']).lower()))
 print('SENSORY_ENABLED=' + shlex.quote(str(state['flags']['sensory_enabled']).lower()))
 print('SHUFFLE_ENABLED=' + shlex.quote(str(state['flags']['shuffle_enabled']).lower()))
+print('COMPACT_ENABLED=' + shlex.quote(str(state['flags'].get('compact_enabled', True)).lower()))
 print('ALLOWED_TOOLS=' + shlex.quote(state['flags'].get('allowed_tools', '')))
+print('LAST_COMPACT_TURN=' + str(state.get('last_compact_turn', 0)))
 ")"
 
   # Rebuild tools flag from restored state

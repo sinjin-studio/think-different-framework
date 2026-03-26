@@ -2,15 +2,21 @@
 # -- Cognitive bias as creative fuel --
 # Reads conversation and identifies which cognitive biases are alive,
 # then asks how each could be channelled into something authentic.
-# Different from friction (friction is felt, bias is identified and harnessed).
+# Returns structured decision in $BIAS_DECISION (JSON).
 # Expects globals: $CONVERSATION, $TRANSCRIPT_MD, $TRANSCRIPT_JSON,
 #                  $TURN_COUNT, $UNIT_LABEL
-# Depends on: lib/json.sh
+# Depends on: lib/json.sh, lib/cap_check.sh
+
+BIAS_DECISION=""
 
 detect_cognitive_bias() {
   [ "$BIAS_ENABLED" != "true" ] && return
   local unit_num="$1"
+  BIAS_DECISION=""
   start_spinner "🧲 Reading cognitive bias as creative fuel"
+
+  local mechanism_history
+  mechanism_history=$(build_mechanism_history)
 
   local bias_prompt="You are a metacognitive observer reading a conversation between several thinkers. Your job is not to flag biases as problems. It is to notice which cognitive biases are already alive in the conversation and ask how each could be channelled into something authentic and resonant.
 
@@ -27,8 +33,12 @@ Look for:
 
 The line to draw: understanding how humans actually decide versus exploiting them. The former is craft. The latter is manipulation. Name which side each bias is on.
 
-Output 2-3 short observations. Name the bias. Show how it is operating. Ask how it could be channelled generatively. One sentence each. No labels, no numbering.
+Respond with a JSON object containing:
+- observations: an array of 2-3 short observation strings (name the bias, show how it is operating, ask how it could be channelled generatively)
+- biases_detected: an array of bias names found in the conversation
+- recommendation: a short string describing how the conversation could channel these biases more honestly
 
+${mechanism_history}
 CONVERSATION:
 ${CONVERSATION}"
 
@@ -44,9 +54,24 @@ ${CONVERSATION}"
     return
   fi
 
-  local biases
-  if claude_call "$tmpfile"; then
-    biases="$CLAUDE_RESPONSE"
+  local json_schema='{"type":"object","properties":{"observations":{"type":"array","items":{"type":"string"}},"biases_detected":{"type":"array","items":{"type":"string"}},"recommendation":{"type":"string"}},"required":["observations","biases_detected","recommendation"]}'
+
+  local biases decision_json
+  VERBOSE_CALLER="mechanism:bias"
+  if claude_call_json "$tmpfile" "$json_schema"; then
+    decision_json="$CLAUDE_RESPONSE"
+    BIAS_DECISION="$decision_json"
+    biases=$(echo "$decision_json" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+for obs in d.get('observations', []):
+    print(obs)
+" 2>/dev/null || echo "No significant cognitive biases detected.")
+    # Append to mechanism memory
+    local bias_names bias_rec_text
+    bias_names=$(echo "$decision_json" | python3 -c "import sys,json; print(', '.join(json.load(sys.stdin).get('biases_detected',[])))" 2>/dev/null || echo "")
+    bias_rec_text=$(echo "$decision_json" | python3 -c "import sys,json; print(json.load(sys.stdin).get('recommendation',''))" 2>/dev/null || echo "")
+    append_mechanism_memory "bias" "$unit_num" "$bias_names" "$bias_rec_text"
   else
     rm -f "$tmpfile"
     if [ "$CAP_LIMIT_HIT" = "true" ]; then

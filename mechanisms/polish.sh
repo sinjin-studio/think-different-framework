@@ -38,6 +38,7 @@ ${CONVERSATION}"
   fi
 
   local assessment
+  VERBOSE_CALLER="mechanism:polish"
   if claude_call "$tmpfile"; then
     assessment="$CLAUDE_RESPONSE"
   else

@@ -28,7 +28,7 @@ import json, sys
 with open('${TRANSCRIPT_JSON}', 'r') as f:
     content = f.read().rstrip().rstrip(',')
     data = json.loads(content + ']')
-integrators = [e for e in data if e['agent'] == 'integrator' and e.get('spiral', 0) == ${spiral_num}]
+integrators = [e for e in data if e['lens'] == 'integrator' and e.get('spiral', 0) == ${spiral_num}]
 if integrators:
     text = integrators[-1]['content']
     parts = []
