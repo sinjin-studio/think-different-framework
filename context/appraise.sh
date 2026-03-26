@@ -51,6 +51,8 @@ WHAT COULD BE REMOVED: [What is already unnecessary in how this seed is framed? 
 
 ${PROJECT_CONTEXT:+PROJECT CONTEXT (ground truth about the actual situation):
 ${PROJECT_CONTEXT}}
+${ZEITGEIST_CONTEXT:+
+${ZEITGEIST_CONTEXT}}
 
 SEED TOPIC: ${SEED_TOPIC}"
 
@@ -58,6 +60,7 @@ SEED TOPIC: ${SEED_TOPIC}"
   tmpfile=$(mktemp)
   echo "$appraise_prompt" > "$tmpfile"
 
+  VERBOSE_CALLER="seed:appraise"
   if claude_call "$tmpfile"; then
     APPRAISE_CONTEXT="$CLAUDE_RESPONSE"
   else
@@ -66,7 +69,7 @@ SEED TOPIC: ${SEED_TOPIC}"
       stop_spinner "cap limit"
       return 1
     fi
-    APPRAISE_CONTEXT="No appraisal context available. Agents should follow their own instincts."
+    APPRAISE_CONTEXT="No appraisal context available. Lenses should follow their own instincts."
   fi
   rm -f "$tmpfile"
 

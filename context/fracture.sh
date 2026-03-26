@@ -50,6 +50,8 @@ WILDCARD: [Something that has no connection to the seed at all but might produce
 
 ${PROJECT_CONTEXT:+PROJECT CONTEXT (ground truth about the actual situation):
 ${PROJECT_CONTEXT}}
+${ZEITGEIST_CONTEXT:+
+${ZEITGEIST_CONTEXT}}
 
 SEED TOPIC: ${SEED_TOPIC}"
 
@@ -57,6 +59,7 @@ SEED TOPIC: ${SEED_TOPIC}"
   tmpfile=$(mktemp)
   echo "$fracture_prompt" > "$tmpfile"
 
+  VERBOSE_CALLER="seed:fracture"
   if claude_call "$tmpfile"; then
     FRACTURE_CONTEXT="$CLAUDE_RESPONSE"
   else
@@ -65,7 +68,7 @@ SEED TOPIC: ${SEED_TOPIC}"
       stop_spinner "cap limit"
       return 1
     fi
-    FRACTURE_CONTEXT="No fracture context available. Agents should follow their own instincts."
+    FRACTURE_CONTEXT="No fracture context available. Lenses should follow their own instincts."
   fi
   rm -f "$tmpfile"
 

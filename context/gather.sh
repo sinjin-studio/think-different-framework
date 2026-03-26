@@ -88,6 +88,7 @@ Keep the brief under 500 words. Concrete and specific."
   local gather_tmpfile
   gather_tmpfile=$(mktemp)
   echo "$gather_prompt" > "$gather_tmpfile"
+  VERBOSE_CALLER="gather"
   if claude_call "$gather_tmpfile"; then
     PROJECT_CONTEXT="$CLAUDE_RESPONSE"
   else

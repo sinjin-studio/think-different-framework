@@ -30,7 +30,7 @@ Then tune the seed."
 
   start_spinner "🌱 Tuning lenses to the seed"
 
-  local tuning_prompt="You are preparing a multi-agent brainstorming session. Given the seed topic below, suggest unexpected angles of approach.
+  local tuning_prompt="You are preparing a multi-lens brainstorming session. Given the seed topic below, suggest unexpected angles of approach.
 
 ${ground_section:+${ground_section}
 
@@ -46,6 +46,8 @@ WILDCARD: [One completely orthogonal concept, phenomenon, or question that has n
 
 ${PROJECT_CONTEXT:+PROJECT CONTEXT (use this to ground your suggestions in the actual situation):
 ${PROJECT_CONTEXT}}
+${ZEITGEIST_CONTEXT:+
+${ZEITGEIST_CONTEXT}}
 
 SEED TOPIC: ${SEED_TOPIC}"
 
@@ -53,6 +55,7 @@ SEED TOPIC: ${SEED_TOPIC}"
   tmpfile=$(mktemp)
   echo "$tuning_prompt" > "$tmpfile"
 
+  VERBOSE_CALLER="seed:tune"
   if claude_call "$tmpfile"; then
     LENS_CONTEXT="$CLAUDE_RESPONSE"
   else
@@ -61,7 +64,7 @@ SEED TOPIC: ${SEED_TOPIC}"
       stop_spinner "cap limit"
       return 1
     fi
-    LENS_CONTEXT="No lens context available. Agents should follow their own instincts."
+    LENS_CONTEXT="No lens context available. Lenses should follow their own instincts."
   fi
   rm -f "$tmpfile"
 
@@ -79,7 +82,7 @@ ${PROJECT_CONTEXT}"
 
   CONVERSATION="${CONVERSATION}
 
-LENS CONTEXT (optional starting points for the agents, not constraints):
+LENS CONTEXT (optional starting points for the lenses, not constraints):
 ${LENS_CONTEXT}"
 
   if [ -n "$PROJECT_CONTEXT" ]; then

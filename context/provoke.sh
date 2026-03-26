@@ -4,7 +4,7 @@
 # seed provocations that drive separate thinking sessions.
 # Expects globals: $SEED_COUNT (default 3), $PROJECT_CONTEXT (optional),
 #                  $PROVOCATION_TONE (default "provocative")
-# Sets: $PROVOCATIONS (array)
+# Sets: $PROVOCATIONS (array), $ZEITGEIST_SOURCES (array)
 
 # ── Tone-specific prompt blocks ──
 
@@ -26,7 +26,7 @@ Do NOT produce:
 - Affirmations that avoid the hard question underneath
 TONE
       ;;
-    intimate)
+    personal)
       cat <<'TONE'
 Each provocation should be:
 - Zoomed to one human, one moment, one sensory detail - the provocation lives in specificity, not abstraction
@@ -95,17 +95,17 @@ generate_provocations() {
   local input_type="$2"  # "brief", "brand", "notes", "project"
 
   # Progress emoji based on tone
-  local tone_emoji="🔥"
+  local tone_emoji="💣🌶️"
   local tone_label="${PROVOCATION_TONE:-provocative}"
   if [[ "$tone_label" == *","* ]]; then
-    tone_emoji="🎲"
+    tone_emoji="🎲✨"
     tone_label="mixed"
   else
     case "$tone_label" in
-      generous) tone_emoji="🌱" ;;
-      intimate) tone_emoji="🤌" ;;
-      absurd)   tone_emoji="🌀" ;;
-      daydream) tone_emoji="💭" ;;
+      generous) tone_emoji="🌷🎁" ;;
+      personal) tone_emoji="🤲🫀" ;;
+      absurd)   tone_emoji="🦞📞" ;;
+      daydream) tone_emoji="☁️💭" ;;
     esac
   fi
   start_spinner "${tone_emoji} Generating provocations (${tone_label})"
@@ -192,6 +192,7 @@ ${context_block}${audience_block}"
   echo "$provoke_prompt" > "$tmpfile"
 
   local raw_provocations
+  VERBOSE_CALLER="provoke"
   if claude_call "$tmpfile"; then
     raw_provocations="$CLAUDE_RESPONSE"
   else
@@ -208,18 +209,37 @@ ${context_block}${audience_block}"
   fi
   rm -f "$tmpfile"
 
-  # Parse numbered lines into array (bash 3.2 compatible)
+  # Parse numbered lines into array, separating sources from provocations (bash 3.2 compatible)
   PROVOCATIONS=()
+  ZEITGEIST_SOURCES=()
   while IFS= read -r line; do
     # Strip leading number, period, and whitespace
     local cleaned
     cleaned=$(echo "$line" | sed 's/^[0-9]*\.\s*//' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
-    if [ -n "$cleaned" ]; then
-      PROVOCATIONS+=("$cleaned")
+    if [ -z "$cleaned" ]; then
+      continue
     fi
+    # Detect source/reference lines - capture rather than discard
+    case "$cleaned" in
+      "Sources:"*|"Sources"*|"References:"*|"References"*)
+        continue ;;
+      "- ["*|"* ["*)
+        ZEITGEIST_SOURCES+=("$cleaned") ;;
+      "http://"*|"https://"*)
+        ZEITGEIST_SOURCES+=("$cleaned") ;;
+      "- http://"*|"- https://"*)
+        ZEITGEIST_SOURCES+=("$cleaned") ;;
+      *)
+        PROVOCATIONS+=("$cleaned") ;;
+    esac
   done <<< "$raw_provocations"
 
-  stop_spinner "done (${#PROVOCATIONS[@]} provocations)"
+  # Safety net: enforce --seeds count if Claude still over-generated
+  if [ ${#PROVOCATIONS[@]} -gt ${SEED_COUNT} ]; then
+    PROVOCATIONS=("${PROVOCATIONS[@]:0:${SEED_COUNT}}")
+  fi
+
+  stop_spinner "done (${#PROVOCATIONS[@]} provocations, ${#ZEITGEIST_SOURCES[@]} sources captured)"
   echo ""
 
   local i=1
@@ -228,6 +248,14 @@ ${context_block}${audience_block}"
     i=$((i + 1))
   done
   echo ""
+
+  if [ ${#ZEITGEIST_SOURCES[@]} -gt 0 ]; then
+    echo "  📰 Known territory (${#ZEITGEIST_SOURCES[@]} sources captured):"
+    for src in "${ZEITGEIST_SOURCES[@]}"; do
+      echo "     ${src}"
+    done
+    echo ""
+  fi
 }
 
 pick_provocations() {
@@ -259,6 +287,117 @@ pick_provocations() {
   echo ""
 }
 
+# ── Provocation review gate ──
+# Reviews generated provocations for distinctness and new territory.
+# Merges similar ones, reframes weak ones. Only runs when multiple provocations exist.
+review_provocations() {
+  [ "${#PROVOCATIONS[@]}" -le 1 ] && return
+  [ "${AUTONOMOUS_MODE:-}" != "true" ] && return
+
+  start_spinner "🔍 Reviewing provocations for distinctness"
+
+  local prov_list=""
+  local i=1
+  for prov in "${PROVOCATIONS[@]}"; do
+    prov_list="${prov_list}
+${i}. ${prov}"
+    i=$((i + 1))
+  done
+
+  local review_prompt="You are reviewing seed provocations for a creative thinking session. Each provocation will drive a separate thinking session. For the sessions to produce genuinely different output, the provocations must open genuinely different territory.
+
+Review these provocations:
+${prov_list}
+
+For each provocation, assess:
+- DISTINCTNESS: Does this provocation open territory the others cannot reach? Different angles on familiar ground is not enough - each should explore new territory.
+- TENSION POTENTIAL: Does it contain a genuine tension that lenses can work with, or is it flat?
+- CONVENTIONAL OVERLAP: Would two or more of these provocations lead to the same conventional answer?
+
+Respond with a JSON object."
+
+  local json_schema='{"type":"object","properties":{"provocations":{"type":"array","items":{"type":"object","properties":{"index":{"type":"integer"},"verdict":{"type":"string","enum":["keep","merge","reframe"]},"reason":{"type":"string"},"reframed":{"type":"string"}},"required":["index","verdict","reason"]}}},"required":["provocations"]}'
+
+  local tmpfile
+  tmpfile=$(mktemp)
+  echo "$review_prompt" > "$tmpfile"
+
+  VERBOSE_CALLER="provoke:review"
+  if claude_call_json "$tmpfile" "$json_schema"; then
+    local review_json="$CLAUDE_RESPONSE"
+
+    # Process the review decisions
+    local new_provocations=()
+    local merged_indices=""
+
+    # Use python to process the JSON and produce shell-safe output
+    eval "$(echo "$review_json" | python3 -c "
+import sys, json, shlex
+
+d = json.load(sys.stdin)
+provs = d.get('provocations', [])
+merge_targets = set()
+reframes = {}
+
+for p in provs:
+    idx = p.get('index', 0)
+    verdict = p.get('verdict', 'keep')
+    if verdict == 'merge':
+        merge_targets.add(idx)
+    elif verdict == 'reframe':
+        reframed = p.get('reframed', '')
+        if reframed:
+            reframes[idx] = reframed
+
+print('MERGE_INDICES=' + shlex.quote(','.join(str(i) for i in sorted(merge_targets))))
+for idx, text in reframes.items():
+    print(f'REFRAME_{idx}=' + shlex.quote(text))
+" 2>/dev/null || echo "")"
+
+    # Rebuild provocations array
+    local new_provs=()
+    i=1
+    for prov in "${PROVOCATIONS[@]}"; do
+      local skip="false"
+      # Check if merged
+      if [[ ",$MERGE_INDICES," == *",$i,"* ]]; then
+        skip="true"
+        echo "  ⊘ Provocation ${i} merged (too similar)"
+      fi
+
+      if [ "$skip" = "false" ]; then
+        # Check if reframed
+        local reframe_var="REFRAME_${i}"
+        local reframed="${!reframe_var:-}"
+        if [ -n "$reframed" ]; then
+          echo "  ↻ Provocation ${i} reframed for new territory"
+          new_provs+=("$reframed")
+        else
+          new_provs+=("$prov")
+        fi
+      fi
+      i=$((i + 1))
+    done
+
+    if [ "${#new_provs[@]}" -gt 0 ]; then
+      PROVOCATIONS=("${new_provs[@]}")
+    fi
+  fi
+
+  rm -f "$tmpfile"
+  stop_spinner "done (${#PROVOCATIONS[@]} provocations after review)"
+
+  if [ "${#PROVOCATIONS[@]}" -gt 0 ]; then
+    echo ""
+    i=1
+    for prov in "${PROVOCATIONS[@]}"; do
+      echo "  ${i}. ${prov}"
+      i=$((i + 1))
+    done
+    echo ""
+  fi
+}
+
 read_input_material() {
   local input_type="$1"
   local input_value="$2"
@@ -286,7 +425,7 @@ read_input_material() {
           generous)
             brand_suffix="What hidden strengths exist in their positioning? What are they doing right that nobody is talking about?"
             ;;
-          intimate)
+          personal)
             brand_suffix="What does it feel like to encounter this brand in a specific moment? What is one person's real experience of it?"
             ;;
           absurd)
@@ -314,7 +453,7 @@ read_input_material() {
           generous)
             seed_suffix="Generate provocations that find hidden potential, amplify overlooked strengths, and reframe this seed from radically positive angles."
             ;;
-          intimate)
+          personal)
             seed_suffix="Generate provocations that collapse this seed into specific human moments - one person, one scene, one feeling."
             ;;
           absurd)

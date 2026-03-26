@@ -65,6 +65,7 @@ SEED TOPIC: ${SEED_TOPIC}"
   echo "$ground_prompt" > "$tmpfile"
 
   local ground_output=""
+  VERBOSE_CALLER="ground"
   if claude_call "$tmpfile"; then
     ground_output="$CLAUDE_RESPONSE"
   else
