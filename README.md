@@ -153,25 +153,25 @@ You can test grounding in isolation without running a full session:
 
 Two paths to a presentation. A direct seed runs one session. Raw input (brief, brand, notes) gets distilled into provocations, each provocation runs a full session, then all sessions are synthesised into one presentation.
 
-![Session flow - two paths converging to presentation](docs/session-flow.svg)
+##### ![Session flow - two paths converging to presentation](docs/session-flow.svg)
 
 ### 💫🔀 Dyslexic Composition - step by step
 
-7 rounds (default). Cognitions and perceivers interleave. Friction between every round. Sensory check mid-session. Bias check before convergence. Void and transcendence checks from round 5 onwards (two-strike pattern - first signal noted, second triggers grounding).
+7 rounds (default). Cognitions and perceivers interleave. Friction between every round. Sensory check mid-session. Bias check before convergence. Negative space and transcendence checks from round 5 onwards (two-strike pattern - first signal noted, second triggers grounding).
 
-![Dyslexic composition flow - 7 rounds with friction, sensory, void, bias, and transcendence checks](docs/dyslexic-flow.svg)
+![Dyslexic composition flow - 7 rounds with friction, sensory, negative space, bias, and transcendence checks](docs/dyslexic-flow.svg)
 
 ### 🌀🌿 Spiral Composition - step by step
 
-5 spirals (default). Each spiral widens then crystallises. The Integrator's insight reseeds the next spiral. Friction, bias, void and transcendence checks from spiral 3 onwards.
+5 spirals (default). Each spiral widens then crystallises. The Integrator's insight reseeds the next spiral. Friction, bias, negative space and transcendence checks from spiral 3 onwards.
 
 ![Spiral composition flow - 5 spirals converging inward with reseed connections](docs/spiral-flow.svg)
 
 ### 🪨✨ Lapidary Composition - step by step
 
-5 passes (default). Each pass works the same material with increasing precision. Polish mechanism between passes assesses what survived and what was revealed. Void and transcendence checks from pass 3 onwards. Mature judgement only - Child excluded by default.
+5 passes (default). Each pass works the same material with increasing precision. Polish mechanism between passes assesses what survived and what was revealed. Negative space and transcendence checks from pass 3 onwards. Mature judgement only - Child excluded by default.
 
-![Lapidary composition flow - 5 passes with polish, friction, void, and transcendence checks](docs/lapidary-flow.svg)
+![Lapidary composition flow - 5 passes with polish, friction, negative space, and transcendence checks](docs/lapidary-flow.svg)
 
 ## Usage
 
@@ -218,6 +218,27 @@ Comma-separate tones to assign them round-robin across seeds. With `--tone provo
 ./think.sh --brand "Patagonia" --tone mixed --seeds 5
 ```
 
+### Depth
+
+The `--depth` flag controls how deep into fundamental human drivers the perceiver lenses go. Each level contains the previous - deeper prompts layer on top, they don't replace. Affects five lenses: Mortal, Achala, Empath, Child, Provocateur.
+
+| Level | Description |
+|-------|-------------|
+| `deep` (default) | Current lens behaviour - already meaningful depth |
+| `deeper` | The drivers behind the drivers - legacy, fierce compassion, desire beneath desire, pre-assumption, uncomfortable truth |
+| `deepest` | Full humanity, nothing hidden - mortality salience, immovable determination, the wound beneath the desire, beginner's mind as epistemology, identity-threatening truth |
+
+```bash
+# All depth-aware lenses at deepest
+./think.sh "seed" --depth deepest
+
+# Per-lens control
+./think.sh "seed" --depth mortal:deepest,achala:deeper
+
+# Global deeper, mortal override to deepest
+./think.sh "seed" --depth deeper,mortal:deepest
+```
+
 ### With project context
 
 Run from inside a project directory to automatically ground the thinking in what the project actually is.
@@ -261,6 +282,7 @@ cd ~/projects/my-project && ~/think.sh "seed topic"
 | `--report-only` | Regenerate presentation from existing transcript |
 | `--resume FILE` | Resume an interrupted session from state file |
 | `--allowedTools TOOLS` | Tools for Claude CLI (default: `"WebSearch,WebFetch"`, use `""` to disable) |
+| `--depth LEVEL` | Lens depth: `deep` (default), `deeper`, `deepest`. Per-lens: `mortal:deepest,achala:deeper`. See [Depth](#depth) |
 
 ### Experimentation
 
@@ -285,7 +307,7 @@ Explicit `--exclude` wins over `--include`. `--include` overrides mode defaults 
 ./think.sh "seed" --no-bias        # Skip cognitive bias checks
 ./think.sh "seed" --no-sensory     # Skip sensory/context re-injection
 ./think.sh "seed" --no-transcendence  # Skip transcendence check
-./think.sh "seed" --no-void        # Skip negative space mapping
+./think.sh "seed" --no-negative-space        # Skip negative space mapping
 ```
 
 #### Round/spiral/pass count
@@ -338,7 +360,7 @@ When experimental flags are active, the session banner shows what's different:
 | `--no-friction` | Skip friction detection between rounds |
 | `--no-bias` | Skip cognitive bias checks |
 | `--no-sensory` | Skip sensory/context re-injection |
-| `--no-void` | Skip negative space mapping |
+| `--no-negative-space` | Skip negative space mapping |
 | `--rounds N` | Number of rounds (dyslexic default: 7) |
 | `--spirals N` | Number of spirals (spiral default: 5) |
 | `--passes N` | Number of passes (lapidary default: 5) |
@@ -355,17 +377,29 @@ When experimental flags are active, the session banner shows what's different:
 
 ## Mechanisms
 
-Beyond lenses, the framework uses several mechanisms:
+Beyond lenses, the framework uses metacognitive mechanisms that operate *outside* the conversation to shape session flow. Each receives structured history of prior mechanism findings, so they build on each other rather than re-discovering the same patterns.
 
-- **Assumption grounding** - Embedded in seed preparation (fracture/tune/appraise). Surfaces assumptions most likely to be wrong and verifies factual claims via web search. No interactive correction needed - the framework does its own homework.
-- **Friction detection** - Clark-inspired prediction error detection. Finds where lenses contradict each other. The signal is in the mismatch, not the agreement.
-- **Sensory check** - Re-injects project context mid-session so abstract thinking collides with ground truth.
-- **Cognitive bias as creative fuel** - Metacognitive layer that identifies which cognitive biases are alive in the conversation and asks how each could be channelled into something authentic. Loss aversion becomes urgency, identity bias becomes belonging, scarcity becomes desire. Craft, not manipulation.
-- **Transcendence (two-strike)** - Late-session check on whether the conversation has reached beyond its starting assumptions into genuinely new territory, or is still circling familiar ground. Uses a two-strike pattern: first positive signal is noted but the session continues, second consecutive signal triggers early grounding. This prevents premature exit - research shows breakthroughs often arrive at iteration 10+.
-- **Negative space** - Mid-session cartography of absence. Maps what the conversation has NOT explored relative to the provocation - scales, audiences, emotions, time horizons, domains that no lens has entered. Like the Hubble Deep Field: points at the dark patches precisely because the absence of foreground noise is the condition for seeing further. Can redirect a lens into the void. In synthesis, maps the collective blind spot across multiple runs.
-- **Mechanism memory** - Mechanisms build on each other's findings. Each mechanism receives a structured history of what previous mechanisms discovered, so friction at round 3 knows what friction at round 1 flagged and focuses on what's new or evolved. Prevents the same tensions being re-discovered without progress.
-- **Spiral re-seeding** - Extracts the most surprising insight from integration and uses it to seed the next spiral (spiral mode only).
-- **Polish** - Between-pass quality assessment. What survived? What was revealed? Is the material getting denser or losing life? (lapidary mode only).
+| Mechanism | Emoji | When | What it does | Structured output |
+|-----------|-------|------|--------------|-------------------|
+| Assumption Grounding | 🌍🔬 | Seed prep | Surfaces assumptions most likely to be wrong, verifies via web search | Verified/unverified assumptions |
+| Friction | 🔥⚡ | Between rounds | Finds where lenses contradict each other - signal is in the mismatch | `{recommendation, inject_lens}` |
+| Sensory | 🎨👃 | Mid-session | Re-injects project context so abstract thinking collides with ground truth | Context collision |
+| Bias | 🧠🪤 | Before convergence | Identifies cognitive biases as creative fuel - craft, not manipulation | `{biases_detected, recommendation}` |
+| Transcendence | ✨🚀 | Late session (2-strike) | Checks if session has reached beyond starting assumptions | `{has_breakthrough, recommendation}` |
+| Negative Space | 🔭🌑 | Mid-late session | Maps unexplored territory - the dark patches between the lit areas | `{territories, pattern_of_avoidance, recommendation}` |
+| Reseed | 🌱🔄 | Between spirals | Extracts most surprising insight to seed next spiral | Reframed seed |
+| Polish | 💎🔍 | Between passes | Assesses what survived and what was revealed | Quality assessment |
+| Review | ⚖️🔎 | Post-session | Adversarial prosecution/defense/verdict quality gate | Restart or proceed |
+
+- **Assumption grounding** is embedded in seed preparation (fracture/tune/appraise). Surfaces assumptions most likely to be wrong and verifies factual claims via web search. No interactive correction needed - the framework does its own homework.
+- **Friction detection** is Clark-inspired prediction error detection. Finds where lenses contradict each other. The signal is in the mismatch, not the agreement.
+- **Sensory check** re-injects project context mid-session so abstract thinking collides with ground truth.
+- **Cognitive bias as creative fuel** identifies which cognitive biases are alive in the conversation and asks how each could be channelled into something authentic. Loss aversion becomes urgency, identity bias becomes belonging, scarcity becomes desire. Craft, not manipulation.
+- **Transcendence** uses a two-strike pattern: first positive signal is noted but the session continues, second consecutive signal triggers early grounding. This prevents premature exit - research shows breakthroughs often arrive at iteration 10+.
+- **Negative space** is mid-session cartography of absence. Maps what the conversation has NOT explored relative to the provocation - scales, audiences, emotions, time horizons, domains that no lens has entered. Like the Hubble Deep Field: points at the dark patches precisely because the absence of foreground noise is the condition for seeing further. Can redirect a lens into the dark patches. In synthesis, maps the collective blind spot across multiple runs.
+- **Mechanism memory** ensures each mechanism receives a structured history of what previous mechanisms discovered, so friction at round 3 knows what friction at round 1 flagged and focuses on what's new or evolved. Prevents the same tensions being re-discovered without progress.
+- **Spiral re-seeding** extracts the most surprising insight from integration and uses it to seed the next spiral (spiral mode only).
+- **Polish** is between-pass quality assessment. What survived? What was revealed? Is the material getting denser or losing life? (lapidary mode only).
 
 ### Autonomous Mode (default)
 
@@ -374,7 +408,7 @@ Genuinely agentic behaviour, on by default:
 - **Conductor** - Replaces hardcoded composition sequences. An agent that decides which lens speaks next, what instruction to give, and when to trigger mechanisms or end the session. Three conductor presets (dyslexic/spiral/lapidary) shape its orchestration style.
 - **Inline skip-turn** - Each lens decides within its response whether it has something genuinely new to add. If not, it responds with `SKIP: reason` and the turn is logged without wasting a separate pre-call. Use `--skip-strict` to restore the original two-call pattern if inline detection proves unreliable.
 - **Context compaction (opt-in)** - Disabled by default. When enabled via `--compact`, every 8-10 turns the conversation is distilled into a digest plus the last 3-4 verbatim turns. Off by default because breakthroughs often arrive at iteration 10+ and compaction destroys the raw phrasing that fuels them. Opus 4.6's 1M context window handles full conversations comfortably. Full transcript is always preserved in output files.
-- **Structured mechanism decisions** - Friction returns `{recommendation: "deepen|redirect|continue"}` and can inject a specific lens. Transcendence returns `{has_breakthrough: bool}` and can skip to grounding. Void returns `{recommendation: "redirect_to_void|note_and_continue|void_is_intentional"}` and identifies unexplored territories with suggested lenses. Mechanisms receive a structured history of prior mechanism findings, so each builds on the last.
+- **Structured mechanism decisions** - Friction returns `{recommendation: "deepen|redirect|continue"}` and can inject a specific lens. Transcendence returns `{has_breakthrough: bool}` and can skip to grounding. Negative space returns `{recommendation: "redirect_to_void|note_and_continue|void_is_intentional"}` and identifies unexplored territories with suggested lenses. Mechanisms receive a structured history of prior mechanism findings, so each builds on the last.
 - **Provocation review** - When multiple provocations are generated, they're reviewed for distinctness before sessions begin. Similar provocations get merged, weak ones get reframed.
 - **Adversarial session reviewer** - Post-composition quality gate using a prosecution/defense/verdict pattern. The prosecution assumes the session failed and searches for prior art (WebSearch). The defense concedes weak ideas and argues only for genuine divergence. The verdict decides restart/proceed from the adversarial exchange. Can restart with mutations: different mode, shuffled lens order, reframed seed. 2-run ceiling per provocation. Synthesises across both runs.
 
@@ -391,7 +425,7 @@ Genuinely agentic behaviour, on by default:
 
 Each session produces:
 
-- **Presentation** (`presentation.md` / `.docx` / `.html`) - The Line (platform + expression at two altitudes), creative brief, manifesto, and insight article. Controlled by `--type`. HTML version features cinematic scroll effects with GSAP ScrollTrigger
+- **Presentation** (`presentation.md` / `.docx` / `.html`) - The Line (winning platform + expression), the experiment, the asset (sensory/tactile creative description), creative brief, manifesto, insight article, and session findings (novel ideas for inspiration). Controlled by `--type`. The presentation pipeline distils session findings first, then all sections are anchored on the deepest material. HTML version features cinematic scroll effects with GSAP ScrollTrigger
 - **Transcript** (`session_*.md`) - Full markdown transcript of the thinking session
 - **JSON** (`session_*.json`) - Machine-readable transcript for analysis
 - **Context** (`context_*.md`) - Project context brief (if gathered)
@@ -429,7 +463,7 @@ mechanisms/
   bias.sh                        # Cognitive bias detection (structured decisions)
   transcendence.sh               # Transcendence check (structured decisions)
   review.sh                      # Adversarial session reviewer - prosecution/defense/verdict
-  void.sh                        # Negative space mapping (mid-session + synthesis)
+  negative_space.sh              # Negative space mapping (mid-session + synthesis)
   reseed.sh                      # Spiral re-seeding
   polish.sh                      # Between-pass quality assessment (lapidary)
 modes/
