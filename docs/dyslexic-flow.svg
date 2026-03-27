@@ -1,5 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 720">
-  <style>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 1166400 608400"
+   version="1.1"
+   id="svg66"
+   width="1166400"
+   height="608400"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <style
+     id="style1">
     text { font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; }
     .lens { font-size: 10px; font-weight: 500; fill: #334155; }
     .title { font-size: 10px; font-weight: 700; fill: #ff6b35; }
@@ -7,188 +16,800 @@
     .mech { font-size: 9.5px; font-weight: 600; fill: #fff; }
     .ground-title { font-size: 10px; font-weight: 700; fill: #2d6a4f; }
   </style>
-
-  <defs>
-    <marker id="arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-      <path d="M1,1 L7,4 L1,7" fill="none" stroke="#94a3b8" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <defs
+     id="defs1">
+    <marker
+       id="arr"
+       viewBox="0 0 8 8"
+       refX="7"
+       refY="4"
+       markerWidth="5"
+       markerHeight="5"
+       orient="auto-start-reverse">
+      <path
+         d="M 1,1 7,4 1,7"
+         fill="none"
+         stroke="#94a3b8"
+         stroke-width="1.2"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         id="path1" />
     </marker>
   </defs>
-
   <!-- ═══ ROW 1 ═══ -->
-
   <!-- Fracture Seed -->
-  <rect x="14" y="66" width="56" height="56" rx="28" fill="#fff7ed" stroke="#ff6b35" stroke-width="1.5"/>
-  <text x="42" y="90" text-anchor="middle" font-size="9" font-weight="600" fill="#ff6b35">Fracture</text>
-  <text x="42" y="102" text-anchor="middle" font-size="9" font-weight="600" fill="#ff6b35">Seed</text>
-
-  <line x1="74" y1="94" x2="97" y2="94" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
-
+  <rect
+     x="14"
+     y="66"
+     width="56"
+     height="56"
+     rx="28"
+     fill="#fff7ed"
+     stroke="#ff6b35"
+     stroke-width="1.5"
+     id="rect1" />
+  <text
+     x="42"
+     y="90"
+     text-anchor="middle"
+     font-size="9px"
+     font-weight="600"
+     fill="#ff6b35"
+     id="text1">Fracture</text>
+  <text
+     x="42"
+     y="102"
+     text-anchor="middle"
+     font-size="9px"
+     font-weight="600"
+     fill="#ff6b35"
+     id="text2">Seed</text>
+  <line
+     x1="74"
+     y1="94"
+     x2="97"
+     y2="94"
+     stroke="#cbd5e1"
+     stroke-width="1.3"
+     marker-end="url(#arr)"
+     id="line2" />
   <!-- Round 1 -->
-  <rect x="102" y="18" width="130" height="152" rx="8" fill="#fff7ed" stroke="#fdba74" stroke-width="1"/>
-  <text class="title" x="112" y="36">Round 1</text>
-  <text class="sub" x="112" y="48">First Fragments</text>
-  <text class="lens" x="112" y="68">🔍 Decomposer</text>
-  <text class="lens" x="112" y="84">❤️‍🔥 Empath</text>
-  <text class="lens" x="112" y="100">🪢 Associator</text>
-  <text class="lens" x="112" y="116">👁️ Observer</text>
-  <text class="lens" x="112" y="132">🪑 Includer</text>
-  <text class="lens" x="112" y="148">🔍 Decomposer</text>
-
-  <line x1="236" y1="94" x2="259" y2="94" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
-
+  <rect
+     x="102"
+     y="31.5"
+     width="130"
+     height="152"
+     rx="8"
+     fill="#fff7ed"
+     stroke="#fdba74"
+     stroke-width="1"
+     id="rect2" />
+  <text
+     class="title"
+     x="112"
+     y="49.5"
+     id="text3">Round 1</text>
+  <text
+     class="sub"
+     x="112"
+     y="61.5"
+     id="text4">First Fragments</text>
+  <text
+     class="lens"
+     x="112"
+     y="81.5"
+     id="text5">🔍 Decomposer</text>
+  <text
+     class="lens"
+     x="112"
+     y="97.5"
+     id="text6">❤️‍🔥 Empath</text>
+  <text
+     class="lens"
+     x="112"
+     y="113.5"
+     id="text7">🪢 Associator</text>
+  <text
+     class="lens"
+     x="112"
+     y="129.5"
+     id="text8">👁️ Observer</text>
+  <text
+     class="lens"
+     x="112"
+     y="145.5"
+     id="text9">🪑 Includer</text>
+  <text
+     class="lens"
+     x="112"
+     y="161.5"
+     id="text10">🔍 Decomposer</text>
+  <line
+     x1="236"
+     y1="94"
+     x2="259"
+     y2="94"
+     stroke="#cbd5e1"
+     stroke-width="1.3"
+     marker-end="url(#arr)"
+     id="line10" />
   <!-- Friction 1 -->
-  <rect x="264" y="82" width="62" height="24" rx="12" fill="#ff6b35"/>
-  <text class="mech" x="295" y="94" text-anchor="middle" dominant-baseline="central">Friction</text>
-
-  <line x1="330" y1="94" x2="353" y2="94" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
-
+  <rect
+     x="264"
+     y="82"
+     width="62"
+     height="24"
+     rx="12"
+     fill="#ff6b35"
+     id="rect10" />
+  <text
+     class="mech"
+     x="295"
+     y="94"
+     text-anchor="middle"
+     dominant-baseline="central"
+     id="text11">Friction</text>
+  <line
+     x1="330"
+     y1="94"
+     x2="353"
+     y2="94"
+     stroke="#cbd5e1"
+     stroke-width="1.3"
+     marker-end="url(#arr)"
+     id="line11" />
   <!-- Round 2 -->
-  <rect x="358" y="30" width="130" height="160" rx="8" fill="#fff7ed" stroke="#fdba74" stroke-width="1"/>
-  <text class="title" x="368" y="48">Round 2</text>
-  <text class="sub" x="368" y="60">Scale Shift</text>
-  <text class="lens" x="368" y="80">🔭 Scaler</text>
-  <text class="lens" x="368" y="96">🧒 Child</text>
-  <text class="lens" x="368" y="112">🪢 Associator</text>
-  <text class="lens" x="368" y="128">🔥 Provocateur</text>
-  <text class="lens" x="368" y="144">🕯️ Achala</text>
-  <text class="lens" x="368" y="160">🧩 Logician</text>
-  <text class="lens" x="368" y="176">🔭 Scaler</text>
-
-  <line x1="492" y1="94" x2="515" y2="94" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
-
+  <rect
+     x="358"
+     y="30"
+     width="130"
+     height="160"
+     rx="8"
+     fill="#fff7ed"
+     stroke="#fdba74"
+     stroke-width="1"
+     id="rect11" />
+  <text
+     class="title"
+     x="368"
+     y="48"
+     id="text12">Round 2</text>
+  <text
+     class="sub"
+     x="368"
+     y="60"
+     id="text13">Scale Shift</text>
+  <text
+     class="lens"
+     x="368"
+     y="80"
+     id="text14">🔭 Scaler</text>
+  <text
+     class="lens"
+     x="368"
+     y="96"
+     id="text15">🧒 Child</text>
+  <text
+     class="lens"
+     x="368"
+     y="112"
+     id="text16">🪢 Associator</text>
+  <text
+     class="lens"
+     x="368"
+     y="128"
+     id="text17">🔥 Provocateur</text>
+  <text
+     class="lens"
+     x="368"
+     y="144"
+     id="text18">🕯️ Achala</text>
+  <text
+     class="lens"
+     x="368"
+     y="160"
+     id="text19">🧩 Logician</text>
+  <text
+     class="lens"
+     x="368"
+     y="176"
+     id="text20">🔭 Scaler</text>
+  <line
+     x1="492"
+     y1="94"
+     x2="515"
+     y2="94"
+     stroke="#cbd5e1"
+     stroke-width="1.3"
+     marker-end="url(#arr)"
+     id="line20" />
   <!-- Friction 2 -->
-  <rect x="520" y="82" width="62" height="24" rx="12" fill="#ff6b35"/>
-  <text class="mech" x="551" y="94" text-anchor="middle" dominant-baseline="central">Friction</text>
-
-  <line x1="586" y1="94" x2="609" y2="94" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
-
+  <rect
+     x="520"
+     y="82"
+     width="62"
+     height="24"
+     rx="12"
+     fill="#ff6b35"
+     id="rect20" />
+  <text
+     class="mech"
+     x="551"
+     y="94"
+     text-anchor="middle"
+     dominant-baseline="central"
+     id="text21">Friction</text>
+  <line
+     x1="586"
+     y1="94"
+     x2="609"
+     y2="94"
+     stroke="#cbd5e1"
+     stroke-width="1.3"
+     marker-end="url(#arr)"
+     id="line21" />
   <!-- Sensory Check -->
-  <rect x="614" y="82" width="66" height="24" rx="12" fill="#4a90d9"/>
-  <text class="mech" x="647" y="94" text-anchor="middle" dominant-baseline="central">Sensory</text>
-
+  <rect
+     x="614"
+     y="82"
+     width="66"
+     height="24"
+     rx="12"
+     fill="#4a90d9"
+     id="rect21" />
+  <text
+     class="mech"
+     x="647"
+     y="94"
+     text-anchor="middle"
+     dominant-baseline="central"
+     id="text22">Sensory</text>
   <!-- Wrap arrow row 1 to row 2 -->
-  <path d="M684,94 Q710,94 710,186 Q710,280 684,280" fill="none" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
-
+  <path
+     d="m 684,94 q 26,0 26,92 0,94 -26,94"
+     fill="none"
+     stroke="#cbd5e1"
+     stroke-width="1.3"
+     marker-end="url(#arr)"
+     id="path22" />
   <!-- ═══ ROW 2 ═══ -->
-
   <!-- Round 3 -->
-  <rect x="546" y="216" width="130" height="144" rx="8" fill="#fff7ed" stroke="#fdba74" stroke-width="1"/>
-  <text class="title" x="556" y="234">Round 3</text>
-  <text class="sub" x="556" y="246">Deep Fragments</text>
-  <text class="lens" x="556" y="266">🔍 Decomposer</text>
-  <text class="lens" x="556" y="282">⏳ Mortal</text>
-  <text class="lens" x="556" y="298">🪢 Associator</text>
-  <text class="lens" x="556" y="314">👁️ Observer</text>
-  <text class="lens" x="556" y="330">❤️‍🔥 Empath</text>
-  <text class="lens" x="556" y="346">🧩 Logician</text>
-
-  <line x1="542" y1="280" x2="519" y2="280" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
-
+  <rect
+     x="546"
+     y="216"
+     width="130"
+     height="144"
+     rx="8"
+     fill="#fff7ed"
+     stroke="#fdba74"
+     stroke-width="1"
+     id="rect22" />
+  <text
+     class="title"
+     x="556"
+     y="234"
+     id="text23">Round 3</text>
+  <text
+     class="sub"
+     x="556"
+     y="246"
+     id="text24">Deep Fragments</text>
+  <text
+     class="lens"
+     x="556"
+     y="266"
+     id="text25">🔍 Decomposer</text>
+  <text
+     class="lens"
+     x="556"
+     y="282"
+     id="text26">⏳ Mortal</text>
+  <text
+     class="lens"
+     x="556"
+     y="298"
+     id="text27">🪢 Associator</text>
+  <text
+     class="lens"
+     x="556"
+     y="314"
+     id="text28">👁️ Observer</text>
+  <text
+     class="lens"
+     x="556"
+     y="330"
+     id="text29">❤️‍🔥 Empath</text>
+  <text
+     class="lens"
+     x="556"
+     y="346"
+     id="text30">🧩 Logician</text>
+  <line
+     x1="542"
+     y1="280"
+     x2="519"
+     y2="280"
+     stroke="#cbd5e1"
+     stroke-width="1.3"
+     marker-end="url(#arr)"
+     id="line30" />
   <!-- Friction 3 -->
-  <rect x="453" y="268" width="62" height="24" rx="12" fill="#ff6b35"/>
-  <text class="mech" x="484" y="280" text-anchor="middle" dominant-baseline="central">Friction</text>
-
-  <line x1="449" y1="280" x2="435" y2="280" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
-
+  <rect
+     x="453"
+     y="268"
+     width="62"
+     height="24"
+     rx="12"
+     fill="#ff6b35"
+     id="rect30" />
+  <text
+     class="mech"
+     x="484"
+     y="280"
+     text-anchor="middle"
+     dominant-baseline="central"
+     id="text31">Friction</text>
+  <line
+     x1="449"
+     y1="280"
+     x2="435"
+     y2="280"
+     stroke="#cbd5e1"
+     stroke-width="1.3"
+     marker-end="url(#arr)"
+     id="line31" />
   <!-- Negative Space Check -->
-  <rect x="361" y="268" width="70" height="24" rx="12" fill="#0d9488"/>
-  <text class="mech" x="396" y="280" text-anchor="middle" dominant-baseline="central">Neg Space</text>
-
-  <line x1="357" y1="280" x2="343" y2="280" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
-
+  <rect
+     x="355"
+     y="268"
+     width="76"
+     height="24"
+     rx="12"
+     fill="#0d9488"
+     id="rect31" />
+  <text
+     class="mech"
+     x="393"
+     y="280"
+     text-anchor="middle"
+     dominant-baseline="central"
+     id="text32">Neg Space</text>
+  <line
+     x1="351"
+     y1="280"
+     x2="337"
+     y2="280"
+     stroke="#cbd5e1"
+     stroke-width="1.3"
+     marker-end="url(#arr)"
+     id="line32" />
   <!-- Bias Check -->
-  <rect x="297" y="268" width="62" height="24" rx="12" fill="#9b59b6"/>
-  <text class="mech" x="328" y="280" text-anchor="middle" dominant-baseline="central">Bias</text>
-
-  <line x1="293" y1="280" x2="279" y2="280" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
-
+  <rect
+     x="271"
+     y="268"
+     width="62"
+     height="24"
+     rx="12"
+     fill="#9b59b6"
+     id="rect32" />
+  <text
+     class="mech"
+     x="302"
+     y="280"
+     text-anchor="middle"
+     dominant-baseline="central"
+     id="text33">Bias</text>
+  <line
+     x1="267"
+     y1="280"
+     x2="253"
+     y2="280"
+     stroke="#cbd5e1"
+     stroke-width="1.3"
+     marker-end="url(#arr)"
+     id="line33" />
   <!-- Rounds 4-5 (Extended) -->
-  <rect x="26" y="224" width="248" height="68" rx="8" fill="#fff7ed" stroke="#fdba74" stroke-width="1" stroke-dasharray="4 3"/>
-  <text class="title" x="36" y="242">Rounds 4-5</text>
-  <text class="sub" x="36" y="254">Extended Fragments</text>
-  <text class="lens" x="36" y="274">🔍 Decomposer → 🪢 Associator → 🔭 Scaler → ❤️‍🔥 Empath</text>
-  <text class="sub" x="36" y="286">+ Friction per round</text>
-
+  <rect
+     x="16"
+     y="224"
+     width="232"
+     height="84"
+     rx="8"
+     fill="#fff7ed"
+     stroke="#fdba74"
+     stroke-width="1"
+     stroke-dasharray="4, 3"
+     id="rect33" />
+  <text
+     class="title"
+     x="26"
+     y="242"
+     id="text34">Rounds 4-5</text>
+  <text
+     class="sub"
+     x="26"
+     y="254"
+     id="text35">Extended Fragments</text>
+  <text
+     class="lens"
+     x="26"
+     y="274"
+     id="text36">🔍 Decomposer → 🪢 Associator</text>
+  <text
+     class="lens"
+     x="26"
+     y="290"
+     id="text37">🔭 Scaler → ❤️‍🔥 Empath</text>
+  <text
+     class="sub"
+     x="26"
+     y="302"
+     id="text38">+ Friction per round</text>
   <!-- Arrow from Rounds 4-5 down to Row 3 -->
-  <path d="M150,296 Q150,316 150,330" fill="none" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
-
+  <path
+     d="m 108.68182,318.13636 q 0,30.10877 0,60.21755"
+     fill="none"
+     stroke="#cbd5e1"
+     stroke-width="1.68133"
+     marker-end="url(#arr)"
+     id="path38" />
   <!-- ═══ ROW 3 ═══ -->
-
   <!-- Negative Space after Round 5 -->
-  <rect x="16" y="336" width="70" height="24" rx="12" fill="#0d9488"/>
-  <text class="mech" x="51" y="348" text-anchor="middle" dominant-baseline="central">Neg Space</text>
-
-  <line x1="90" y1="348" x2="96" y2="348" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
-
+  <rect
+     x="71.227272"
+     y="392.04544"
+     width="76"
+     height="24"
+     rx="12"
+     fill="#0d9488"
+     id="rect38" />
+  <text
+     class="mech"
+     x="109.22727"
+     y="404.04544"
+     text-anchor="middle"
+     dominant-baseline="central"
+     id="text39">Neg Space</text>
+  <line
+     x1="151.22728"
+     y1="404.04544"
+     x2="163.22728"
+     y2="404.04544"
+     stroke="#cbd5e1"
+     stroke-width="1.3"
+     marker-end="url(#arr)"
+     id="line39" />
   <!-- Transcendence after Round 5 (two-strike) -->
-  <rect x="100" y="336" width="92" height="24" rx="12" fill="#d4a017"/>
-  <text class="mech" x="146" y="348" text-anchor="middle" dominant-baseline="central">Transcend</text>
-  <text font-size="7" fill="#94a3b8" x="146" y="372" text-anchor="middle">two-strike</text>
-
-  <line x1="196" y1="348" x2="212" y2="348" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
-
+  <rect
+     x="167.22728"
+     y="392.04544"
+     width="92"
+     height="24"
+     rx="12"
+     fill="#d4a017"
+     id="rect39" />
+  <text
+     class="mech"
+     x="213.22728"
+     y="404.04544"
+     text-anchor="middle"
+     dominant-baseline="central"
+     id="text40">Transcend</text>
+  <text
+     font-size="7px"
+     fill="#94a3b8"
+     x="213.22728"
+     y="428.04544"
+     text-anchor="middle"
+     id="text41">two-strike</text>
+  <line
+     x1="263.22726"
+     y1="404.04544"
+     x2="279.22726"
+     y2="404.04544"
+     stroke="#cbd5e1"
+     stroke-width="1.3"
+     marker-end="url(#arr)"
+     id="line41" />
   <!-- Rounds 6-7 (if not grounded) -->
-  <rect x="216" y="324" width="248" height="68" rx="8" fill="#fff7ed" stroke="#fdba74" stroke-width="1" stroke-dasharray="4 3"/>
-  <text class="title" x="226" y="342">Rounds 6-7</text>
-  <text class="sub" x="226" y="354">Extended Fragments (if continuing)</text>
-  <text class="lens" x="226" y="374">🔍 Decomposer → 🪢 Associator → 🔭 Scaler → ❤️‍🔥 Empath</text>
-  <text class="sub" x="226" y="386">+ Friction, Neg Space, Transcendence per round</text>
-
-  <line x1="468" y1="358" x2="484" y2="358" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
-
+  <rect
+     x="283.22726"
+     y="380.04544"
+     width="240"
+     height="84"
+     rx="8"
+     fill="#fff7ed"
+     stroke="#fdba74"
+     stroke-width="1"
+     stroke-dasharray="4, 3"
+     id="rect41" />
+  <text
+     class="title"
+     x="293.22726"
+     y="398.04544"
+     id="text42">Rounds 6-7</text>
+  <text
+     class="sub"
+     x="293.22726"
+     y="410.04544"
+     id="text43">Extended Fragments (if continuing)</text>
+  <text
+     class="lens"
+     x="293.22726"
+     y="430.04544"
+     id="text44">🔍 Decomposer → 🪢 Associator</text>
+  <text
+     class="lens"
+     x="293.22726"
+     y="446.04544"
+     id="text45">🔭 Scaler → ❤️‍🔥 Empath</text>
+  <text
+     class="sub"
+     x="293.22726"
+     y="458.04544"
+     id="text46">+ Friction, Neg Space, Transcendence</text>
+  <line
+     x1="527.22729"
+     y1="414.04544"
+     x2="543.22729"
+     y2="414.04544"
+     stroke="#cbd5e1"
+     stroke-width="1.3"
+     marker-end="url(#arr)"
+     id="line46" />
   <!-- Final Round: Constellation -->
-  <rect x="488" y="324" width="130" height="124" rx="8" fill="#fff7ed" stroke="#fdba74" stroke-width="1"/>
-  <text class="title" x="498" y="342">Final Round</text>
-  <text class="sub" x="498" y="354">Constellation</text>
-  <text class="lens" x="498" y="374">💎 Reifier</text>
-  <text class="lens" x="498" y="390">🪢 Associator</text>
-  <text class="lens" x="498" y="406">🕯️ Achala</text>
-  <text class="lens" x="498" y="422">⏳ Mortal</text>
-  <text class="lens" x="498" y="438">🔥 Provocateur</text>
-
+  <rect
+     x="547.22729"
+     y="380.04544"
+     width="130"
+     height="124"
+     rx="8"
+     fill="#fff7ed"
+     stroke="#fdba74"
+     stroke-width="1"
+     id="rect46" />
+  <text
+     class="title"
+     x="557.22729"
+     y="398.04544"
+     id="text47">Final Round</text>
+  <text
+     class="sub"
+     x="557.22729"
+     y="410.04544"
+     id="text48">Constellation</text>
+  <text
+     class="lens"
+     x="557.22729"
+     y="430.04544"
+     id="text49">💎 Reifier</text>
+  <text
+     class="lens"
+     x="557.22729"
+     y="446.04544"
+     id="text50">🪢 Associator</text>
+  <text
+     class="lens"
+     x="557.22729"
+     y="462.04544"
+     id="text51">🕯️ Achala</text>
+  <text
+     class="lens"
+     x="557.22729"
+     y="478.04544"
+     id="text52">⏳ Mortal</text>
+  <text
+     class="lens"
+     x="557.22729"
+     y="494.04544"
+     id="text53">🔥 Provocateur</text>
   <!-- Arrow from Constellation down to Ground -->
-  <path d="M553,452 Q553,468 553,478" fill="none" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
-
+  <path
+     d="m 612.22727,508.04545 q 0,16 0,26"
+     fill="none"
+     stroke="#cbd5e1"
+     stroke-width="1.3"
+     marker-end="url(#arr)"
+     id="path53" />
   <!-- Ground -->
-  <rect x="508" y="482" width="92" height="64" rx="8" fill="#ecfdf5" stroke="#86efac" stroke-width="1"/>
-  <text class="ground-title" x="518" y="500">Ground</text>
-  <text class="lens" x="518" y="520">❤️‍🔥 Empath</text>
-  <text class="lens" x="518" y="536">💎 Reifier</text>
-
+  <rect
+     x="567.22729"
+     y="538.04547"
+     width="92"
+     height="64"
+     rx="8"
+     fill="#ecfdf5"
+     stroke="#86efac"
+     stroke-width="1"
+     id="rect53" />
+  <text
+     class="ground-title"
+     x="577.22729"
+     y="556.04547"
+     id="text54">Ground</text>
+  <text
+     class="lens"
+     x="577.22729"
+     y="576.04547"
+     id="text55">❤️‍🔥 Empath</text>
+  <text
+     class="lens"
+     x="577.22729"
+     y="592.04547"
+     id="text56">💎 Reifier</text>
   <!-- Arrow from Ground to Presentation -->
-  <path d="M554,550 Q554,564 554,572" fill="none" stroke="#cbd5e1" stroke-width="1.3" marker-end="url(#arr)"/>
-
+  <path
+     d="m 613.22727,606.04545 q 0,14 0,22"
+     fill="none"
+     stroke="#cbd5e1"
+     stroke-width="1.3"
+     marker-end="url(#arr)"
+     id="path56" />
   <!-- Presentation -->
-  <rect x="504" y="576" width="100" height="30" rx="15" fill="#2d6a4f"/>
-  <text class="mech" x="554" y="591" text-anchor="middle" dominant-baseline="central">Presentation</text>
-
+  <rect
+     x="563.22729"
+     y="632.04547"
+     width="100"
+     height="30"
+     rx="15"
+     fill="#2d6a4f"
+     id="rect56" />
+  <text
+     class="mech"
+     x="613.22729"
+     y="647.04547"
+     text-anchor="middle"
+     dominant-baseline="central"
+     id="text57">Presentation</text>
   <!-- Mechanism memory arrows: state flows between mechanism checks -->
   <!-- Friction 1 -> Friction 2 (via memory) -->
-  <path d="M295,108 C295,140 551,140 551,108" fill="none" stroke="#6b7280" stroke-width="1" stroke-dasharray="3 2" opacity="0.5"/>
-  <text font-size="7" fill="#6b7280" x="423" y="148" text-anchor="middle" opacity="0.7">memory</text>
-
+  <path
+     d="M 295,108 C 285.18182,217.65543 525.53066,267.81271 528.82491,122.24456 529.14744,107.99276 551,113.79912 551,108"
+     fill="none"
+     stroke="#6b7280"
+     stroke-width="1"
+     stroke-dasharray="3, 2"
+     opacity="0.5"
+     id="path57" />
+  <text
+     font-size="7px"
+     fill="#6b7280"
+     x="423"
+     y="148"
+     text-anchor="middle"
+     opacity="0.7"
+     id="text58">memory</text>
   <!-- Friction 2 -> Friction 3 (via memory, across rows) -->
-  <path d="M551,108 C570,160 510,210 484,266" fill="none" stroke="#6b7280" stroke-width="1" stroke-dasharray="3 2" opacity="0.5"/>
-
+  <path
+     d="m 551,108 c 19,52 -41,102 -67,158"
+     fill="none"
+     stroke="#6b7280"
+     stroke-width="1"
+     stroke-dasharray="3, 2"
+     opacity="0.5"
+     id="path58" />
   <!-- Friction 3 -> Neg Space -> Bias (memory chain) -->
-  <path d="M453,280 L435,280" fill="none" stroke="#6b7280" stroke-width="0.8" stroke-dasharray="2 2" opacity="0.4"/>
-  <path d="M377,280 L363,280" fill="none" stroke="#6b7280" stroke-width="0.8" stroke-dasharray="2 2" opacity="0.4"/>
-
+  <path
+     d="M 453,280 H 435"
+     fill="none"
+     stroke="#6b7280"
+     stroke-width="0.8"
+     stroke-dasharray="2, 2"
+     opacity="0.4"
+     id="path59" />
+  <path
+     d="M 371,280 H 357"
+     fill="none"
+     stroke="#6b7280"
+     stroke-width="0.8"
+     stroke-dasharray="2, 2"
+     opacity="0.4"
+     id="path60" />
   <!-- Legend -->
-  <g transform="translate(250, 680)">
-    <rect x="0" y="0" width="12" height="12" rx="3" fill="#ff6b35"/>
-    <text font-size="9" fill="#64748b" x="18" y="10">Friction</text>
-    <rect x="75" y="0" width="12" height="12" rx="3" fill="#4a90d9"/>
-    <text font-size="9" fill="#64748b" x="93" y="10">Sensory</text>
-    <rect x="150" y="0" width="12" height="12" rx="3" fill="#0d9488"/>
-    <text font-size="9" fill="#64748b" x="168" y="10">Negative Space</text>
-    <rect x="250" y="0" width="12" height="12" rx="3" fill="#9b59b6"/>
-    <text font-size="9" fill="#64748b" x="268" y="10">Bias</text>
-    <rect x="310" y="0" width="12" height="12" rx="3" fill="#d4a017"/>
-    <text font-size="9" fill="#64748b" x="328" y="10">Transcendence</text>
-    <line x1="410" y1="6" x2="440" y2="6" stroke="#6b7280" stroke-width="1" stroke-dasharray="3 2"/>
-    <text font-size="9" fill="#64748b" x="446" y="10">Mechanism Memory</text>
-    <rect x="550" y="0" width="60" height="12" rx="3" fill="none" stroke="#fdba74" stroke-width="1" stroke-dasharray="4 3"/>
-    <text font-size="9" fill="#64748b" x="618" y="10">Extended (variable)</text>
+  <g
+     transform="translate(190,740)"
+     id="g66">
+    <rect
+       x="0"
+       y="0"
+       width="12"
+       height="12"
+       rx="3"
+       fill="#ff6b35"
+       id="rect60" />
+    <text
+       font-size="9px"
+       fill="#64748b"
+       x="18"
+       y="10"
+       id="text60">Friction</text>
+    <rect
+       x="75"
+       y="0"
+       width="12"
+       height="12"
+       rx="3"
+       fill="#4a90d9"
+       id="rect61" />
+    <text
+       font-size="9px"
+       fill="#64748b"
+       x="93"
+       y="10"
+       id="text61">Sensory</text>
+    <rect
+       x="150"
+       y="0"
+       width="12"
+       height="12"
+       rx="3"
+       fill="#0d9488"
+       id="rect62" />
+    <text
+       font-size="9px"
+       fill="#64748b"
+       x="168"
+       y="10"
+       id="text62">Negative Space</text>
+    <rect
+       x="260"
+       y="0"
+       width="12"
+       height="12"
+       rx="3"
+       fill="#9b59b6"
+       id="rect63" />
+    <text
+       font-size="9px"
+       fill="#64748b"
+       x="278"
+       y="10"
+       id="text63">Bias</text>
+    <rect
+       x="320"
+       y="0"
+       width="12"
+       height="12"
+       rx="3"
+       fill="#d4a017"
+       id="rect64" />
+    <text
+       font-size="9px"
+       fill="#64748b"
+       x="338"
+       y="10"
+       id="text64">Transcendence</text>
+    <line
+       x1="430"
+       y1="6"
+       x2="460"
+       y2="6"
+       stroke="#6b7280"
+       stroke-width="1"
+       stroke-dasharray="3, 2"
+       id="line64" />
+    <text
+       font-size="9px"
+       fill="#64748b"
+       x="466"
+       y="10"
+       id="text65">Mechanism Memory</text>
+    <rect
+       x="570"
+       y="0"
+       width="60"
+       height="12"
+       rx="3"
+       fill="none"
+       stroke="#fdba74"
+       stroke-width="1"
+       stroke-dasharray="4, 3"
+       id="rect65" />
+    <text
+       font-size="9px"
+       fill="#64748b"
+       x="638"
+       y="10"
+       id="text66">Extended (variable)</text>
   </g>
 </svg>
