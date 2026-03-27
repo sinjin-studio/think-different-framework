@@ -58,11 +58,12 @@ FRICTION_ENABLED="true"
 BIAS_ENABLED="true"
 SENSORY_ENABLED="true"
 TRANSCENDENCE_ENABLED="true"
-VOID_ENABLED="true"
+NEGATIVE_SPACE_ENABLED="true"
 SHUFFLE_ENABLED="false"
 AUTONOMOUS_MODE="true"
 SKIP_STRICT=""
 COMPACT_ENABLED="false"
+WAIT_FOR_CAP="true"
 GROUND_ENABLED="true"
 GROUND_ONLY=""
 SEED_COUNT=""
@@ -72,6 +73,7 @@ SPIRAL_COUNT=""
 PASS_COUNT=""
 ALLOWED_TOOLS="WebSearch,WebFetch"
 PROVOCATION_TONE="provocative"
+LENS_DEPTH="deep"
 OUTPUT_TYPE="insight,brief,manifesto"
 TYPE_EXPLICIT=""
 LINE_COUNT=3
@@ -136,7 +138,7 @@ show_help() {
   echo "    --no-bias        Skip cognitive bias checks"
   echo "    --no-sensory     Skip sensory/context re-injection"
   echo "    --no-transcendence  Skip transcendence check"
-  echo "    --no-void        Skip negative space mapping"
+  echo "    --no-negative-space  Skip negative space mapping"
   echo "    --rounds N       Number of rounds (dyslexic default: 7)"
   echo "    --spirals N      Number of spirals (spiral default: 5)"
   echo "    --passes N       Number of passes (lapidary default: 5)"
@@ -145,10 +147,14 @@ show_help() {
   echo "    --shuffle        Randomize lens order within each round/phase"
   echo "    --autonomous     Enable agentic mode (default: on)"
   echo "    --no-autonomous  Disable agentic mode, use hardcoded composition sequences"
+  echo "    --no-wait        Disable auto-wait on cap hit (default: wait in autonomous mode)"
   echo "    --skip-strict    Use separate pre-call for skip-turn (default: inline detection)"
   echo "    --compact        Enable context compaction (off by default, opt in for very long sessions)"
   echo "    --no-ground      Skip assumption grounding embedded in seed prep"
   echo "    --ground-only    Run only the grounding step, then exit"
+  echo "    --depth LEVEL    Lens depth: deep (default), deeper, deepest. Per-lens:"
+  echo "                     mortal:deepest,achala:deeper. Affects Mortal, Achala,"
+  echo "                     Empath, Child, Provocateur"
   echo "    --allowedTools T Tools for Claude CLI (default: \"WebSearch,WebFetch\", use \"\" to disable)"
   echo ""
   exit 0
@@ -229,8 +235,8 @@ while [ $# -gt 0 ]; do
       TRANSCENDENCE_ENABLED="false"
       shift
       ;;
-    --no-void)
-      VOID_ENABLED="false"
+    --no-negative-space)
+      NEGATIVE_SPACE_ENABLED="false"
       shift
       ;;
     --rounds)
@@ -270,6 +276,10 @@ while [ $# -gt 0 ]; do
       ;;
     --no-autonomous)
       AUTONOMOUS_MODE="false"
+      shift
+      ;;
+    --no-wait)
+      WAIT_FOR_CAP="false"
       shift
       ;;
     --skip-strict)
@@ -324,6 +334,11 @@ while [ $# -gt 0 ]; do
     --tone|-t)
       shift
       PROVOCATION_TONE="$1"
+      shift
+      ;;
+    --depth)
+      shift
+      LENS_DEPTH="$1"
       shift
       ;;
     --type)
@@ -415,6 +430,39 @@ for _t in "${_TONE_CHECK[@]}"; do
       ;;
   esac
 done
+
+# Validate depth levels (supports global and per-lens: mortal:deepest,achala:deeper)
+_DEPTH_AWARE_LENSES="mortal achala empath child provocateur"
+IFS=',' read -ra _DEPTH_CHECK <<< "$LENS_DEPTH"
+for _d in "${_DEPTH_CHECK[@]}"; do
+  case "$_d" in
+    deep|deeper|deepest) ;;
+    *:*)
+      _d_key="${_d%%:*}"
+      _d_val="${_d#*:}"
+      _d_valid_key=""
+      for _dal in $_DEPTH_AWARE_LENSES; do
+        [ "$_dal" = "$_d_key" ] && _d_valid_key="true"
+      done
+      if [ -z "$_d_valid_key" ]; then
+        echo "Error: unknown depth lens '$_d_key'. Depth-aware lenses: ${_DEPTH_AWARE_LENSES}"
+        exit 1
+      fi
+      case "$_d_val" in
+        deep|deeper|deepest) ;;
+        *)
+          echo "Error: unknown depth level '$_d_val' for '$_d_key'. Use: deep, deeper, or deepest"
+          exit 1
+          ;;
+      esac
+      ;;
+    *)
+      echo "Error: unknown depth '$_d'. Use: deep, deeper, deepest, or lens:level (e.g. mortal:deepest)"
+      exit 1
+      ;;
+  esac
+done
+export LENS_DEPTH
 
 # Need at least one of: seed, raw input, presentation-only, synthesise, or project context
 HAS_INPUT=""
@@ -725,18 +773,18 @@ for entry in data:
   echo "  🪟 THINK DIFFERENT FRAMEWORK - Resuming"
   echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo "  Seed: ${SEED_TOPIC:0:80}"
-  local mode_emoji="💫🔀"
-  case "$MODE" in
-    spiral)   mode_emoji="🌀🌿" ;;
-    lapidary) mode_emoji="🪨✨" ;;
-  esac
-  echo "  Mode: ${mode_emoji} $MODE"
+  echo "  Mode: $(mode_emoji "$MODE") $MODE"
   echo "  Resuming from turn: $RESUME_FROM_TURN"
   echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
   # Source and run the mode (skip logic handled by call_lens)
-  source "${SCRIPT_DIR}/modes/${MODE}.sh"
-  run_session || true
+  if [ "$AUTONOMOUS_MODE" = "true" ]; then
+    source "${SCRIPT_DIR}/lib/conductor_loop.sh"
+    run_conductor_session || true
+  else
+    source "${SCRIPT_DIR}/modes/${MODE}.sh"
+    run_session || true
+  fi
 
   if [ "$CAP_LIMIT_HIT" = "true" ]; then
     exit 1
@@ -816,7 +864,7 @@ fi
 [ "$BIAS_ENABLED" != "true" ] && EXPERIMENT_LINES+=("    - bias (disabled via --no-bias)")
 [ "$SENSORY_ENABLED" != "true" ] && EXPERIMENT_LINES+=("    - sensory (disabled via --no-sensory)")
 [ "$TRANSCENDENCE_ENABLED" != "true" ] && EXPERIMENT_LINES+=("    - transcendence (disabled via --no-transcendence)")
-[ "$VOID_ENABLED" != "true" ] && EXPERIMENT_LINES+=("    - void (disabled via --no-void)")
+[ "$NEGATIVE_SPACE_ENABLED" != "true" ] && EXPERIMENT_LINES+=("    - negative space (disabled via --no-negative-space)")
 [ -n "$ROUND_COUNT" ] && EXPERIMENT_LINES+=("    ~ rounds: ${ROUND_COUNT} (via --rounds)")
 [ -n "$SPIRAL_COUNT" ] && EXPERIMENT_LINES+=("    ~ spirals: ${SPIRAL_COUNT} (via --spirals)")
 [ -n "$PASS_COUNT" ] && EXPERIMENT_LINES+=("    ~ passes: ${PASS_COUNT} (via --passes)")
@@ -838,6 +886,7 @@ else
   EXPERIMENT_LINES+=("    - tools: disabled (no web search)")
 fi
 [ "$PROVOCATION_TONE" != "provocative" ] && EXPERIMENT_LINES+=("    ~ tone: ${PROVOCATION_TONE}")
+[ "$LENS_DEPTH" != "deep" ] && EXPERIMENT_LINES+=("    ~ depth: ${LENS_DEPTH}")
 
 # ── 1. Read input material ──
 # All paths produce INPUT_MATERIAL for distillation
@@ -909,12 +958,7 @@ case "$input_type" in
   notes) echo "  Notes: ${NOTES_TEXT:0:60}..." ;;
   project) echo "  Source: auto-detect from project" ;;
 esac
-mode_emoji="💫🔀"
-case "$MODE" in
-  spiral)   mode_emoji="🌀🌿" ;;
-  lapidary) mode_emoji="🪨✨" ;;
-esac
-echo "  Mode: ${mode_emoji} $MODE"
+echo "  Mode: $(mode_emoji "$MODE") $MODE"
 if [ -n "$AUDIENCE_TEXT" ]; then
   echo "  Audience: ${AUDIENCE_TEXT}"
 fi
@@ -1048,6 +1092,7 @@ for seed in "${SEEDS[@]}"; do
   SEED_TOPIC="$seed"
   CONVERSATION=""
   TURN_COUNT=0
+  MECHANISM_MEMORY=()
 
   # Suffix for multiple sessions, clean for single
   if [ ${#SEEDS[@]} -gt 1 ]; then
@@ -1099,16 +1144,14 @@ for seed in "${SEEDS[@]}"; do
 
       echo ""
       echo "  ↻ Restarting session with mutations"
-      old_emoji="💫🔀"; new_emoji="💫🔀"
-      case "$MODE" in spiral) old_emoji="🌀🌿" ;; lapidary) old_emoji="🪨✨" ;; esac
-      case "$mutation_mode" in spiral) new_emoji="🌀🌿" ;; lapidary) new_emoji="🪨✨" ;; esac
-      echo "    Mode: ${old_emoji} ${MODE} -> ${new_emoji} ${mutation_mode}"
+      echo "    Mode: $(mode_emoji "$MODE") ${MODE} -> $(mode_emoji "$mutation_mode") ${mutation_mode}"
       [ -n "$reframed_seed" ] && echo "    Seed: reframed"
       echo ""
 
       # Set up fresh session for run 2
       CONVERSATION=""
       TURN_COUNT=0
+      MECHANISM_MEMORY=()
       if [ -n "$reframed_seed" ]; then
         SEED_TOPIC="$reframed_seed"
       fi
