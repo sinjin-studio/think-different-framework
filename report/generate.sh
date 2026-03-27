@@ -193,12 +193,100 @@ allocate_budget() {
   fi
 }
 
+# ── Distil session findings ──
+# Extracts the most novel findings from the conversation, ranked by divergence.
+distil_session_findings() {
+  local conversation_text="$1"
+  local seed="$2"
+
+read -r -d '' DISTIL_SYSTEM << 'DISTILSYS' || true
+You are extracting findings, not summarizing. A finding is something the session discovered that was not in the original seed and would not be obvious to a senior strategist working alone on this topic.
+
+Read the full conversation. Identify the 5-7 most novel findings. Rank them by how far they diverge from conventional thinking on this subject.
+
+For each finding, write 2-3 sentences: name the specific mechanism or insight, and explain why it is novel (what would a strategist miss without this session?).
+
+Format as a numbered list. No preamble, no summary paragraph. Just the findings.
+
+Do not reward beautiful writing. Reward surprising, specific, usable ideas. If a finding could apply to any brand or topic, it is not specific enough.
+DISTILSYS
+
+  local distil_prompt="Here is a full thinking session transcript on the topic: ${seed}
+
+Extract the most novel findings. What did this session discover that was not in the seed and would not be obvious to a senior strategist?
+
+TRANSCRIPT:
+${conversation_text}"
+
+  local tmpfile
+  tmpfile=$(mktemp)
+  echo "$distil_prompt" > "$tmpfile"
+
+  local result=""
+  VERBOSE_CALLER="report:distil"
+  if claude_call_no_cap "$tmpfile" "$DISTIL_SYSTEM"; then
+    result="$CLAUDE_RESPONSE"
+  fi
+  rm -f "$tmpfile"
+
+  echo "$result"
+}
+
+# ── Generate creative asset description ──
+# A sensory/spatial/tactile description of an asset that embodies the insight.
+generate_asset() {
+  local distillation="$1"
+  local winning_line="$2"
+  local seed="$3"
+  local conversation_text="$4"
+
+read -r -d '' ASSET_SYSTEM << 'ASSETSYS' || true
+You describe a single creative asset that embodies an insight. Not an ad concept. A thing someone could make.
+
+The asset can be any medium: a photograph, a short film, a sound piece, an installation, a physical object, a performance, a piece of music, a garment, a space. Choose whichever medium carries this specific insight best.
+
+Describe it as if someone needs to make it tomorrow. Be specific about:
+- Medium and format (e.g. "60-second film, single fixed camera, no edit")
+- Materials, textures, sensory qualities
+- Duration or dimensions
+- What the viewer/listener/participant experiences
+- What is deliberately absent
+
+Stay within 100-150 words. No preamble. No explanation of why. Just describe the thing.
+
+This is for minds that think in space rather than sequence. The description should make someone see it, hear it, or feel it before they understand it.
+ASSETSYS
+
+  local asset_prompt="THE LINE: ${winning_line}
+
+TOPIC: ${seed}
+
+SESSION'S MOST NOVEL FINDINGS:
+${distillation}
+
+Describe one creative asset that embodies the deepest finding from this session. Choose the medium that carries this insight best."
+
+  local tmpfile
+  tmpfile=$(mktemp)
+  echo "$asset_prompt" > "$tmpfile"
+
+  local result=""
+  VERBOSE_CALLER="report:asset"
+  if claude_call_no_cap "$tmpfile" "$ASSET_SYSTEM"; then
+    result="$CLAUDE_RESPONSE"
+  fi
+  rm -f "$tmpfile"
+
+  echo "$result"
+}
+
 # ── Generate The Line ──
 # Rallying lines distilled from the session.
 generate_the_line() {
   local conversation_text="$1"
   local seed="$2"
   local line_count="${3:-3}"
+  local distillation="${4:-}"
 
   # Progress messaging moved to generate_presentation caller
   # to avoid leaking into $() capture
@@ -258,6 +346,7 @@ A good expression:
 - Carries an emotion, not just an idea
 - Works on a wall, in a headline, or whispered to yourself before doing the hard thing
 - Is rhythmically tight - syllable count matters, every word earns its place
+- Speaks outward to the world, not inward to the brief. It should read like something that exists on a wall, in a headline, or in someone's mouth - not like a line from a strategy deck addressing a stakeholder
 
 What NOT to do:
 - No "In a world where..." framing
@@ -268,6 +357,7 @@ What NOT to do:
 - Nothing that sounds like a consulting framework
 - Nothing generic enough to apply to any topic
 - Nothing that reflects on the process of creating it
+- Nothing that reads like a strategist addressing a client. The expression lives in the world, not in the deck
 - Do not explain the lines. Just deliver them
 
 Write at the altitude of ${practitioners}. Not in their style. At their standard.
@@ -275,11 +365,21 @@ Write at the altitude of ${practitioners}. Not in their style. At their standard
 ${line_count_instruction}
 LINESYS
 
+  local distil_block=""
+  if [ -n "$distillation" ]; then
+    distil_block="SESSION'S MOST NOVEL FINDINGS (ranked by divergence):
+${distillation}
+
+---
+
+"
+  fi
+
   local line_prompt="${AUDIENCE_TEXT:+Audience: ${AUDIENCE_TEXT}
 
-}Here are research notes from a thinking session on: ${seed}
+}${distil_block}Here are research notes from a thinking session on: ${seed}
 
-Find the core insight. Render it at two altitudes: the strategic platform (generative truth you can build on) and the expression (audience-facing punch).
+Find the core insight. Render it at two altitudes: the strategic platform (generative truth you can build on) and the expression (audience-facing punch). Prioritise the deepest, most novel findings - not the most repeated or accessible ones.
 
 RESEARCH NOTES:
 ${conversation_text}
@@ -305,12 +405,54 @@ Write the lines. Platform first, then expression. Each angle should carry the in
   echo "$the_lines"
 }
 
+# ── Pick the strongest expression from multiple angles ──
+pick_strongest_line() {
+  local the_lines="$1"
+
+  # Count angles
+  local count
+  count=$(echo "$the_lines" | grep -c '^EXPRESSION:' || true)
+
+  # Single line or none - return first expression directly
+  if [ "$count" -le 1 ]; then
+    echo "$the_lines" | grep -m 1 '^EXPRESSION:' | sed 's/^EXPRESSION:[[:space:]]*//'
+    return
+  fi
+
+  # Multiple lines - ask Claude to pick the strongest
+  local pick_prompt="You are judging creative lines. Below are ${count} angles, each with a PLATFORM and EXPRESSION.
+
+Pick the single strongest EXPRESSION - the one with the most tension, specificity, and memorability. Respond with ONLY the number (e.g. 1, 2, or 3). Nothing else.
+
+${the_lines}"
+
+  local tmpfile
+  tmpfile=$(mktemp)
+  echo "$pick_prompt" > "$tmpfile"
+
+  local pick=""
+  VERBOSE_CALLER="report:pick_line"
+  if claude_call_no_cap "$tmpfile"; then
+    pick=$(echo "$CLAUDE_RESPONSE" | tr -dc '0-9' | head -c 1)
+  fi
+  rm -f "$tmpfile"
+
+  # Extract the picked expression (fall back to 1 if parse fails)
+  [ -z "$pick" ] && pick="1"
+  local winner
+  winner=$(echo "$the_lines" | grep '^EXPRESSION:' | sed -n "${pick}p" | sed 's/^EXPRESSION:[[:space:]]*//')
+  [ -z "$winner" ] && winner=$(echo "$the_lines" | grep -m 1 '^EXPRESSION:' | sed 's/^EXPRESSION:[[:space:]]*//')
+
+  echo "$winner"
+}
+
 # ── Generate experiment (standalone section with hypothesis + success signal) ──
 generate_experiment() {
   local conversation_text="$1"
   local seed="$2"
   local words="$3"
   local the_lines="${4:-}"
+  local distillation="${5:-}"
 
   local low=$((words - words / 10))
   local high=$((words + words / 10))
@@ -344,7 +486,17 @@ ${the_lines}
 "
   fi
 
-  local experiment_prompt="Here are research notes on the following topic. Distil them into one concrete experiment worth trying.
+  local distil_block=""
+  if [ -n "$distillation" ]; then
+    distil_block="SESSION'S MOST NOVEL FINDINGS:
+${distillation}
+
+---
+
+"
+  fi
+
+  local experiment_prompt="${distil_block}Here are research notes on the following topic. Distil them into one concrete experiment worth trying. Prioritise the deepest findings.
 
 TOPIC: ${seed}
 
@@ -379,6 +531,7 @@ generate_insight() {
   local seed="$2"
   local words="$3"
   local prior_sections="${4:-}"
+  local distillation="${5:-}"
 
   local length_guidance=""
   case "$words" in
@@ -473,7 +626,17 @@ ${prior_sections}
 "
   fi
 
-  local insight_prompt="Here are research notes on the following topic. Read them and write an original article based on the best ideas within. Write as if the ideas are your own.
+  local distil_block=""
+  if [ -n "$distillation" ]; then
+    distil_block="SESSION'S MOST NOVEL FINDINGS:
+${distillation}
+
+---
+
+"
+  fi
+
+  local insight_prompt="${distil_block}Here are research notes on the following topic. Read them and write an original article based on the best ideas within. Write as if the ideas are your own. Prioritise the deepest, most novel findings.
 
 TOPIC: ${seed}
 
@@ -507,6 +670,7 @@ generate_brief() {
   local conversation_text="$1"
   local seed="$2"
   local words="$3"
+  local distillation="${4:-}"
 
   local numeric_words="${words%%-*}"
   local low=$((numeric_words - numeric_words / 10))
@@ -561,7 +725,17 @@ SVG rules:
 ${length_guidance}
 BRIEFSYS
 
-  local brief_prompt="Here are research notes on the following topic. Distill them into a creative brief.
+  local distil_block=""
+  if [ -n "$distillation" ]; then
+    distil_block="SESSION'S MOST NOVEL FINDINGS:
+${distillation}
+
+---
+
+"
+  fi
+
+  local brief_prompt="${distil_block}Here are research notes on the following topic. Distill them into a creative brief. Ground the brief in the deepest findings.
 
 TOPIC: ${seed}
 
@@ -597,6 +771,7 @@ generate_manifesto() {
   local the_line="$3"
   local words="${4:-400}"
   local prior_sections="${5:-}"
+  local distillation="${6:-}"
   local low=$((words - words / 10))
   local high=$((words + words / 10))
 
@@ -635,7 +810,17 @@ ${prior_sections}
 "
   fi
 
-  local manifesto_prompt="Here are research notes on a topic, and a rallying line distilled from them. Write a manifesto that opens with this line and builds conviction around it.
+  local distil_block=""
+  if [ -n "$distillation" ]; then
+    distil_block="SESSION'S MOST NOVEL FINDINGS:
+${distillation}
+
+---
+
+"
+  fi
+
+  local manifesto_prompt="${distil_block}Here are research notes on a topic, and a rallying line distilled from them. Write a manifesto that opens with this line and builds conviction around it. Draw on the deepest findings.
 
 THE LINE: ${the_line}
 
@@ -688,22 +873,29 @@ generate_presentation() {
   fi
   echo ""
 
+  # ── Step 0.5: Distil session findings ──
+  start_spinner "🔬 Distilling session findings"
+  local distillation
+  distillation=$(distil_session_findings "$conversation_text" "$seed")
+  stop_spinner "done"
+
   # ── Step 1: Generate The Line(s) ──
   local line_count="${LINE_COUNT:-3}"
   start_spinner "💡 Distilling The Line (${line_count} angles)"
   local the_lines
-  the_lines=$(generate_the_line "$conversation_text" "$seed" "$line_count")
+  the_lines=$(generate_the_line "$conversation_text" "$seed" "$line_count" "$distillation")
   stop_spinner "done"
 
-  # Extract the first Expression for use in manifesto opening
+  # Pick the strongest Expression for use in manifesto opening
   local first_line=""
   if [ -n "$the_lines" ]; then
-    # Find the first EXPRESSION: line and extract its value
-    first_line=$(echo "$the_lines" | grep -m 1 '^EXPRESSION:' | sed 's/^EXPRESSION:[[:space:]]*//')
+    start_spinner "🎯 Picking strongest expression"
+    first_line=$(pick_strongest_line "$the_lines")
+    stop_spinner "done"
     # Strip wrapping quotes
     first_line="${first_line#\"}"
     first_line="${first_line%\"}"
-    # Fallback: if no EXPRESSION: prefix found, use first non-empty line
+    # Fallback: if extraction failed, use first non-empty line
     if [ -z "$first_line" ]; then
       first_line=$(echo "$the_lines" | head -1 | sed 's/^[0-9]*\.\s*//')
       first_line="${first_line#\"}"
@@ -734,7 +926,7 @@ generate_presentation() {
   # Experiment (always generated when budget allows)
   if [ "$BUDGET_EXPERIMENT" -gt 0 ]; then
     start_spinner "🧪 Writing experiment (~${BUDGET_EXPERIMENT}w)"
-    experiment_content=$(generate_experiment "$conversation_text" "$seed" "$BUDGET_EXPERIMENT" "$the_lines")
+    experiment_content=$(generate_experiment "$conversation_text" "$seed" "$BUDGET_EXPERIMENT" "$the_lines" "$distillation")
     stop_spinner "done"
     [ -n "$experiment_content" ] && prior_sections="EXPERIMENT:
 ${experiment_content}"
@@ -743,7 +935,7 @@ ${experiment_content}"
   # Brief
   if [ -n "$do_brief" ] && [ "$BUDGET_BRIEF" -gt 0 ]; then
     start_spinner "📋 Writing creative brief (~${BUDGET_BRIEF}w)"
-    brief_content=$(generate_brief "$conversation_text" "$seed" "$BUDGET_BRIEF")
+    brief_content=$(generate_brief "$conversation_text" "$seed" "$BUDGET_BRIEF" "$distillation")
     stop_spinner "done"
     [ -n "$brief_content" ] && prior_sections="${prior_sections:+${prior_sections}
 
@@ -756,7 +948,7 @@ ${brief_content}"
   # Insight (receives experiment + brief for dedup)
   if [ -n "$do_insight" ] && [ "$BUDGET_INSIGHT" -gt 0 ]; then
     start_spinner "📝 Writing insight article (~${BUDGET_INSIGHT}w)"
-    insight_content=$(generate_insight "$conversation_text" "$seed" "$BUDGET_INSIGHT" "$prior_sections")
+    insight_content=$(generate_insight "$conversation_text" "$seed" "$BUDGET_INSIGHT" "$prior_sections" "$distillation")
     stop_spinner "done"
     [ -n "$insight_content" ] && prior_sections="${prior_sections:+${prior_sections}
 
@@ -769,17 +961,20 @@ ${insight_content}"
   # Manifesto (receives all prior for dedup)
   if [ -n "$do_manifesto" ] && [ "$BUDGET_MANIFESTO" -gt 0 ]; then
     start_spinner "🔥 Writing manifesto (~${BUDGET_MANIFESTO}w)"
-    manifesto_content=$(generate_manifesto "$conversation_text" "$seed" "$first_line" "$BUDGET_MANIFESTO" "$prior_sections")
+    manifesto_content=$(generate_manifesto "$conversation_text" "$seed" "$first_line" "$BUDGET_MANIFESTO" "$prior_sections" "$distillation")
+    stop_spinner "done"
+  fi
+
+  # Asset (always generated - sensory/tactile description of an object that embodies the insight)
+  local asset_content=""
+  if [ -n "$first_line" ] && [ -n "$distillation" ]; then
+    start_spinner "🎨 Describing the asset"
+    asset_content=$(generate_asset "$distillation" "$first_line" "$seed" "$conversation_text")
     stop_spinner "done"
   fi
 
   # ── Step 3: Assemble output ──
-  local mode_label=""
-  case "${MODE:-dyslexic}" in
-    spiral) mode_label="🌀🌿 spiral" ;;
-    lapidary) mode_label="🪨✨ lapidary" ;;
-    *) mode_label="💫🔀 dyslexic" ;;
-  esac
+  local mode_label="$(mode_emoji "${MODE:-dyslexic}") ${MODE:-dyslexic}"
 
   cat > "$output_file" << PRESHEADER
 # Think Different Presentation
@@ -796,12 +991,31 @@ ${MODE:+> **Mode:** ${mode_label}}
 
 PRESHEADER
 
-  # The Line(s) - the rallying cry
+  # The Line - winning line only (all lines go to session transcript)
   if [ -n "$the_lines" ]; then
     echo "" >> "$output_file"
     echo "## The Line" >> "$output_file"
     echo "" >> "$output_file"
-    echo "$the_lines" >> "$output_file"
+    # Extract the winning PLATFORM + EXPRESSION pair
+    local winning_pair=""
+    if [ -n "$first_line" ]; then
+      # Find which angle contains the winning expression and extract its PLATFORM + EXPRESSION
+      winning_pair=$(echo "$the_lines" | awk -v expr="$first_line" '
+        /^\[/ { block="" }
+        { block = block "\n" $0 }
+        /^EXPRESSION:/ && index($0, expr) > 0 {
+          # Print the block for this angle (strip leading newline)
+          sub(/^\n/, "", block)
+          print block
+          exit
+        }
+      ')
+    fi
+    if [ -n "$winning_pair" ]; then
+      echo "$winning_pair" >> "$output_file"
+    else
+      echo "$the_lines" >> "$output_file"
+    fi
     echo "" >> "$output_file"
     echo "---" >> "$output_file"
   fi
@@ -812,6 +1026,16 @@ PRESHEADER
     echo "## The Experiment" >> "$output_file"
     echo "" >> "$output_file"
     echo "$experiment_content" >> "$output_file"
+    echo "" >> "$output_file"
+    echo "---" >> "$output_file"
+  fi
+
+  # The Asset - sensory/tactile description
+  if [ -n "$asset_content" ]; then
+    echo "" >> "$output_file"
+    echo "## The Asset" >> "$output_file"
+    echo "" >> "$output_file"
+    echo "$asset_content" >> "$output_file"
     echo "" >> "$output_file"
     echo "---" >> "$output_file"
   fi
@@ -842,6 +1066,18 @@ PRESHEADER
     echo "## Manifesto" >> "$output_file"
     echo "" >> "$output_file"
     echo "$manifesto_content" >> "$output_file"
+    echo "" >> "$output_file"
+  fi
+
+  # Session Findings - distilled novel ideas for inspiration
+  if [ -n "$distillation" ]; then
+    echo "---" >> "$output_file"
+    echo "" >> "$output_file"
+    echo "## Session Findings" >> "$output_file"
+    echo "" >> "$output_file"
+    echo "*The most novel ideas from the thinking session, ranked by divergence from conventional thinking.*" >> "$output_file"
+    echo "" >> "$output_file"
+    echo "$distillation" >> "$output_file"
     echo "" >> "$output_file"
   fi
 
@@ -894,6 +1130,15 @@ ${brief_content}"
 MANIFESTO:
 
 ${manifesto_content}"
+  fi
+  if [ -n "$asset_content" ]; then
+    combined="${combined}
+
+---
+
+THE ASSET:
+
+${asset_content}"
   fi
   echo "$combined"
 }
