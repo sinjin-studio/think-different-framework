@@ -49,7 +49,7 @@ run_session() {
   source "${SCRIPT_DIR}/mechanisms/sensory.sh"
   source "${SCRIPT_DIR}/mechanisms/bias.sh"
   source "${SCRIPT_DIR}/mechanisms/transcendence.sh"
-  source "${SCRIPT_DIR}/mechanisms/void.sh"
+  source "${SCRIPT_DIR}/mechanisms/negative_space.sh"
 
   # Gather context, then fracture (grounding is embedded in fracture)
   gather_project_context || true
@@ -127,7 +127,7 @@ run_session() {
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
     map_negative_space 3 || true
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
-    handle_void_decision 3
+    handle_negative_space_decision 3
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
     detect_cognitive_bias 3 || true
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
@@ -151,10 +151,10 @@ run_session() {
 
     # Transcendence + void checks from round 5 onwards
     if [ "$r" -ge 5 ]; then
-      if [ "$VOID_ENABLED" = "true" ]; then
+      if [ "$NEGATIVE_SPACE_ENABLED" = "true" ]; then
         map_negative_space "$r" || true
         [ "$CAP_LIMIT_HIT" = "true" ] && return 0
-        handle_void_decision "$r"
+        handle_negative_space_decision "$r"
         [ "$CAP_LIMIT_HIT" = "true" ] && return 0
       fi
       if [ "$TRANSCENDENCE_ENABLED" = "true" ]; then

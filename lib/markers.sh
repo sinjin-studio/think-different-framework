@@ -29,6 +29,14 @@ mark_pass() {
   md_append_section 2 "Pass ${num}: ${label}"
 }
 
+mode_emoji() {
+  case "${1:-dyslexic}" in
+    spiral)   echo "🌀🌿" ;;
+    lapidary) echo "🪨✨" ;;
+    *)        echo "💫🔀" ;;
+  esac
+}
+
 mark_phase() {
   local label="$1"
   local subtitle="$2"

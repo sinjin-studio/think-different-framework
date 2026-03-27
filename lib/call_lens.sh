@@ -32,6 +32,31 @@ is_lens_active() {
   return 0
 }
 
+# ── Lens depth (--depth flag) ──
+# Returns the depth level for a given lens key by parsing $LENS_DEPTH.
+# Per-lens override (key:level) takes priority over global level.
+get_lens_depth() {
+  local key="$1"
+  local depth_str="${LENS_DEPTH:-deep}"
+  local _old_ifs="$IFS"
+  local IFS=','
+  # Check for per-lens override (key:level)
+  for entry in $depth_str; do
+    case "$entry" in
+      "${key}:"*) echo "${entry#*:}"; IFS="$_old_ifs"; return ;;
+    esac
+  done
+  # Fall back to global (bare value without colon)
+  for entry in $depth_str; do
+    case "$entry" in
+      *:*) ;; # skip per-lens entries
+      *) echo "$entry"; IFS="$_old_ifs"; return ;;
+    esac
+  done
+  IFS="$_old_ifs"
+  echo "deep"
+}
+
 # ── Shuffle array (Fisher-Yates, bash 3.2 compatible) ──
 shuf_array() {
   local arr=("$@")
@@ -394,19 +419,19 @@ handle_transcendence_decision() {
   fi
 }
 
-# React to void decision: redirect a lens into unexplored territory
-handle_void_decision() {
+# React to negative space decision: redirect a lens into unexplored territory
+handle_negative_space_decision() {
   local unit_num="$1"
-  [ -z "$VOID_DECISION" ] && return
-  local void_rec
-  void_rec=$(echo "$VOID_DECISION" | python3 -c "import sys,json; print(json.load(sys.stdin).get('recommendation','note_and_continue'))" 2>/dev/null || echo "note_and_continue")
-  if [ "$void_rec" = "redirect_to_void" ]; then
-    local inject_key void_territory
-    inject_key=$(echo "$VOID_DECISION" | python3 -c "import sys,json; t=json.load(sys.stdin).get('territories',[]); print(t[0].get('suggested_lens','') if t else '')" 2>/dev/null || echo "")
-    void_territory=$(echo "$VOID_DECISION" | python3 -c "import sys,json; t=json.load(sys.stdin).get('territories',[]); print(t[0].get('description','') if t else '')" 2>/dev/null || echo "")
+  [ -z "$NEGATIVE_SPACE_DECISION" ] && return
+  local ns_rec
+  ns_rec=$(echo "$NEGATIVE_SPACE_DECISION" | python3 -c "import sys,json; print(json.load(sys.stdin).get('recommendation','note_and_continue'))" 2>/dev/null || echo "note_and_continue")
+  if [ "$ns_rec" = "redirect_to_void" ]; then
+    local inject_key ns_territory
+    inject_key=$(echo "$NEGATIVE_SPACE_DECISION" | python3 -c "import sys,json; t=json.load(sys.stdin).get('territories',[]); print(t[0].get('suggested_lens','') if t else '')" 2>/dev/null || echo "")
+    ns_territory=$(echo "$NEGATIVE_SPACE_DECISION" | python3 -c "import sys,json; t=json.load(sys.stdin).get('territories',[]); print(t[0].get('description','') if t else '')" 2>/dev/null || echo "")
     if [ -n "$inject_key" ] && is_lens_active "$inject_key"; then
-      echo "  ↪ Void redirect: sending ${inject_key} into the dark"
-      call_lens "$inject_key" "void_exploration" "$unit_num" "The negative space mapper found territory nobody has explored yet: ${void_territory}. Point your lens at this dark patch. What do you see there?" || true
+      echo "  ↪ Negative space redirect: sending ${inject_key} into the dark"
+      call_lens "$inject_key" "negative_space_exploration" "$unit_num" "The negative space mapper found territory nobody has explored yet: ${ns_territory}. Point your lens at this dark patch. What do you see there?" || true
     fi
   fi
 }

@@ -3,23 +3,23 @@
 # Cartographer of absence: maps the territory no lens has explored.
 # Every lens response illuminates some ground. This mechanism maps
 # the dark patches between the lit areas and asks what is in there.
-# Returns structured decision in $VOID_DECISION (JSON).
+# Returns structured decision in $NEGATIVE_SPACE_DECISION (JSON).
 # Expects globals: $CONVERSATION, $TRANSCRIPT_MD, $TRANSCRIPT_JSON,
 #                  $TURN_COUNT, $UNIT_LABEL, $SEED_TOPIC
 # Depends on: lib/json.sh, lib/cap_check.sh
 
-VOID_DECISION=""
+NEGATIVE_SPACE_DECISION=""
 
 map_negative_space() {
-  [ "$VOID_ENABLED" != "true" ] && return
+  [ "$NEGATIVE_SPACE_ENABLED" != "true" ] && return
   local unit_num="$1"
-  VOID_DECISION=""
+  NEGATIVE_SPACE_DECISION=""
   start_spinner "🔭 Mapping negative space"
 
   local mechanism_history
   mechanism_history=$(build_mechanism_history)
 
-  local void_prompt="You are a cartographer of absence. Your job is not to evaluate what has been said - other mechanisms do that. Your job is to map what has NOT been said.
+  local ns_prompt="You are a cartographer of absence. Your job is not to evaluate what has been said - other mechanisms do that. Your job is to map what has NOT been said.
 
 Think of it like this: every lens response illuminates some territory. Friction finds where the lit areas contradict each other. Transcendence asks whether the lit areas touch something that matters. You are different. You are pointing the telescope at the dark spaces between the lit areas and asking: what is in there?
 
@@ -58,7 +58,7 @@ ${CONVERSATION}"
 
   local tmpfile
   tmpfile=$(mktemp)
-  echo "$void_prompt" > "$tmpfile"
+  echo "$ns_prompt" > "$tmpfile"
 
   # Resume skip
   if [ "$TURN_COUNT" -lt "$RESUME_FROM_TURN" ]; then
@@ -70,15 +70,15 @@ ${CONVERSATION}"
 
   local json_schema='{"type":"object","properties":{"territories":{"type":"array","items":{"type":"object","properties":{"name":{"type":"string"},"description":{"type":"string"},"suggested_lens":{"type":"string"},"web_check":{"type":"string"}},"required":["name","description","suggested_lens"]}},"pattern_of_avoidance":{"type":"string"},"recommendation":{"type":"string","enum":["redirect_to_void","note_and_continue","void_is_intentional"]}},"required":["territories","pattern_of_avoidance","recommendation"]}'
 
-  # Temporarily ensure web search is available for void territory checking
+  # Temporarily ensure web search is available for negative space territory checking
   local saved_tools="$ALLOWED_TOOLS_FLAG"
   ALLOWED_TOOLS_FLAG="--allowedTools WebSearch,WebFetch"
 
   local territories decision_json
-  VERBOSE_CALLER="mechanism:void"
+  VERBOSE_CALLER="mechanism:negative_space"
   if claude_call_json "$tmpfile" "$json_schema"; then
     decision_json="$CLAUDE_RESPONSE"
-    VOID_DECISION="$decision_json"
+    NEGATIVE_SPACE_DECISION="$decision_json"
     # Extract territory descriptions as prose for conversation
     territories=$(echo "$decision_json" | python3 -c "
 import sys, json
@@ -95,10 +95,10 @@ print()
 print('Pattern of avoidance: ' + d.get('pattern_of_avoidance', ''))
 " 2>/dev/null || echo "No negative space mapped.")
     # Append to mechanism memory
-    local void_rec_mem void_summary
-    void_rec_mem=$(echo "$decision_json" | python3 -c "import sys,json; print(json.load(sys.stdin).get('recommendation','note_and_continue'))" 2>/dev/null || echo "note_and_continue")
-    void_summary=$(echo "$decision_json" | python3 -c "import sys,json; d=json.load(sys.stdin); ts=d.get('territories',[]); print(d.get('pattern_of_avoidance','') + ' | ' + ', '.join(t.get('name','') for t in ts[:3]))" 2>/dev/null || echo "")
-    append_mechanism_memory "void" "$unit_num" "$void_rec_mem" "$void_summary"
+    local ns_rec_mem ns_summary
+    ns_rec_mem=$(echo "$decision_json" | python3 -c "import sys,json; print(json.load(sys.stdin).get('recommendation','note_and_continue'))" 2>/dev/null || echo "note_and_continue")
+    ns_summary=$(echo "$decision_json" | python3 -c "import sys,json; d=json.load(sys.stdin); ts=d.get('territories',[]); print(d.get('pattern_of_avoidance','') + ' | ' + ', '.join(t.get('name','') for t in ts[:3]))" 2>/dev/null || echo "")
+    append_mechanism_memory "negative_space" "$unit_num" "$ns_rec_mem" "$ns_summary"
   else
     rm -f "$tmpfile"
     ALLOWED_TOOLS_FLAG="$saved_tools"
@@ -124,7 +124,7 @@ ${territories}"
 ${territories}
 "
 
-  json_append_entry "void_mapper" "Negative Space" "🔭" "Absence Cartography" "void" "$unit_num" "$TURN_COUNT" "$territories"
+  json_append_entry "negative_space_mapper" "Negative Space" "🔭" "Absence Cartography" "negative_space" "$unit_num" "$TURN_COUNT" "$territories"
   TURN_COUNT=$((TURN_COUNT + 1))
 
   json_flush

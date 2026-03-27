@@ -43,7 +43,7 @@ run_session() {
   source "${SCRIPT_DIR}/mechanisms/polish.sh"
   source "${SCRIPT_DIR}/mechanisms/bias.sh"
   source "${SCRIPT_DIR}/mechanisms/transcendence.sh"
-  source "${SCRIPT_DIR}/mechanisms/void.sh"
+  source "${SCRIPT_DIR}/mechanisms/negative_space.sh"
 
   # Gather context, then appraise (grounding is embedded in appraisal)
   gather_project_context || true
@@ -73,7 +73,7 @@ run_session() {
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
     map_negative_space 1 || true
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
-    handle_void_decision 1
+    handle_negative_space_decision 1
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
   fi
 
@@ -142,10 +142,10 @@ run_session() {
 
     # Transcendence + void checks from pass 3 onwards
     if [ "$p" -ge 3 ]; then
-      if [ "$VOID_ENABLED" = "true" ]; then
+      if [ "$NEGATIVE_SPACE_ENABLED" = "true" ]; then
         map_negative_space "$p" || true
         [ "$CAP_LIMIT_HIT" = "true" ] && return 0
-        handle_void_decision "$p"
+        handle_negative_space_decision "$p"
         [ "$CAP_LIMIT_HIT" = "true" ] && return 0
       fi
       if [ "$TRANSCENDENCE_ENABLED" = "true" ]; then

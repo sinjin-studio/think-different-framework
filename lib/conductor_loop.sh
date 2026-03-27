@@ -34,32 +34,35 @@ run_conductor_session() {
   source "${SCRIPT_DIR}/mechanisms/sensory.sh"
   source "${SCRIPT_DIR}/mechanisms/bias.sh"
   source "${SCRIPT_DIR}/mechanisms/transcendence.sh"
-  source "${SCRIPT_DIR}/mechanisms/void.sh"
+  source "${SCRIPT_DIR}/mechanisms/negative_space.sh"
 
   # Get conductor system prompt for this mode
   local conductor_system
   conductor_system=$(get_conductor_system "$MODE")
 
-  # Gather context and prepare seed (using mode-appropriate preparation)
-  gather_project_context || true
-  [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+  # Skip seed prep and context gathering on resume (conversation already loaded)
+  if [ "${RESUME_MODE:-}" != "true" ]; then
+    # Gather context and prepare seed (using mode-appropriate preparation)
+    gather_project_context || true
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
 
-  # Run seed preparation based on mode
-  case "$MODE" in
-    dyslexic)
-      source "${SCRIPT_DIR}/context/fracture.sh"
-      fracture_seed || true
-      ;;
-    spiral)
-      source "${SCRIPT_DIR}/context/tune.sh"
-      tune_seed || true
-      ;;
-    lapidary)
-      source "${SCRIPT_DIR}/context/appraise.sh"
-      appraise_seed || true
-      ;;
-  esac
-  [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    # Run seed preparation based on mode
+    case "$MODE" in
+      dyslexic)
+        source "${SCRIPT_DIR}/context/fracture.sh"
+        fracture_seed || true
+        ;;
+      spiral)
+        source "${SCRIPT_DIR}/context/tune.sh"
+        tune_seed || true
+        ;;
+      lapidary)
+        source "${SCRIPT_DIR}/context/appraise.sh"
+        appraise_seed || true
+        ;;
+    esac
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+  fi
 
   # Build list of valid lens keys from sourced functions
   local valid_lenses=""
@@ -101,7 +104,7 @@ What should happen next? Decide which lens should speak and what instruction to 
 
 Respond with a JSON object."
 
-    local decision_schema="{\"type\":\"object\",\"properties\":{\"next_lens\":{\"type\":\"string\",\"enum\":[${valid_lenses}]},\"phase\":{\"type\":\"string\"},\"instruction\":{\"type\":\"string\"},\"mechanism_after\":{\"type\":\"string\",\"enum\":[\"friction\",\"sensory\",\"bias\",\"transcendence\",\"void\",\"\"]},\"review_now\":{\"type\":\"boolean\"},\"end_session\":{\"type\":\"boolean\"}},\"required\":[\"next_lens\",\"phase\",\"instruction\",\"end_session\"]}"
+    local decision_schema="{\"type\":\"object\",\"properties\":{\"next_lens\":{\"type\":\"string\",\"enum\":[${valid_lenses}]},\"phase\":{\"type\":\"string\"},\"instruction\":{\"type\":\"string\"},\"mechanism_after\":{\"type\":\"string\",\"enum\":[\"friction\",\"sensory\",\"bias\",\"transcendence\",\"negative_space\",\"\"]},\"review_now\":{\"type\":\"boolean\"},\"end_session\":{\"type\":\"boolean\"}},\"required\":[\"next_lens\",\"phase\",\"instruction\",\"end_session\"]}"
 
     local tmpfile
     tmpfile=$(mktemp)
@@ -200,10 +203,10 @@ Respond with a JSON object."
             fi
           fi
           ;;
-        void)
+        negative_space)
           map_negative_space "$((turn_in_session))" || true
           [ "$CAP_LIMIT_HIT" = "true" ] && return 0
-          handle_void_decision "$((turn_in_session))"
+          handle_negative_space_decision "$((turn_in_session))"
           [ "$CAP_LIMIT_HIT" = "true" ] && return 0
           ;;
       esac

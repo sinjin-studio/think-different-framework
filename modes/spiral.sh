@@ -33,7 +33,7 @@ run_session() {
   source "${SCRIPT_DIR}/mechanisms/reseed.sh"
   source "${SCRIPT_DIR}/mechanisms/bias.sh"
   source "${SCRIPT_DIR}/mechanisms/transcendence.sh"
-  source "${SCRIPT_DIR}/mechanisms/void.sh"
+  source "${SCRIPT_DIR}/mechanisms/negative_space.sh"
 
   # Gather context, then tune (grounding is embedded in tuning)
   gather_project_context || true
@@ -143,7 +143,7 @@ run_session() {
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
     map_negative_space 2 || true
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
-    handle_void_decision 2
+    handle_negative_space_decision 2
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
     # Transcendence moved to after spiral 3 in extended spirals loop
     if [ "$total_spirals" -ge 3 ]; then
@@ -241,10 +241,10 @@ run_session() {
 
     # Transcendence + void checks from spiral 3 onwards
     if [ "$s" -ge 3 ]; then
-      if [ "$VOID_ENABLED" = "true" ]; then
+      if [ "$NEGATIVE_SPACE_ENABLED" = "true" ]; then
         map_negative_space "$s" || true
         [ "$CAP_LIMIT_HIT" = "true" ] && return 0
-        handle_void_decision "$s"
+        handle_negative_space_decision "$s"
         [ "$CAP_LIMIT_HIT" = "true" ] && return 0
       fi
       if [ "$TRANSCENDENCE_ENABLED" = "true" ]; then
