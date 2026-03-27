@@ -44,18 +44,8 @@ chmod +x think.sh
 
 **Works with:** bash 3.2+ (macOS and Linux).
 
-## Token Usage
-
 > [!WARNING]
-> **This will eat your tokens.** This is an experiment in brute-forcing new thinking, the framework is optimised for unique thinking, not token efficiency or an exercise in cost reduction. Every session fires 19+ lenses in various sequences, each reading the full conversation history and multiple sessions can be run at once and synthesizing later. In autonomous mode, the conductor, skip-turn decisions, and reviewer add additional calls, tools can be invoked too. A single run can burn through a good chunk of your session budget. It is not optimised. It is not subtle. It is a deliberate, token-heavy collision engine. You have been warned.
-
-**Plan recommendations:**
-
-- **Pro plan** - Framework defaults to 1 provocation. Enough for single-seed exploration. Multi-provocation sessions will likely hit rate limits.
-- **Max plan** (recommended) - Defaults to 3 provocations. Best for brief/brand/notes input where multiple angles matter.
-- **Enterprise/Team** - Defaults to 3 provocations. Higher rate limits for intensive use.
-
-The framework detects your Claude plan automatically via `claude auth status` and sets the default seed count. Override with `--seeds N`. Use `--pick` to generate provocations then select which to run.
+> **This will eat your tokens.** Every session fires 19+ lenses, each reading the full conversation history. In autonomous mode, the conductor, reviewer, and tools add further calls. A single run can burn through a good chunk of your session budget. It is a deliberate, token-heavy collision engine. The framework auto-detects your Claude plan (Pro=1 seed, Max/Team/Enterprise=3 seeds). Override with `--seeds N`. See [Plan Recommendations](#plan-recommendations) for details.
 
 ## How It Works
 
@@ -83,95 +73,23 @@ Shared pool. Every composition draws from these. Each is a productive cognitive 
 
 ### Cognitions - WHAT you do with what you see
 
-Two sets of cognitive operations. Compositions choose which set to use.
+Compositions choose which cognition set to use. The Logician is a hybrid - it fuses structural perception with causal reasoning and participates in both dyslexic and lapidary compositions.
 
-**Fragmentary cognitions** - break, leap, shift, name:
-
-| Lens | Operation |
-|-------|-----------|
-| 🔍🫧 The Decomposer | Break apart, examine piece as whole |
-| 🪢🌉 The Associator | Link across domains, adjacencies |
-| 🔭🔬 The Scaler | Change altitude radically |
-| 💎👁️‍🗨️ The Reifier | Make invisible visible, name the shape |
-
-**Deepening cognitions** - open, rhyme, integrate:
-
-| Lens | Operation |
-|-------|-----------|
-| 🧭🌀 The Diverger | Open territory, follow surprise |
-| 🔮🧬 The Analogiser | Find structural rhymes across domains |
-| 🧐🕸️ The Integrator | Find emergent whole, name the unnamed |
-
-**Evaluative cognitions** - weigh, root, pare:
-
-| Lens | Operation |
-|-------|-----------|
-| ⚖️🎚️ The Appraiser | Weigh quality, proportion, fitness |
-| 📜🏛️ The Historian | Contextualise in tradition, culture, precedent |
-| ✂️🪶 The Editor | Refine toward economy, remove everything that is not the thing |
-
-### Hybrids - lenses that break the boundary
-
-Some cognitive traits do not fit neatly into perceiver or cognition. They fuse perception with reasoning in a single operation. Hybrid lenses intentionally break the perceiver/cognition boundary - a framework about thinking differently should think differently about its own rules.
-
-| Lens | Bias | What it rebels against |
-|-------|------|----------------------|
-| 🧩🧮 The Logician | Structure, Causation & First Principles | Accepting "how" without understanding "why", correlation as causation |
+| Set | Lenses | Operations |
+|-----|--------|------------|
+| **Fragmentary** | 🔍🫧 Decomposer, 🪢🌉 Associator, 🔭🔬 Scaler, 💎👁️‍🗨️ Reifier | Break, leap, shift, name |
+| **Deepening** | 🧭🌀 Diverger, 🔮🧬 Analogiser, 🧐🕸️ Integrator | Open, rhyme, integrate |
+| **Evaluative** | ⚖️🎚️ Appraiser, 📜🏛️ Historian, ✂️🪶 Editor | Weigh, root, pare |
 
 ### Compositions - HOW you sequence them
 
 Each composition pairs a cognition set with a selection of perceivers and defines the rhythm - how many rounds, which lenses speak when, where friction and bias checks fall.
 
-| Mode | Cognitions | Perceivers | Character | Steps |
-|------|------------|------------|-----------|-------|
-| 💫🔀 `dyslexic` | Fragmentary + Logician (rounds 2-3) | All except Skeptic | Leaping, collision-driven. 4 rounds of decompose-associate-scale-reify with perceivers woven between. | ~32 |
-| 🌀🌿 `spiral` | Deepening | Empath, Provocateur, Observer, Skeptic, Includer, Achala | 3 spirals of diverge-analogise-integrate, each reseeding the next. | ~37 |
-| 🪨✨ `lapidary` | Evaluative + Logician (pass 2) | Empath, Connoisseur, Provocateur, Observer, Skeptic, Achala | Iterative refinement. 3 passes of weigh-root-pare, each more precise than the last. | ~25 |
-
-The Skeptic is excluded from the dyslexic composition by default. Dyslexic thinking naturally produces incongruence detection as a perceptual byproduct - adding an explicit Skeptic lens can over-anchor on what doesn't fit before the leaps have had space to form. Use `--include skeptic` to override this and place it in Round 3.
-
-The Child is excluded from the lapidary composition by default. Lapidary thinking requires mature judgement - the discernment of a craftsperson, not wild generation. The Connoisseur takes the evaluative seat that the Child cannot occupy.
-
-### Assumption Grounding
-
-Grounding is embedded directly in seed preparation (fracture, tune, or appraise). Before breaking apart or assessing the seed, the model surfaces 3-4 assumptions about the problem, audience, or situation most likely to be wrong, with alternative realities for each.
-
-Web search is enabled by default (`WebSearch,WebFetch`). When available, the model verifies factual claims - market data, demographics, trends - and marks each assumption as VERIFIED or UNVERIFIED. This means the framework does its own homework rather than blocking the session for interactive user correction.
-
-When web search is unavailable (via `--allowedTools ""`), assumptions are marked UNVERIFIED and held loosely by agents. A warning is printed with instructions to re-enable.
-
-This matters because assumptions form during seed preparation, BEFORE any of the existing checking mechanisms fire (friction, bias, sensory, Observer, Skeptic all run DURING composition rounds). Without grounding, contaminated assumptions bake into the conversation that every lens builds on.
-
-You can test grounding in isolation without running a full session:
-
-```bash
-./think.sh "your seed topic" --ground-only
-./think.sh "your seed topic" --context ./brief.md --ground-only
-```
-
-### Session Flow
-
-Two paths to a presentation. A direct seed runs one session. Raw input (brief, brand, notes) gets distilled into provocations, each provocation runs a full session, then all sessions are synthesised into one presentation.
-
-##### ![Session flow - two paths converging to presentation](docs/session-flow.svg)
-
-### 💫🔀 Dyslexic Composition - step by step
-
-7 rounds (default). Cognitions and perceivers interleave. Friction between every round. Sensory check mid-session. Bias check before convergence. Negative space and transcendence checks from round 5 onwards (two-strike pattern - first signal noted, second triggers grounding).
-
-![Dyslexic composition flow - 7 rounds with friction, sensory, negative space, bias, and transcendence checks](docs/dyslexic-flow.svg)
-
-### 🌀🌿 Spiral Composition - step by step
-
-5 spirals (default). Each spiral widens then crystallises. The Integrator's insight reseeds the next spiral. Friction, bias, negative space and transcendence checks from spiral 3 onwards.
-
-![Spiral composition flow - 5 spirals converging inward with reseed connections](docs/spiral-flow.svg)
-
-### 🪨✨ Lapidary Composition - step by step
-
-5 passes (default). Each pass works the same material with increasing precision. Polish mechanism between passes assesses what survived and what was revealed. Negative space and transcendence checks from pass 3 onwards. Mature judgement only - Child excluded by default.
-
-![Lapidary composition flow - 5 passes with polish, friction, negative space, and transcendence checks](docs/lapidary-flow.svg)
+| Mode | Cognitions | Perceivers | Character |
+|------|------------|------------|-----------|
+| 💫🔀 `dyslexic` | Fragmentary + Logician | All except Skeptic | Leaping, collision-driven. Rounds of decompose-associate-scale-reify with perceivers woven between |
+| 🌀🌿 `spiral` | Deepening | Empath, Provocateur, Observer, Skeptic, Includer, Achala | Spirals of diverge-analogise-integrate, each reseeding the next |
+| 🪨✨ `lapidary` | Evaluative + Logician | Empath, Connoisseur, Provocateur, Observer, Skeptic, Achala | Iterative refinement. Passes of weigh-root-pare, each more precise than the last |
 
 ## Usage
 
@@ -196,6 +114,104 @@ The framework meets you wherever you are. Give it a brief, a brand name, or some
 ./think.sh --brand "Nike" --audience "runners who need permission to start"
 ./think.sh --brief ./brief.pdf --mode spiral      # all flags combine
 ```
+
+### With project context
+
+Run from inside a project directory to automatically ground the thinking in what the project actually is.
+
+```bash
+cd ~/projects/my-project && ~/think.sh "seed topic"
+./think.sh "seed topic" --context ./brief.md
+```
+
+### Presentation operations
+
+```bash
+# Re-run presentation at different length
+./think.sh --report-only ./think-different-output/my-session/session.md --words 2000
+
+# Manual synthesis of existing transcripts
+./think.sh --synthesise ./run1/*.md ./run2/*.md --words 1500
+```
+
+Control provocation character with `--tone` (default: `provocative`). See [Tones](#tones). Control perceiver depth with `--depth` (default: `deep`). See [Depth](#depth).
+
+## Options
+
+| Flag | Description |
+|------|-------------|
+| **Core** | |
+| `--mode MODE` | Composition: `dyslexic` (default), `spiral`, `lapidary` |
+| `--words N` | Target word count for presentation (default: 1500) |
+| `--output DIR` | Output directory (default: ./think-different-output) |
+| `--context FILE` | Explicit context file to ground the session |
+| **Input** | |
+| `--brief FILE` | Generate provocations from a brief file |
+| `--brand NAME` | Generate provocations from a brand name |
+| `--notes TEXT` | Generate provocations from working notes |
+| `--audience TEXT` | Target audience (auto-inferred from input if not set) |
+| `--tone TONE` / `-t` | Provocation tone (default: `provocative`). See [Tones](#tones) |
+| `--seeds N` | Number of provocations to generate (auto-detected from plan, max: 12) |
+| `--pick` | Interactively select which provocations to run |
+| **Output** | |
+| `--type TYPES` | Output types: `insight`, `brief`, `manifesto` (default: all three, comma-separated) |
+| `--lines N` | Number of rallying lines to generate (default: 3, max: 7) |
+| `--practitioners LIST` | Comma-separated creative practitioners as quality bar for The Line |
+| `--html` | Enable HTML presentation generation (experimental, off by default) |
+| `--formats LIST` | Output formats for `--report-only`: `all`, `md`, `doc`, `html` (comma-separated) |
+| `--report-only FILE` | Regenerate presentation from existing transcript |
+| `--synthesise` | Synthesise existing transcript files into one presentation |
+| `--resume FILE` | Resume an interrupted session from state file |
+| **Tuning** | |
+| `--depth LEVEL` | Lens depth: `deep` (default), `deeper`, `deepest`. Per-lens: `mortal:deepest,achala:deeper`. See [Depth](#depth) |
+| `--rounds N` | Number of rounds (dyslexic default: 7) |
+| `--spirals N` | Number of spirals (spiral default: 5) |
+| `--passes N` | Number of passes (lapidary default: 5) |
+| `--turns N` | Max turns for autonomous conductor (default: 35) |
+| `--min-turns N` | Min turns before conductor can end session (default: 15) |
+| `--shuffle` | Randomize lens order within each round/phase |
+| `--include A,B` | Force-include lenses by key name |
+| `--exclude A,B` | Force-exclude lenses by key name |
+| **Mechanisms** | |
+| `--no-friction` | Skip friction detection between rounds |
+| `--no-bias` | Skip cognitive bias checks |
+| `--no-sensory` | Skip sensory/context re-injection |
+| `--no-negative-space` | Skip negative space mapping |
+| `--no-transcendence` | Skip transcendence check |
+| `--no-ground` | Skip assumption grounding embedded in seed prep |
+| `--ground-only` | Run only the grounding step, then exit |
+| **Mode** | |
+| `--autonomous` | Enable agentic mode (default: on) |
+| `--no-autonomous` | Disable agentic mode, use hardcoded composition sequences (also disables auto-wait) |
+| `--no-wait` | Disable auto-wait on cap hit (default: polls for reset in autonomous mode, for overnight runs) |
+| `--skip-strict` | Use separate pre-call for skip-turn instead of inline detection |
+| `--compact` | Enable context compaction (off by default, opt in for very long sessions) |
+| `--allowedTools TOOLS` | Tools for Claude CLI (default: `"WebSearch,WebFetch"`, use `""` to disable) |
+
+## Output
+
+Each session produces:
+
+- **Presentation** (`presentation.md` / `.docx` / `.html`) - The Line (winning platform + expression), the experiment, the asset (sensory/tactile creative description), creative brief, manifesto, insight article, and session findings (novel ideas for inspiration). Controlled by `--type`. The presentation pipeline distils session findings first, then all sections are anchored on the deepest material. HTML version features cinematic scroll effects with GSAP ScrollTrigger
+- **Transcript** (`session_*.md`) - Full markdown transcript of the thinking session
+- **JSON** (`session_*.json`) - Machine-readable transcript for analysis
+- **Context** (`context_*.md`) - Project context brief (if gathered)
+
+---
+
+## Advanced
+
+Everything below is for tuning, experimenting, and understanding the internals. You don't need any of this to run your first session.
+
+### Plan Recommendations
+
+- **Pro plan** - Framework defaults to 1 provocation. Enough for single-seed exploration. Multi-provocation sessions will likely hit rate limits.
+- **Max plan** (recommended) - Defaults to 3 provocations. Best for brief/brand/notes input where multiple angles matter.
+- **Enterprise/Team** - Defaults to 3 provocations. Higher rate limits for intensive use.
+
+The framework detects your Claude plan automatically via `claude auth status` and sets the default seed count. Override with `--seeds N`. Use `--pick` to generate provocations then select which to run.
+
+**Auto-wait on cap hit:** In autonomous mode (default), the framework automatically polls for cap reset when credits are exhausted - start at 5-minute intervals, increasing to 10 minutes, for up to 4 hours. This enables unattended overnight runs. Disable with `--no-wait`.
 
 ### Tones
 
@@ -238,51 +254,6 @@ The `--depth` flag controls how deep into fundamental human drivers the perceive
 # Global deeper, mortal override to deepest
 ./think.sh "seed" --depth deeper,mortal:deepest
 ```
-
-### With project context
-
-Run from inside a project directory to automatically ground the thinking in what the project actually is.
-
-```bash
-cd ~/projects/my-project && ~/think.sh "seed topic"
-./think.sh "seed topic" --context ./brief.md
-```
-
-### Presentation operations
-
-```bash
-# Re-run presentation at different length
-./think.sh --report-only ./think-different-output/my-session/session.md --words 2000
-
-# Manual synthesis of existing transcripts
-./think.sh --synthesise ./run1/*.md ./run2/*.md --words 1500
-```
-
-### Options
-
-| Flag | Description |
-|------|-------------|
-| `--mode MODE` | Composition: `dyslexic` (default), `spiral`, `lapidary` |
-| `--words N` | Target word count for presentation (default: 500-800) |
-| `--output DIR` | Output directory (default: ./think-different-output) |
-| `--context FILE` | Explicit context file to ground the session |
-| `--brief FILE` | Generate provocations from a brief file |
-| `--brand NAME` | Generate provocations from a brand name |
-| `--notes TEXT` | Generate provocations from working notes |
-| `--audience TEXT` | Target audience (auto-inferred from input if not set) |
-| `--tone TONE` / `-t` | Provocation tone (default: `provocative`). See [Tones](#tones) |
-| `--seeds N` | Number of provocations to generate (default: 3, max: 12) |
-| `--pick` | Interactively select which provocations to run |
-| `--type TYPES` | Output types: `insight`, `brief`, `manifesto` (default: all three, comma-separated) |
-| `--lines N` | Number of rallying lines to generate (default: 3, max: 7) |
-| `--practitioners LIST` | Comma-separated creative practitioners as quality bar for The Line |
-| `--html` | Enable HTML presentation generation (experimental, off by default) |
-| `--formats LIST` | Output formats for `--report-only`: `all`, `md`, `doc`, `html` (comma-separated) |
-| `--synthesise` | Synthesise existing transcript files into one presentation |
-| `--report-only` | Regenerate presentation from existing transcript |
-| `--resume FILE` | Resume an interrupted session from state file |
-| `--allowedTools TOOLS` | Tools for Claude CLI (default: `"WebSearch,WebFetch"`, use `""` to disable) |
-| `--depth LEVEL` | Lens depth: `deep` (default), `deeper`, `deepest`. Per-lens: `mortal:deepest,achala:deeper`. See [Depth](#depth) |
 
 ### Experimentation
 
@@ -353,29 +324,27 @@ When experimental flags are active, the session banner shows what's different:
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--include A,B` | Force-include lenses by key name |
-| `--exclude A,B` | Force-exclude lenses by key name |
-| `--no-friction` | Skip friction detection between rounds |
-| `--no-bias` | Skip cognitive bias checks |
-| `--no-sensory` | Skip sensory/context re-injection |
-| `--no-negative-space` | Skip negative space mapping |
-| `--rounds N` | Number of rounds (dyslexic default: 7) |
-| `--spirals N` | Number of spirals (spiral default: 5) |
-| `--passes N` | Number of passes (lapidary default: 5) |
-| `--min-turns N` | Min turns before conductor can end session (default: 15) |
-| `--shuffle` | Randomize lens order within each round/phase |
-| `--no-transcendence` | Skip transcendence check |
-| `--no-ground` | Skip assumption grounding embedded in seed prep |
-| `--ground-only` | Run only the grounding step, then exit |
-| `--autonomous` | Enable agentic mode (default: on) |
-| `--no-autonomous` | Disable agentic mode, use hardcoded composition sequences |
-| `--skip-strict` | Use separate pre-call for skip-turn instead of inline detection |
-| `--compact` | Enable context compaction (off by default, opt in for very long sessions) |
-| `--allowedTools T` | Tools for Claude CLI (default: `"WebSearch,WebFetch"`, use `""` to disable) |
+### Autonomous Mode (default)
 
-## Mechanisms
+Genuinely agentic behaviour, on by default:
+
+- **Conductor** - Replaces hardcoded composition sequences. An agent that decides which lens speaks next, what instruction to give, and when to trigger mechanisms or end the session. Three conductor presets (dyslexic/spiral/lapidary) shape its orchestration style.
+- **Inline skip-turn** - Each lens decides within its response whether it has something genuinely new to add. If not, it responds with `SKIP: reason` and the turn is logged without wasting a separate pre-call. Use `--skip-strict` to restore the original two-call pattern if inline detection proves unreliable.
+- **Context compaction (opt-in)** - Disabled by default. When enabled via `--compact`, every 8-10 turns the conversation is distilled into a digest plus the last 3-4 verbatim turns. Off by default because breakthroughs often arrive at iteration 10+ and compaction destroys the raw phrasing that fuels them. Opus 4.6's 1M context window handles full conversations comfortably. Full transcript is always preserved in output files.
+- **Structured mechanism decisions** - Friction returns `{recommendation: "deepen|redirect|continue"}` and can inject a specific lens. Transcendence returns `{has_breakthrough: bool}` and can skip to grounding. Negative space returns `{recommendation: "redirect_to_void|note_and_continue|void_is_intentional"}` and identifies unexplored territories with suggested lenses. Mechanisms receive a structured history of prior mechanism findings, so each builds on the last.
+- **Provocation review** - When multiple provocations are generated, they're reviewed for distinctness before sessions begin. Similar provocations get merged, weak ones get reframed.
+- **Adversarial session reviewer** - Post-composition quality gate using a prosecution/defense/verdict pattern. The prosecution assumes the session failed and searches for prior art (WebSearch). The defense concedes weak ideas and argues only for genuine divergence. The verdict decides restart/proceed from the adversarial exchange. Can restart with mutations: different mode, shuffled lens order, reframed seed. 2-run ceiling per provocation. Synthesises across both runs.
+
+```bash
+# Autonomous is the default - just run:
+./think.sh "seed"
+./think.sh --brief ./brief.pdf --mode spiral
+
+# Opt out to use hardcoded sequences:
+./think.sh "seed" --no-autonomous
+```
+
+### Mechanisms
 
 Beyond lenses, the framework uses metacognitive mechanisms that operate *outside* the conversation to shape session flow. Each receives structured history of prior mechanism findings, so they build on each other rather than re-discovering the same patterns.
 
@@ -401,36 +370,54 @@ Beyond lenses, the framework uses metacognitive mechanisms that operate *outside
 - **Spiral re-seeding** extracts the most surprising insight from integration and uses it to seed the next spiral (spiral mode only).
 - **Polish** is between-pass quality assessment. What survived? What was revealed? Is the material getting denser or losing life? (lapidary mode only).
 
-### Autonomous Mode (default)
+### Assumption Grounding
 
-Genuinely agentic behaviour, on by default:
+Grounding is embedded directly in seed preparation (fracture, tune, or appraise). Before breaking apart or assessing the seed, the model surfaces 3-4 assumptions about the problem, audience, or situation most likely to be wrong, with alternative realities for each.
 
-- **Conductor** - Replaces hardcoded composition sequences. An agent that decides which lens speaks next, what instruction to give, and when to trigger mechanisms or end the session. Three conductor presets (dyslexic/spiral/lapidary) shape its orchestration style.
-- **Inline skip-turn** - Each lens decides within its response whether it has something genuinely new to add. If not, it responds with `SKIP: reason` and the turn is logged without wasting a separate pre-call. Use `--skip-strict` to restore the original two-call pattern if inline detection proves unreliable.
-- **Context compaction (opt-in)** - Disabled by default. When enabled via `--compact`, every 8-10 turns the conversation is distilled into a digest plus the last 3-4 verbatim turns. Off by default because breakthroughs often arrive at iteration 10+ and compaction destroys the raw phrasing that fuels them. Opus 4.6's 1M context window handles full conversations comfortably. Full transcript is always preserved in output files.
-- **Structured mechanism decisions** - Friction returns `{recommendation: "deepen|redirect|continue"}` and can inject a specific lens. Transcendence returns `{has_breakthrough: bool}` and can skip to grounding. Negative space returns `{recommendation: "redirect_to_void|note_and_continue|void_is_intentional"}` and identifies unexplored territories with suggested lenses. Mechanisms receive a structured history of prior mechanism findings, so each builds on the last.
-- **Provocation review** - When multiple provocations are generated, they're reviewed for distinctness before sessions begin. Similar provocations get merged, weak ones get reframed.
-- **Adversarial session reviewer** - Post-composition quality gate using a prosecution/defense/verdict pattern. The prosecution assumes the session failed and searches for prior art (WebSearch). The defense concedes weak ideas and argues only for genuine divergence. The verdict decides restart/proceed from the adversarial exchange. Can restart with mutations: different mode, shuffled lens order, reframed seed. 2-run ceiling per provocation. Synthesises across both runs.
+Web search is enabled by default (`WebSearch,WebFetch`). When available, the model verifies factual claims - market data, demographics, trends - and marks each assumption as VERIFIED or UNVERIFIED. This means the framework does its own homework rather than blocking the session for interactive user correction.
+
+When web search is unavailable (via `--allowedTools ""`), assumptions are marked UNVERIFIED and held loosely by agents. A warning is printed with instructions to re-enable.
+
+This matters because assumptions form during seed preparation, BEFORE any of the existing checking mechanisms fire (friction, bias, sensory, Observer, Skeptic all run DURING composition rounds). Without grounding, contaminated assumptions bake into the conversation that every lens builds on.
 
 ```bash
-# Autonomous is the default - just run:
-./think.sh "seed"
-./think.sh --brief ./brief.pdf --mode spiral
-
-# Opt out to use hardcoded sequences:
-./think.sh "seed" --no-autonomous
+./think.sh "your seed topic" --ground-only
+./think.sh "your seed topic" --context ./brief.md --ground-only
 ```
 
-## Output
+### Session Flow
 
-Each session produces:
+Two paths to a presentation. A direct seed runs one session. Raw input (brief, brand, notes) gets distilled into provocations, each provocation runs a full session, then all sessions are synthesised into one presentation.
 
-- **Presentation** (`presentation.md` / `.docx` / `.html`) - The Line (winning platform + expression), the experiment, the asset (sensory/tactile creative description), creative brief, manifesto, insight article, and session findings (novel ideas for inspiration). Controlled by `--type`. The presentation pipeline distils session findings first, then all sections are anchored on the deepest material. HTML version features cinematic scroll effects with GSAP ScrollTrigger
-- **Transcript** (`session_*.md`) - Full markdown transcript of the thinking session
-- **JSON** (`session_*.json`) - Machine-readable transcript for analysis
-- **Context** (`context_*.md`) - Project context brief (if gathered)
+##### ![Session flow - two paths converging to presentation](docs/session-flow.svg)
 
-## Architecture
+### Composition Flows
+
+#### 💫🔀 Dyslexic Composition - step by step
+
+7 rounds (default). Cognitions and perceivers interleave. Friction between every round. Sensory check mid-session. Bias check before convergence. Negative space and transcendence checks from round 5 onwards (two-strike pattern - first signal noted, second triggers grounding).
+
+![Dyslexic composition flow - 7 rounds with friction, sensory, negative space, bias, and transcendence checks](docs/dyslexic-flow.svg)
+
+#### 🌀🌿 Spiral Composition - step by step
+
+5 spirals (default). Each spiral widens then crystallises. The Integrator's insight reseeds the next spiral. Friction, bias, negative space and transcendence checks from spiral 3 onwards.
+
+![Spiral composition flow - 5 spirals converging inward with reseed connections](docs/spiral-flow.svg)
+
+#### 🪨✨ Lapidary Composition - step by step
+
+5 passes (default). Each pass works the same material with increasing precision. Polish mechanism between passes assesses what survived and what was revealed. Negative space and transcendence checks from pass 3 onwards. Mature judgement only - Child excluded by default.
+
+![Lapidary composition flow - 5 passes with polish, friction, negative space, and transcendence checks](docs/lapidary-flow.svg)
+
+### Lens Exclusion Defaults
+
+The Skeptic is excluded from the dyslexic composition by default. Dyslexic thinking naturally produces incongruence detection as a perceptual byproduct - adding an explicit Skeptic lens can over-anchor on what doesn't fit before the leaps have had space to form. Use `--include skeptic` to override this and place it in Round 3.
+
+The Child is excluded from the lapidary composition by default. Lapidary thinking requires mature judgement - the discernment of a craftsperson, not wild generation. The Connoisseur takes the evaluative seat that the Child cannot occupy.
+
+### Architecture
 
 ```
 think.sh                          # CLI entry point

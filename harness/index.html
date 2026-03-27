@@ -56,6 +56,16 @@ header .version {
   color: var(--text-muted);
   font-family: var(--mono);
 }
+header .npm-link {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+header .npm-link:hover { color: var(--red); }
+header .npm-link svg { width: 32px; height: 13px; fill: currentColor; }
 .layout {
   display: grid;
   grid-template-columns: 1fr 380px;
@@ -601,6 +611,7 @@ input[type="range"] {
 <header>
   <h1><span>Think Different</span> Framework</h1>
   <span class="version">Test Harness</span>
+  <a class="npm-link" href="https://www.npmjs.com/package/@sinjin/think-different-framework" target="_blank" rel="noopener" title="View on npm"><svg viewBox="0 0 780 250"><path d="M240,250h100v-50h100V0H240V250z M340,50h50v100h-50V50z M480,0v200h100V50h50v150h50V50h50v150h50V0H480z M0,200h100V50h50v150h50V0H0V200z"/></svg></a>
 </header>
 
 <div class="layout">
@@ -750,6 +761,21 @@ input[type="range"] {
         <div class="help">Dyslexic: collision-driven leaps. Spiral: widening cycles. Lapidary: iterative polish.</div>
       </div>
 
+      <div class="field">
+        <label>Lens Depth <span class="flag">--depth</span></label>
+        <div class="segmented" id="depth-control">
+          <button class="active" data-value="deep">Deep</button>
+          <button data-value="deeper">Deeper</button>
+          <button data-value="deepest">Deepest</button>
+        </div>
+        <div class="help">How deep into fundamental human drivers the lenses go. Affects Mortal, Achala, Empath, Child, Provocateur. Per-lens: mortal:deepest,achala:deeper</div>
+        <div class="field" id="depth-custom-field" style="margin-top: 0.5rem; display: none;">
+          <label>Per-lens overrides <span class="flag">lens:level</span></label>
+          <input type="text" id="depthCustom" placeholder="e.g. mortal:deepest,achala:deeper" style="font-family: monospace;">
+          <div class="help">Comma-separated lens:level pairs. Overrides the global depth for specific lenses.</div>
+        </div>
+      </div>
+
       <div class="field-row">
         <div class="toggle-wrap">
           <label class="toggle">
@@ -820,10 +846,10 @@ input[type="range"] {
           </div>
           <div class="help" style="margin-top: 0.3rem;">Detects breakthroughs</div>
         </div>
-        <div class="mechanism-card" data-mechanism="void">
+        <div class="mechanism-card" data-mechanism="negative_space">
           <div class="toggle-wrap">
-            <label class="toggle"><input type="checkbox" checked data-key="void"><span class="slider"></span></label>
-            <span class="toggle-label">Void</span>
+            <label class="toggle"><input type="checkbox" checked data-key="negative_space"><span class="slider"></span></label>
+            <span class="toggle-label">Negative Space</span>
           </div>
           <div class="help" style="margin-top: 0.3rem;">Maps dark territory</div>
         </div>
@@ -938,6 +964,11 @@ input[type="range"] {
             <span class="toggle-label">Ground Only</span>
             <span class="toggle-help flag">--ground-only</span>
           </div>
+          <div class="toggle-wrap">
+            <label class="toggle"><input type="checkbox" id="noWait"><span class="slider"></span></label>
+            <span class="toggle-label">No Wait</span>
+            <span class="toggle-help flag">--no-wait</span>
+          </div>
         </div>
 
         <div class="field">
@@ -1034,13 +1065,14 @@ const DEFAULTS = {
   practitioners: [...PRACTITIONERS],
   html: false,
   formats: ['all'],
-  friction: true, bias: true, sensory: true, transcendence: true, void: true,
+  depth: 'deep', depthCustom: '',
+  friction: true, bias: true, sensory: true, transcendence: true, negative_space: true,
   autonomous: true,
   turns: 35,
   rounds: 4, spirals: 3, passes: 3,
   include: [], exclude: [],
   shuffle: false, skipStrict: false, compact: false,
-  noGround: false, groundOnly: false,
+  noGround: false, groundOnly: false, noWait: false,
   allowedTools: 'WebSearch,WebFetch',
   cmdPrefix: './think.sh',
 };
@@ -1135,6 +1167,22 @@ function bindEvents() {
     });
   });
 
+  // Depth segmented
+  document.querySelectorAll('#depth-control button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#depth-control button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      STATE.depth = btn.dataset.value;
+      // Show per-lens override field when not at default
+      document.getElementById('depth-custom-field').style.display = STATE.depth !== 'deep' ? 'block' : 'none';
+      render();
+    });
+  });
+  document.getElementById('depthCustom').addEventListener('input', (e) => {
+    STATE.depthCustom = e.target.value;
+    render();
+  });
+
   // Words sync
   const wordsRange = document.getElementById('wordsRange');
   const wordsNum = document.getElementById('wordsNum');
@@ -1162,7 +1210,7 @@ function bindEvents() {
   const toggleMap = {
     pick: 'pick', html: 'html', autonomous: 'autonomous',
     shuffle: 'shuffle', skipStrict: 'skipStrict', compact: 'compact',
-    noGround: 'noGround', groundOnly: 'groundOnly',
+    noGround: 'noGround', groundOnly: 'groundOnly', noWait: 'noWait',
   };
   for (const [elId, key] of Object.entries(toggleMap)) {
     document.getElementById(elId).addEventListener('change', (e) => {
@@ -1425,12 +1473,19 @@ function buildCommand() {
     if (!practIsDefault && STATE.practitioners.length > 0) parts.push('--practitioners', q(STATE.practitioners.join(',')));
     if (STATE.html) parts.push('--html');
 
+    // Depth
+    if (STATE.depth !== 'deep' || STATE.depthCustom) {
+      let depthVal = STATE.depthCustom ? STATE.depthCustom : STATE.depth;
+      if (STATE.depthCustom && STATE.depth !== 'deep') depthVal = STATE.depth + ',' + STATE.depthCustom;
+      parts.push('--depth', depthVal);
+    }
+
     // Mechanisms
     if (!STATE.friction) parts.push('--no-friction');
     if (!STATE.bias) parts.push('--no-bias');
     if (!STATE.sensory) parts.push('--no-sensory');
     if (!STATE.transcendence) parts.push('--no-transcendence');
-    if (!STATE.void) parts.push('--no-void');
+    if (!STATE.negative_space) parts.push('--no-negative-space');
 
     // Autonomous
     if (!STATE.autonomous) {
@@ -1450,6 +1505,7 @@ function buildCommand() {
     if (STATE.compact) parts.push('--compact');
     if (STATE.noGround) parts.push('--no-ground');
     if (STATE.groundOnly) parts.push('--ground-only');
+    if (STATE.noWait) parts.push('--no-wait');
     if (STATE.allowedTools !== 'WebSearch,WebFetch') {
       parts.push('--allowedTools', STATE.allowedTools ? q(STATE.allowedTools) : '""');
     }
@@ -1524,11 +1580,16 @@ function getCommandOneLine() {
       STATE.practitioners.every(p => PRACTITIONERS.includes(p));
     if (!practIsDefault && STATE.practitioners.length > 0) parts.push('--practitioners', q(STATE.practitioners.join(',')));
     if (STATE.html) parts.push('--html');
+    if (STATE.depth !== 'deep' || STATE.depthCustom) {
+      let depthVal = STATE.depthCustom ? STATE.depthCustom : STATE.depth;
+      if (STATE.depthCustom && STATE.depth !== 'deep') depthVal = STATE.depth + ',' + STATE.depthCustom;
+      parts.push('--depth', depthVal);
+    }
     if (!STATE.friction) parts.push('--no-friction');
     if (!STATE.bias) parts.push('--no-bias');
     if (!STATE.sensory) parts.push('--no-sensory');
     if (!STATE.transcendence) parts.push('--no-transcendence');
-    if (!STATE.void) parts.push('--no-void');
+    if (!STATE.negative_space) parts.push('--no-negative-space');
     if (!STATE.autonomous) {
       parts.push('--no-autonomous');
       if (STATE.mode === 'dyslexic' && STATE.rounds !== 4) parts.push('--rounds', '' + STATE.rounds);
@@ -1544,6 +1605,7 @@ function getCommandOneLine() {
     if (STATE.compact) parts.push('--compact');
     if (STATE.noGround) parts.push('--no-ground');
     if (STATE.groundOnly) parts.push('--ground-only');
+    if (STATE.noWait) parts.push('--no-wait');
     if (STATE.allowedTools !== 'WebSearch,WebFetch') {
       parts.push('--allowedTools', STATE.allowedTools ? q(STATE.allowedTools) : '""');
     }
@@ -1649,6 +1711,13 @@ function applyStateToUI() {
     b.classList.toggle('active', b.dataset.value === STATE.mode);
   });
 
+  // Depth
+  document.querySelectorAll('#depth-control button').forEach(b => {
+    b.classList.toggle('active', b.dataset.value === STATE.depth);
+  });
+  document.getElementById('depthCustom').value = STATE.depthCustom || '';
+  document.getElementById('depth-custom-field').style.display = STATE.depth !== 'deep' ? 'block' : 'none';
+
   // Sliders
   document.getElementById('wordsRange').value = STATE.words;
   document.getElementById('wordsNum').value = STATE.words;
@@ -1669,9 +1738,10 @@ function applyStateToUI() {
   document.getElementById('compact').checked = STATE.compact;
   document.getElementById('noGround').checked = STATE.noGround;
   document.getElementById('groundOnly').checked = STATE.groundOnly;
+  document.getElementById('noWait').checked = STATE.noWait;
 
   // Mechanisms
-  ['friction', 'bias', 'sensory', 'transcendence', 'void'].forEach(m => {
+  ['friction', 'bias', 'sensory', 'transcendence', 'negative_space'].forEach(m => {
     const input = document.querySelector(`input[data-key="${m}"]`);
     if (input) {
       input.checked = STATE[m];

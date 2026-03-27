@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1250 170">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 180">
   <style>
     text { font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; }
     .node { font-size: 11px; font-weight: 500; fill: #1e293b; }
@@ -73,18 +73,18 @@
   <text class="mech" x="711" y="104" text-anchor="middle" dominant-baseline="central">Bias</text>
   <rect x="727" y="96" width="50" height="16" rx="8" fill="#d4a017"/>
   <text class="mech" x="752" y="104" text-anchor="middle" dominant-baseline="central">Transcend</text>
-  <rect x="780" y="96" width="34" height="16" rx="8" fill="#0d9488"/>
-  <text class="mech" x="797" y="104" text-anchor="middle" dominant-baseline="central">Void</text>
+  <rect x="780" y="96" width="58" height="16" rx="8" fill="#0d9488"/>
+  <text class="mech" x="809" y="104" text-anchor="middle" dominant-baseline="central">Neg Space</text>
 
   <!-- Compaction (opt-in) + Memory markers (below mechanism strip) -->
-  <rect x="614" y="116" width="64" height="14" rx="7" fill="#3b82f6" opacity="0.35"/>
-  <text class="mech" x="646" y="123" text-anchor="middle" dominant-baseline="central">Compact*</text>
-  <rect x="662" y="116" width="54" height="14" rx="7" fill="#6b7280" opacity="0.8"/>
-  <text class="mech" x="689" y="123" text-anchor="middle" dominant-baseline="central">Mech Mem</text>
+  <rect x="614" y="116" width="58" height="14" rx="7" fill="#3b82f6" opacity="0.35"/>
+  <text class="mech" x="643" y="123" text-anchor="middle" dominant-baseline="central">Compact*</text>
+  <rect x="676" y="116" width="54" height="14" rx="7" fill="#6b7280" opacity="0.8"/>
+  <text class="mech" x="703" y="123" text-anchor="middle" dominant-baseline="central">Mech Mem</text>
 
   <!-- Memory arrow showing mechanism state threading -->
   <path d="M633,112 L633,116" stroke="#6b7280" stroke-width="0.8"/>
-  <path d="M689,112 L689,116" stroke="#6b7280" stroke-width="0.8"/>
+  <path d="M703,112 L703,116" stroke="#6b7280" stroke-width="0.8"/>
 
   <line x1="738" y1="70" x2="756" y2="70" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#arr)"/>
 
@@ -100,8 +100,8 @@
   <text class="note" x="887" y="48" text-anchor="middle">autonomous</text>
 
   <!-- Review restart loop arrow -->
-  <path d="M887,86 C887,142 588,142 588,86" fill="none" stroke="#d4a017" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#arr-gold)"/>
-  <text class="loop-note" x="737" y="150" text-anchor="middle">restart w/ mutations</text>
+  <path d="M887,86 C887,155 588,155 588,86" fill="none" stroke="#d4a017" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#arr-gold)"/>
+  <text class="loop-note" x="737" y="163" text-anchor="middle">restart w/ mutations</text>
 
   <line x1="934" y1="70" x2="960" y2="70" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#arr)"/>
 
@@ -110,12 +110,20 @@
   <text class="node" x="1020" y="70" text-anchor="middle" dominant-baseline="central">Gen / Synthesise</text>
   <text class="note" x="1020" y="100" text-anchor="middle">1 seed: generate</text>
   <text class="note" x="1020" y="112" text-anchor="middle">N seeds: synthesise</text>
-  <rect x="996" y="116" width="48" height="14" rx="7" fill="#0d9488" opacity="0.8"/>
-  <text class="mech" x="1020" y="123" text-anchor="middle" dominant-baseline="central">Void</text>
+  <rect x="984" y="116" width="72" height="14" rx="7" fill="#0d9488" opacity="0.8"/>
+  <text class="mech" x="1020" y="123" text-anchor="middle" dominant-baseline="central">Neg Space</text>
 
   <line x1="1079" y1="70" x2="1105" y2="70" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#arr)"/>
 
+  <!-- Distil findings (orange) -->
+  <rect x="1110" y="56" width="70" height="28" rx="14" fill="#ff6b35"/>
+  <text class="accent" x="1145" y="70" text-anchor="middle" dominant-baseline="central">Distil</text>
+  <text class="note" x="1145" y="100" text-anchor="middle">findings → lines → asset</text>
+  <text class="note" x="1145" y="112" text-anchor="middle">→ sections</text>
+
+  <line x1="1184" y1="70" x2="1210" y2="70" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#arr)"/>
+
   <!-- Presentation (green) -->
-  <rect x="1110" y="50" width="110" height="40" rx="20" fill="#2d6a4f"/>
-  <text class="accent" x="1165" y="70" text-anchor="middle" dominant-baseline="central">Presentation</text>
+  <rect x="1215" y="50" width="110" height="40" rx="20" fill="#2d6a4f"/>
+  <text class="accent" x="1270" y="70" text-anchor="middle" dominant-baseline="central">Presentation</text>
 </svg>

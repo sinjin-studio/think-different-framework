@@ -48,15 +48,17 @@ A multi-lens structured divergence framework for Claude Code CLI. It runs creati
 - `--include/--exclude lenses` - Force lens inclusion/exclusion
 - `--audience TEXT` - Target audience (auto-inferred from input if not set). Shapes provocations and all presentation output toward audience-facing content
 - `--tone TONE` - Provocation tone: `provocative` (default), `generous`, `personal`, `absurd`, `daydream`, `mixed`. Comma-separated for custom mix (e.g. `--tone provocative,generous`)
+- `--depth LEVEL` - Lens depth: `deep` (default), `deeper`, `deepest`. Per-lens: `mortal:deepest,achala:deeper`. Controls how deep into fundamental human drivers the lenses go. Affects Mortal, Achala, Empath, Child, Provocateur
 - `--type TYPES` - Output types: `insight,brief,manifesto` (default: all three). Comma-separated
 - `--lines N` - Number of angles to generate (default: 3, max: 7). Each angle outputs two altitudes: Platform (strategic truth) and Expression (audience-facing punch)
 - `--practitioners LIST` - Comma-separated creative practitioners as quality bar for The Line (default: random 3 from built-in pool)
 - `--html` - Enable HTML presentation generation (experimental, off by default)
 - `--formats LIST` - Output formats for `--report-only`: `all`, `md`, `doc`, `html` (comma-separated)
-- `--no-friction`, `--no-bias`, `--no-sensory`, `--no-transcendence`, `--no-void` - Disable mechanisms
+- `--no-friction`, `--no-bias`, `--no-sensory`, `--no-transcendence`, `--no-negative-space` - Disable mechanisms
 - `--shuffle` - Randomize lens order within rounds
 - `--autonomous` - Enable agentic mode (default: on)
-- `--no-autonomous` - Disable agentic mode, use hardcoded composition sequences
+- `--no-autonomous` - Disable agentic mode, use hardcoded composition sequences (also disables auto-wait)
+- `--no-wait` - Disable auto-wait on cap hit (default: wait and poll in autonomous mode)
 - `--skip-strict` - Use separate pre-call for skip-turn (default: inline detection)
 - `--compact` - Enable context compaction (off by default, opt in for very long sessions)
 - `--allowedTools TOOLS` - Tools for Claude CLI (default: `"WebSearch,WebFetch"`, use `""` to disable)
@@ -110,7 +112,7 @@ COMMON_RULES (defined in `lib/call_lens.sh`) are applied to every lens call - 15
 
 `lib/conductor_loop.sh` implements the agentic orchestration loop. The conductor (`lenses/conductor.sh`) makes structured JSON decisions about which lens speaks next, what instruction to give, whether to trigger a mechanism, and when to end the session.
 
-Guard rails: max 35 turns, minimum 15 turns before ending, minimum 7 distinct lenses before grounding, two-strike transcendence (requires two consecutive signals before triggering early grounding), cap awareness.
+Guard rails: max 35 turns, minimum 15 turns before ending, minimum 7 distinct lenses before grounding, two-strike transcendence (requires two consecutive signals before triggering early grounding), cap awareness. Auto-wait on cap hit (polls with backoff until credits reset, max 4 hours) - enables unattended overnight runs. Disable with `--no-wait`.
 
 ### Conversation Threading
 
@@ -124,18 +126,18 @@ Mechanisms return structured JSON decisions alongside their conversation append:
 - **Friction** returns `{recommendation: "deepen|redirect|continue", inject_lens: "..."}` - can inject a specific lens to break stuck patterns
 - **Transcendence** returns `{has_breakthrough: bool, recommendation: "compress|continue|ground_early"}` - can skip to grounding
 - **Bias** returns `{biases_detected: [...], recommendation: "..."}` - identifies cognitive biases as creative fuel
-- **Void** returns `{territories: [...], pattern_of_avoidance: "...", recommendation: "redirect_to_void|note_and_continue|void_is_intentional"}` - maps unexplored territory and can redirect a lens into the dark patches
+- **Negative Space** returns `{territories: [...], pattern_of_avoidance: "...", recommendation: "redirect_to_void|note_and_continue|void_is_intentional"}` - maps unexplored territory and can redirect a lens into the dark patches
 
-**Mechanism memory** (`MECHANISM_MEMORY` array in `lib/call_lens.sh`): Each mechanism appends its findings to a structured log. Subsequent mechanisms receive a MECHANISM HISTORY section listing prior findings, with the instruction to focus on what's new or evolved. This prevents amnesiac re-discovery of the same tensions. The conductor's state summary also includes mechanism memory.
+**Mechanism memory** (`MECHANISM_MEMORY` array in `lib/call_lens.sh`): Each mechanism appends its findings to a structured log. Subsequent mechanisms receive a MECHANISM HISTORY section listing prior findings, with the instruction to focus on what's new or evolved. This prevents amnesiac re-discovery of the same tensions. The conductor's state summary also includes mechanism memory. Persisted in `session.state.json` for resume continuity.
 
-Flow control helpers in `lib/call_lens.sh`: `handle_friction_decision()`, `handle_transcendence_decision()`, `handle_void_decision()`.
+Flow control helpers in `lib/call_lens.sh`: `handle_friction_decision()`, `handle_transcendence_decision()`, `handle_negative_space_decision()`.
 
 ### Zeitgeist Context
 
 When web search is enabled during provocation generation, Claude may return source citations alongside provocations. These are captured as `ZEITGEIST_SOURCES` and built into a `ZEITGEIST_CONTEXT` block representing "known territory" - what broader discourse already covers. This context is threaded into:
 - **Seed prep** (fracture/tune/appraise) - external anchors for assumption grounding
 - **Sensory mechanism** - re-injected mid-session as `=== KNOWN TERRITORY ===` alongside ground truth
-- **Void mechanism** - contrasts known discourse against session territory for sharper void detection
+- **Negative space mechanism** - contrasts known discourse against session territory for sharper negative space detection
 - **Review prosecution** - head start on prior art identification
 
 Lenses do not receive zeitgeist directly - they encounter it through mechanisms, keeping lens calls clean.
@@ -155,7 +157,7 @@ Can trigger a **restart with mutations**: different mode, shuffled lens order, r
 
 ### Verbose Session Log
 
-Every `claude_call*` invocation is logged to `$SESSION_DIR/log.jsonl` (JSONL format, one JSON object per line). Each entry captures: timestamp, caller identifier (e.g. `lens:empath`, `mechanism:void`, `conductor`), call type, prompt excerpt (first 500 chars), full response, exit code, and cap hit status. Callers set `VERBOSE_CALLER` before invoking `claude_call*`. Excludes the growing conversation context - just individual prompts and responses.
+Every `claude_call*` invocation is logged to `$SESSION_DIR/log.jsonl` (JSONL format, one JSON object per line). Each entry captures: timestamp, caller identifier (e.g. `lens:empath`, `mechanism:negative_space`, `conductor`), call type, prompt excerpt (first 500 chars), full response, exit code, and cap hit status. Callers set `VERBOSE_CALLER` before invoking `claude_call*`. Excludes the growing conversation context - just individual prompts and responses.
 
 ### Pipeline Flow
 
@@ -164,14 +166,14 @@ Every `claude_call*` invocation is logged to `$SESSION_DIR/log.jsonl` (JSONL for
 3. **Rounds/spirals/passes** (or conductor loop in autonomous mode) with interspersed mechanisms
 4. **Session review** (autonomous mode) - baseline test, novelty search, tension check. Can restart with mutations
 5. **Between-phase operations** - Re-seeding (spiral) or polish (lapidary)
-6. **Report generation** - Generate The Line (platform + expression at two altitudes), then creative brief, manifesto, and insight article. Optional .docx
+6. **Report generation** - Distil session findings (ranked by novelty), generate The Line (platform + expression, strongest picked from N angles), the asset (sensory/tactile creative description), then creative brief, manifesto, and insight article. All sections receive the distillation to anchor on the deepest material. Optional .docx
 
 ### Key Directories
 
 - `lenses/` - 20 lenses across `perceivers/`, `cognitions/{fragmentary,deepening,evaluative}/`, `hybrids/`, plus `conductor.sh`
 - `modes/` - Three composition orchestrators (used in non-autonomous mode, become conductor presets in autonomous mode)
 - `context/` - Input handling (gather, ground preamble, provoke, fracture, tune, appraise)
-- `mechanisms/` - Meta-cognitive operations (friction, sensory, bias, transcendence, void, reseed, polish, review)
+- `mechanisms/` - Meta-cognitive operations (friction, sensory, bias, transcendence, negative_space, reseed, polish, review)
 - `lib/` - Shared utilities (dispatch, conductor loop, JSON/MD transcript output, markers)
 - `report/` - Presentation generation, synthesis, and format converters (docx, html)
 - `report/html-template/` - Astro project for developing the HTML template (`npm run dev` for hot reload)
@@ -179,7 +181,7 @@ Every `claude_call*` invocation is logged to `$SESSION_DIR/log.jsonl` (JSONL for
 ### Output
 
 Sessions produce files in `./think-different-output/<slug>_<timestamp>/`:
-- `presentation.md` - Combined output: The Line (platform + expression), creative brief, manifesto, insight article (controlled by `--type`)
+- `presentation.md` - Combined output: The Line (winning platform + expression), the experiment, the asset (sensory description), creative brief, manifesto, insight article (controlled by `--type`), session findings (novel ideas for inspiration)
 - `presentation.docx` - Branded Word document (if python-docx available)
 - `presentation.html` - Cinematic scroll presentation with GSAP ScrollTrigger (enable with `--html`, experimental)
 - `session.md` / `session.json` - Full transcript (markdown + machine-readable)
