@@ -1091,6 +1091,13 @@ for seed in "${SEEDS[@]}"; do
   echo "  ${seed}"
   echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
+  # Guard: skip empty or error seeds
+  if [ -z "$seed" ] || [[ "$seed" == ERROR:* ]] || [[ "$seed" == "ERROR:"* ]]; then
+    echo "  ⚠ Skipping seed ${seed_num} (empty or error content)"
+    seed_num=$((seed_num + 1))
+    continue
+  fi
+
   # Set up session state
   SEED_TOPIC="$seed"
   CONVERSATION=""

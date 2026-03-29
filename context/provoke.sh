@@ -90,6 +90,50 @@ TONE
   esac
 }
 
+# Detect meta-commentary / process chatter that is not a real provocation
+# Returns 0 (true) if the text is meta-commentary, 1 if it looks like a real provocation
+is_meta_commentary() {
+  local text="$1"
+
+  # Starts with ERROR: or WARNING:
+  case "$text" in
+    ERROR:*|WARNING:*|"Error:"*|"Warning:"*) return 0 ;;
+  esac
+
+  # Known sign-off / apology / refusal patterns
+  case "$text" in
+    *"Thank you"*|*"Best of luck"*|*"Good luck"*|*"Hope this"*) return 0 ;;
+    *"I apologize"*|*"I cannot"*|*"I'm sorry"*|*"I'm unable"*) return 0 ;;
+    *"I am sorry"*|*"I am unable"*) return 0 ;;
+  esac
+
+  # Process meta-commentary patterns
+  case "$text" in
+    *"already delivered"*|*"already provided"*|*"already generated"*) return 0 ;;
+    *"were already"*|*"no further action"*|*"No further action"*) return 0 ;;
+    *"background tasks"*|*"research agent"*|*"foreground provided"*) return 0 ;;
+    *GENERATION_FAILED*|*"No provocations"*|*"sign-off"*) return 0 ;;
+    *"upstream step"*|*"Re-run"*|*"re-run"*|*"error message"*) return 0 ;;
+    *"not a seed"*|*"not a provocation"*|*"meta-commentary"*) return 0 ;;
+  esac
+
+  # Talks ABOUT provocations rather than BEING one
+  case "$text" in
+    *"provocation"*"generated"*|*"provocation"*"delivered"*|*"provocation"*"provided"*) return 0 ;;
+    *"provocations"*"generated"*|*"provocations"*"delivered"*|*"provocations"*"provided"*) return 0 ;;
+    *"provocations were"*|*"provocation was"*) return 0 ;;
+  esac
+
+  # Multiple sentences (3+ periods) suggests explanation, not a single provocative sentence
+  local period_count
+  period_count=$(echo "$text" | tr -cd '.' | wc -c | tr -d ' ')
+  if [ "$period_count" -ge 3 ]; then
+    return 0
+  fi
+
+  return 1
+}
+
 generate_provocations() {
   local input_material="$1"
   local input_type="$2"  # "brief", "brand", "notes", "project"
@@ -241,17 +285,18 @@ ${context_block}${audience_block}"
 
   # Detect meta-commentary / sign-off / error responses instead of real provocations
   if [ ${#PROVOCATIONS[@]} -gt 0 ]; then
-    local first="${PROVOCATIONS[0]}"
-    local is_meta="false"
-    case "$first" in
-      *GENERATION_FAILED*|*"No provocations"*|*"sign-off"*|*"upstream step"*|*"Re-run"*)
-        is_meta="true" ;;
-      *"Thank you"*|*"Best of luck"*|*"Good luck"*|*"Hope this"*|*"I apologize"*|*"I cannot"*|*"I'm sorry"*|*"I'm unable"*)
-        is_meta="true" ;;
-    esac
-    if [ "$is_meta" = "true" ]; then
-      echo "  ⚠ Provocation generation returned meta-commentary, retrying..." >&2
-      PROVOCATIONS=()
+    local clean_provs=()
+    local had_meta="false"
+    for prov in "${PROVOCATIONS[@]}"; do
+      if is_meta_commentary "$prov"; then
+        had_meta="true"
+      else
+        clean_provs+=("$prov")
+      fi
+    done
+    if [ "$had_meta" = "true" ]; then
+      echo "  ⚠ Provocation generation returned meta-commentary, filtering..." >&2
+      PROVOCATIONS=("${clean_provs[@]+"${clean_provs[@]}"}")
     fi
   fi
 
@@ -289,6 +334,25 @@ ${provoke_prompt}"
       fi
     fi
     rm -f "$retry_tmp"
+
+    # Filter meta-commentary from retry results too
+    if [ ${#PROVOCATIONS[@]} -gt 0 ]; then
+      local retry_clean=()
+      for prov in "${PROVOCATIONS[@]}"; do
+        if ! is_meta_commentary "$prov"; then
+          retry_clean+=("$prov")
+        fi
+      done
+      PROVOCATIONS=("${retry_clean[@]+"${retry_clean[@]}"}")
+    fi
+  fi
+
+  # Bail out if we still have no usable provocations after all retries
+  if [ ${#PROVOCATIONS[@]} -eq 0 ]; then
+    stop_spinner "failed (no usable provocations after retry)"
+    echo "  ✗ Provocation generation failed - Claude returned meta-commentary instead of provocations." >&2
+    echo "  Try running again, or use a direct seed: ./think.sh \"your topic here\"" >&2
+    return 1
   fi
 
   stop_spinner "done (${#PROVOCATIONS[@]} provocations, ${#ZEITGEIST_SOURCES[@]} sources captured)"
@@ -524,6 +588,17 @@ for p in provs:
     if [ "${#new_provs[@]}" -gt 0 ]; then
       PROVOCATIONS=("${new_provs[@]}")
     fi
+
+    # Post-prosecution validation: prosecution can "sharpen" into error messages
+    local valid_provs=()
+    for prov in "${PROVOCATIONS[@]}"; do
+      if is_meta_commentary "$prov"; then
+        echo "  ⚠ Prosecution produced meta-commentary, dropping" >&2
+      else
+        valid_provs+=("$prov")
+      fi
+    done
+    PROVOCATIONS=("${valid_provs[@]+"${valid_provs[@]}"}")
   fi
 
   rm -f "$tmpfile"
