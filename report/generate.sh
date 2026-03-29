@@ -251,6 +251,9 @@ Describe it as if someone needs to make it tomorrow. Be specific about:
 - Duration or dimensions
 - What the viewer/listener/participant experiences
 - What is deliberately absent
+- Artistic style reference (e.g. "shot in the style of Rinko Kawauchi", "rendered as a maquette", "illustrated in risograph")
+
+The description must be producible as described. If a photograph, a photographer could take it. If a film, a director could shoot it. If an installation, a fabricator could build it. Do not rely on impossible physics, abstract metaphors a camera cannot capture, or visual paradoxes that only work as sentences. If the description would produce poor results as an AI image generation prompt, simplify until it would succeed.
 
 Stay within 100-150 words. No preamble. No explanation of why. Just describe the thing.
 
@@ -446,6 +449,157 @@ ${the_lines}"
   echo "$winner"
 }
 
+# ── Prosecute the winning line and iterate if weak ──
+# Takes the winning PLATFORM+EXPRESSION pair and tests it adversarially.
+# If weak, generates improved alternatives and re-judges. Max 2 iterations.
+prosecute_line() {
+  local winning_platform="$1"
+  local winning_expression="$2"
+  local seed="$3"
+  local distillation="${4:-}"
+  local the_lines="${5:-}"
+
+  local max_iterations=2
+  local iteration=0
+  local current_platform="$winning_platform"
+  local current_expression="$winning_expression"
+
+  local prosecution_schema='{"type":"object","properties":{"verdict":{"type":"string","enum":["strong","weak"]},"briefable":{"type":"string"},"cold_readable":{"type":"string"},"specific":{"type":"string"},"weaknesses":{"type":"array","items":{"type":"string"}}},"required":["verdict","briefable","cold_readable","specific"]}'
+
+  while [ "$iteration" -lt "$max_iterations" ]; do
+    # Step 1: Prosecute
+    local prose_prompt="You are judging a strategic platform and its expression. Be ruthless.
+
+PLATFORM: ${current_platform}
+EXPRESSION: ${current_expression}
+TOPIC: ${seed}
+
+Test each against three criteria:
+1. BRIEFABLE: Could a creative team brief work from this platform without a 2000-word explainer? Does it open territory (generative) or just describe a quality (closed)?
+2. COLD-READABLE: If someone read the expression on a wall with zero context, would it land? Would they feel something? Would they say it to themselves?
+3. SPECIFICITY: Could you swap in another brand/topic and the line still works? If yes, it is too generic.
+
+If all three pass, verdict is strong. If any fail, verdict is weak with specific weaknesses."
+
+    local tmpfile
+    tmpfile=$(mktemp)
+    echo "$prose_prompt" > "$tmpfile"
+
+    VERBOSE_CALLER="report:prosecute_line"
+    local prose_result=""
+    if claude_call_json "$tmpfile" "$prosecution_schema" ""; then
+      prose_result="$CLAUDE_RESPONSE"
+    fi
+    rm -f "$tmpfile"
+
+    if [ -z "$prose_result" ]; then
+      break  # Prosecution failed, keep current
+    fi
+
+    # Check verdict
+    local verdict
+    verdict=$(echo "$prose_result" | python3 -c "import sys,json; print(json.load(sys.stdin).get('verdict','strong'))" 2>/dev/null || echo "strong")
+
+    if [ "$verdict" = "strong" ]; then
+      echo "    ✓ Line passed prosecution (iteration $((iteration + 1)))" >&2
+      break
+    fi
+
+    echo "    ⚡ Line prosecution: weak (iteration $((iteration + 1))), generating alternatives..." >&2
+
+    # Extract weaknesses
+    local weaknesses
+    weaknesses=$(echo "$prose_result" | python3 -c "import sys,json; ws=json.load(sys.stdin).get('weaknesses',[]); print(chr(10).join(f'- {w}' for w in ws))" 2>/dev/null || echo "- Needs improvement")
+
+    # Step 2: Generate improved alternatives
+    local distil_block=""
+    if [ -n "$distillation" ]; then
+      distil_block="SESSION'S MOST NOVEL FINDINGS:
+${distillation}
+
+---
+
+"
+    fi
+
+    local improve_prompt="${distil_block}A strategic line was prosecuted and found wanting. Improve it.
+
+ORIGINAL PLATFORM: ${current_platform}
+ORIGINAL EXPRESSION: ${current_expression}
+TOPIC: ${seed}
+
+PROSECUTION FINDINGS:
+${weaknesses}
+
+Generate 2 improved alternatives. Each must fix the identified weaknesses while keeping the core insight. Format:
+
+[1]
+PLATFORM: [the strategic truth - must be briefable without explanation]
+EXPRESSION: [the audience-facing line - must work cold on a wall]
+
+[2]
+PLATFORM: [different angle on the same insight]
+EXPRESSION: [different expression]
+
+Nothing else."
+
+    tmpfile=$(mktemp)
+    echo "$improve_prompt" > "$tmpfile"
+
+    local alternatives=""
+    VERBOSE_CALLER="report:improve_line"
+    if claude_call_no_cap "$tmpfile" ""; then
+      alternatives="$CLAUDE_RESPONSE"
+    fi
+    rm -f "$tmpfile"
+
+    if [ -z "$alternatives" ]; then
+      break  # Improvement failed, keep current
+    fi
+
+    # Step 3: Re-judge between original and alternatives
+    local judge_prompt="Pick the single strongest Platform+Expression pair. Consider: briefability (can a team build from it?), cold-readability (lands on a wall with no context?), and specificity (only works for this topic?).
+
+[ORIGINAL]
+PLATFORM: ${current_platform}
+EXPRESSION: ${current_expression}
+
+${alternatives}
+
+Respond with ONLY the label: ORIGINAL, 1, or 2. Nothing else."
+
+    tmpfile=$(mktemp)
+    echo "$judge_prompt" > "$tmpfile"
+
+    local pick=""
+    VERBOSE_CALLER="report:judge_line"
+    if claude_call_no_cap "$tmpfile" ""; then
+      pick=$(echo "$CLAUDE_RESPONSE" | tr -d '[:space:]')
+    fi
+    rm -f "$tmpfile"
+
+    # Extract the chosen pair
+    if [ "$pick" = "1" ] || [ "$pick" = "2" ]; then
+      local new_platform new_expression
+      new_platform=$(echo "$alternatives" | awk -v n="$pick" '/^\[/ { block_num++ } block_num==n && /^PLATFORM:/ { sub(/^PLATFORM:[[:space:]]*/, ""); print; exit }')
+      new_expression=$(echo "$alternatives" | awk -v n="$pick" '/^\[/ { block_num++ } block_num==n && /^EXPRESSION:/ { sub(/^EXPRESSION:[[:space:]]*/, ""); print; exit }')
+      if [ -n "$new_platform" ] && [ -n "$new_expression" ]; then
+        current_platform="$new_platform"
+        current_expression="$new_expression"
+        echo "    ↻ Line improved: picked alternative ${pick}" >&2
+      fi
+    else
+      echo "    ✓ Original line retained after alternatives" >&2
+    fi
+
+    iteration=$((iteration + 1))
+  done
+
+  # Return platform and expression separated by a marker
+  echo "PLATFORM: ${current_platform}"
+  echo "EXPRESSION: ${current_expression}"
+}
+
 # ── Generate experiment (standalone section with hypothesis + success signal) ──
 generate_experiment() {
   local conversation_text="$1"
@@ -458,7 +612,7 @@ generate_experiment() {
   local high=$((words + words / 10))
 
 read -r -d '' EXPERIMENT_SYSTEM << EXPERIMENTSYS || true
-You are a strategist distilling a creative thinking session into one concrete experiment. Not a strategy. Not a campaign. One thing someone could start tomorrow.
+You are a strategist distilling a creative thinking session into one concrete experiment. Not a strategy. Not a campaign. One thing someone could start tomorrow. Consider the full scope of the subject, not just the narrow angle the seed touched. If the seed explored one facet of a larger topic, the experiment should reflect the deeper truth, not the narrowest interpretation.
 
 CRITICAL: Write as if you arrived at this yourself. No references to sessions, lenses, transcripts, or any process. You sat with this problem and you know what to try.
 
@@ -609,6 +763,10 @@ SVG rules:
 - Diagram type: a journey/flow showing Provocation -> Landscape -> Insight -> Tension as connected nodes, with the core insight node visually emphasised
 - Short labels only (2-4 words per node, extracted from your actual content)
 - No decorative elements - clean, minimal, functional
+- Circle text fitting: min radius 55 for text nodes. Each text line must be 10 chars or fewer; if a label needs more, increase the radius (add 6px per extra char) before abbreviating
+- Font-size inside circles: r=55 max 11, r=65 max 13, r=80 max 16. Never exceed radius x 0.2
+- Two text lines max per circle: primary label (larger, light) and optional subtitle (smaller, dimmer)
+- Layout consistency: all circles at the same hierarchy level must share the same radius. Size the largest label first, then apply that radius to its siblings
 
 ${length_guidance}
 INSIGHTSYS
@@ -617,7 +775,9 @@ INSIGHTSYS
   if [ -n "$prior_sections" ]; then
     dedup_block="
 ALREADY USED - DO NOT REPEAT:
-The following sections have already been written. Scan them for specific images, characters, scenes, phrases, and arguments. If you find yourself reaching for any of them, stop. Find completely different material from the transcript. Your article must add genuinely new territory - cultural implications, historical parallels, systemic tensions the other sections could not reach.
+The following sections have already been written. Scan them for specific images, characters, scenes, phrases, and arguments.
+
+HARD RULE: Do not repeat any phrase of three or more words from prior sections. Do not reuse any specific metaphor, example, character, or scene. Do not make the same argument with different words. Find completely different evidence from the transcript for the same underlying point. Your article must add genuinely new territory - cultural implications, historical parallels, systemic tensions the other sections could not reach.
 
 ${prior_sections}
 
@@ -721,6 +881,10 @@ SVG rules:
 - Diagram type: show the audience and the territory as two poles, with the proposition as the bridge or resolution between them. Use labels drawn from your actual content, not the section names. The proposition node should be visually emphasised (larger, orange)
 - Short labels only (2-4 words per node, extracted from your actual content)
 - No decorative elements - clean, minimal, functional
+- Circle text fitting: min radius 55 for text nodes. Each text line must be 10 chars or fewer; if a label needs more, increase the radius (add 6px per extra char) before abbreviating
+- Font-size inside circles: r=55 max 11, r=65 max 13, r=80 max 16. Never exceed radius x 0.2
+- Two text lines max per circle: primary label (larger, light) and optional subtitle (smaller, dimmer)
+- Layout consistency: all circles at the same hierarchy level must share the same radius. Size the largest label first, then apply that radius to its siblings
 
 ${length_guidance}
 BRIEFSYS
@@ -802,7 +966,9 @@ MANIFESTOSYS
   if [ -n "$prior_sections" ]; then
     dedup_block="
 ALREADY USED - DO NOT REPEAT:
-The following sections have already been written. Scan them for specific images, characters, scenes, phrases, and arguments. If you find yourself reaching for any of them, stop. Find completely different material from the transcript. Your manifesto declares what we believe - find DIFFERENT emotional ground from what has already been covered.
+The following sections have already been written. Scan them for specific images, characters, scenes, phrases, and arguments.
+
+HARD RULE: Do not repeat any phrase of three or more words from prior sections. Do not reuse any specific metaphor, example, character, or scene. Do not make the same argument with different words. Find completely different evidence from the transcript for the same underlying point. Your manifesto declares what we believe - find DIFFERENT emotional ground from what has already been covered.
 
 ${prior_sections}
 
@@ -900,6 +1066,38 @@ generate_presentation() {
       first_line=$(echo "$the_lines" | head -1 | sed 's/^[0-9]*\.\s*//')
       first_line="${first_line#\"}"
       first_line="${first_line%\"}"
+    fi
+  fi
+
+  # ── Step 1.5: Prosecute the winning line ──
+  if [ -n "$first_line" ] && [ -n "$the_lines" ]; then
+    # Extract the winning platform
+    local winning_platform
+    winning_platform=$(echo "$the_lines" | awk -v expr="$first_line" '
+      /^\[/ { plat=""; next }
+      /^PLATFORM:/ { sub(/^PLATFORM:[[:space:]]*/, ""); plat=$0 }
+      /^EXPRESSION:/ && index($0, expr) > 0 { print plat; exit }
+    ')
+    if [ -n "$winning_platform" ]; then
+      start_spinner "⚖️  Prosecuting The Line"
+      local prosecuted_pair
+      prosecuted_pair=$(prosecute_line "$winning_platform" "$first_line" "$seed" "$distillation" "$the_lines")
+      stop_spinner "done"
+      # Extract updated platform and expression
+      local new_platform new_expression
+      new_platform=$(echo "$prosecuted_pair" | grep '^PLATFORM:' | sed 's/^PLATFORM:[[:space:]]*//')
+      new_expression=$(echo "$prosecuted_pair" | grep '^EXPRESSION:' | sed 's/^EXPRESSION:[[:space:]]*//')
+      if [ -n "$new_expression" ]; then
+        first_line="$new_expression"
+      fi
+      # Update the_lines with the prosecuted pair if it changed
+      if [ -n "$new_platform" ] && [ "$new_platform" != "$winning_platform" ]; then
+        the_lines="${the_lines}
+
+[PROSECUTED]
+PLATFORM: ${new_platform}
+EXPRESSION: ${new_expression}"
+      fi
     fi
   fi
 
@@ -1001,7 +1199,7 @@ PRESHEADER
     if [ -n "$first_line" ]; then
       # Find which angle contains the winning expression and extract its PLATFORM + EXPRESSION
       winning_pair=$(echo "$the_lines" | awk -v expr="$first_line" '
-        /^\[/ { block="" }
+        /^\[/ { block=""; next }
         { block = block "\n" $0 }
         /^EXPRESSION:/ && index($0, expr) > 0 {
           # Print the block for this angle (strip leading newline)
@@ -1079,6 +1277,31 @@ PRESHEADER
     echo "" >> "$output_file"
     echo "$distillation" >> "$output_file"
     echo "" >> "$output_file"
+  fi
+
+  # Runner-up lines - non-winning PLATFORM+EXPRESSION pairs
+  if [ -n "$the_lines" ] && [ -n "$first_line" ]; then
+    local runner_ups=""
+    runner_ups=$(echo "$the_lines" | awk -v winner="$first_line" '
+      /^\[/ { block=""; next }
+      /^$/ { next }
+      { block = block (block ? "\n" : "") $0 }
+      /^EXPRESSION:/ {
+        if (index($0, winner) == 0) {
+          print block
+          print ""
+        }
+        block=""
+      }
+    ')
+    runner_ups=$(echo "$runner_ups" | sed '/^$/d' | sed '$ { /^$/d; }')
+    if [ -n "$runner_ups" ]; then
+      echo "" >> "$output_file"
+      echo "### Runner-Up Lines" >> "$output_file"
+      echo "" >> "$output_file"
+      echo "$runner_ups" >> "$output_file"
+      echo "" >> "$output_file"
+    fi
   fi
 
   # Branded footer
