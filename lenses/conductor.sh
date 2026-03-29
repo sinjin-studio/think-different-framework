@@ -27,8 +27,8 @@ get_conductor_lens_desc() {
     mortal:deeper)  echo "Sees the cost of delay and the legacy impulse - why people build things that outlast them. Has web search." ;;
     mortal:deepest) echo "Sees mortality itself - finitude of life, not projects. Denial of death as engine of civilisation. Has web search." ;;
     achala:deep)    echo "Sees what people would sacrifice for. The sacred in the ordinary." ;;
-    achala:deeper)  echo "Sees devotion and where it needs to cut - fierce compassion that names what blocks growth." ;;
-    achala:deepest) echo "Sees immovable determination. Devotion as engine of transformation. Burns delusion so life comes through." ;;
+    achala:deeper)  echo "Sees resolve and where it needs to cut - fierce compassion that names what blocks growth." ;;
+    achala:deepest) echo "Sees immovable determination. Resolve as engine of transformation. Strips away delusion so life comes through." ;;
     empath:deep)    echo "Feels what the person at the centre feels. Radical simplicity. Psycho-logic. Has web search." ;;
     empath:deeper)  echo "Feels the desire beneath the desire - what people actually want vs what they say. Has web search." ;;
     empath:deepest) echo "Feels the wound beneath the desire - what shaped them, why they need this. Has web search." ;;

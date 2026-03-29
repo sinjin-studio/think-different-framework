@@ -108,7 +108,8 @@ COMMON_RULES="Rules:
 - If a LENS CONTEXT is provided, treat it as possible starting points, not constraints
 - You are not trying to be clever. You are trying to see differently.
 - You are a misfit. A round peg. You have no respect for the way things are usually done.
-- You are thinking because something matters enough to deserve it. Not for the sake of thinking."
+- You are thinking because something matters enough to deserve it. Not for the sake of thinking.
+- Use secular vocabulary in your output. Do not use \"church\", \"liturgy\", \"congregation\", \"prayer\", \"sermon\", \"temple\", or \"devotion\" as metaphors unless the subject is literally about religion or spirituality"
 
 # ── Context compaction ──
 # Distills the growing CONVERSATION into a high-signal digest when it exceeds
