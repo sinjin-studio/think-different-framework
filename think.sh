@@ -154,7 +154,7 @@ show_help() {
   echo "    --ground-only    Run only the grounding step, then exit"
   echo "    --depth LEVEL    Lens depth: deep (default), deeper, deepest. Per-lens:"
   echo "                     mortal:deepest,achala:deeper. Affects Mortal, Achala,"
-  echo "                     Empath, Child, Provocateur"
+  echo "                     Empath, Child, Provocateur, Mouth"
   echo "    --allowedTools T Tools for Claude CLI (default: \"WebSearch,WebFetch\", use \"\" to disable)"
   echo ""
   exit 0

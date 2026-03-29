@@ -70,6 +70,7 @@ Shared pool. Every composition draws from these. Each is a productive cognitive 
 | 🧿🪞 The Skeptic | Incongruence detection | What doesn't fit, what's in plain sight but invisible |
 | 🏺⚖️ The Connoisseur | Quality, proportion & resonance | Indifference to quality, the flattening of taste |
 | ⚔️❤️‍🔥 The Achala | Devotion, interconnection & the sacred | Transactionalism, reducing every motivation to incentive |
+| 🗣️🔥 The Mouth | Register, rhythm & the right word | Deck-voice, sanitised language, dead phrases |
 
 ### Cognitions - WHAT you do with what you see
 
@@ -88,8 +89,8 @@ Each composition pairs a cognition set with a selection of perceivers and define
 | Mode | Cognitions | Perceivers | Character |
 |------|------------|------------|-----------|
 | 💫🔀 `dyslexic` | Fragmentary + Logician | All except Skeptic | Leaping, collision-driven. Rounds of decompose-associate-scale-reify with perceivers woven between |
-| 🌀🌿 `spiral` | Deepening | Empath, Provocateur, Observer, Skeptic, Includer, Achala | Spirals of diverge-analogise-integrate, each reseeding the next |
-| 🪨✨ `lapidary` | Evaluative + Logician | Empath, Connoisseur, Provocateur, Observer, Skeptic, Achala | Iterative refinement. Passes of weigh-root-pare, each more precise than the last |
+| 🌀🌿 `spiral` | Deepening | Empath, Provocateur, Observer, Skeptic, Includer, Achala, Mouth | Spirals of diverge-analogise-integrate, each reseeding the next |
+| 🪨✨ `lapidary` | Evaluative + Logician | Empath, Connoisseur, Provocateur, Observer, Skeptic, Mouth, Achala | Iterative refinement. Passes of weigh-root-pare, each more precise than the last |
 
 ## Usage
 
@@ -236,7 +237,7 @@ Comma-separate tones to assign them round-robin across seeds. With `--tone provo
 
 ### Depth
 
-The `--depth` flag controls how deep into fundamental human drivers the perceiver lenses go. Each level contains the previous - deeper prompts layer on top, they don't replace. Affects five lenses: Mortal, Achala, Empath, Child, Provocateur.
+The `--depth` flag controls how deep into fundamental human drivers the perceiver lenses go. Each level contains the previous - deeper prompts layer on top, they don't replace. Affects six lenses: Mortal, Achala, Empath, Child, Provocateur, Mouth.
 
 | Level | Description |
 |-------|-------------|
@@ -267,7 +268,7 @@ The framework is experimental. These flags let you test different configurations
 ./think.sh "seed" --mode spiral --exclude skeptic  # Spiral without Skeptic
 ```
 
-Lens key names: `empath`, `provocateur`, `observer`, `mortal`, `child`, `skeptic`, `includer`, `connoisseur`, `achala`, `decomposer`, `associator`, `scaler`, `reifier`, `diverger`, `analogiser`, `integrator`, `appraiser`, `historian`, `editor`, `logician`.
+Lens key names: `empath`, `provocateur`, `observer`, `mortal`, `child`, `skeptic`, `includer`, `connoisseur`, `achala`, `mouth`, `decomposer`, `associator`, `scaler`, `reifier`, `diverger`, `analogiser`, `integrator`, `appraiser`, `historian`, `editor`, `logician`.
 
 Explicit `--exclude` wins over `--include`. `--include` overrides mode defaults (e.g. Skeptic excluded from dyslexic by default).
 
@@ -431,7 +432,7 @@ lib/
   markers.sh                     # Round/spiral/phase markers
 lenses/
   conductor.sh                   # The Conductor - first true agent, orchestrates lenses
-  perceivers/                    # Shared perceiver lenses (9 lenses)
+  perceivers/                    # Shared perceiver lenses (10 lenses)
   cognitions/
     fragmentary/                 # Break, leap, shift, name (4 lenses)
     deepening/                   # Open, rhyme, integrate (3 lenses)

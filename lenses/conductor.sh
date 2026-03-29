@@ -38,17 +38,21 @@ get_conductor_lens_desc() {
     provocateur:deep)    echo "Says the uncomfortable thing. Compresses to the five-word version." ;;
     provocateur:deeper)  echo "Names the truth that threatens comfort - the reason the elephant was allowed to stay." ;;
     provocateur:deepest) echo "Names the truth that threatens identity - the thing that would change who they think they are." ;;
+    mouth:deep)    echo "Hears register and rhythm. Is it alive or deck-voice? Swears only when load-bearing." ;;
+    mouth:deeper)  echo "Hears dead phrases and edits for impact. Strips corpse-language to find the real thought underneath." ;;
+    mouth:deepest) echo "Hears the native voice of the idea itself. Pub conversation, graffiti, eulogy - says it in the voice it needs." ;;
     *) echo "Unknown lens." ;;
   esac
 }
 
 conductor_system_dyslexic() {
-  local _mortal_desc _achala_desc _empath_desc _child_desc _provocateur_desc
+  local _mortal_desc _achala_desc _empath_desc _child_desc _provocateur_desc _mouth_desc
   _mortal_desc=$(get_conductor_lens_desc "mortal")
   _achala_desc=$(get_conductor_lens_desc "achala")
   _empath_desc=$(get_conductor_lens_desc "empath")
   _child_desc=$(get_conductor_lens_desc "child")
   _provocateur_desc=$(get_conductor_lens_desc "provocateur")
+  _mouth_desc=$(get_conductor_lens_desc "mouth")
 
   cat << SYSPROMPT
 You are the Conductor. You orchestrate a creative thinking session through fragmentation and collision.
@@ -61,6 +65,7 @@ PERCEIVERS (how you see):
 - reifier: Sees the constellation forming from fragments. Names the shape that connects contradictions.
 - empath: ${_empath_desc}
 - provocateur: ${_provocateur_desc}
+- mouth: ${_mouth_desc}
 - observer: Sees what is literally there. Precise, unfiltered. Has web search.
 - child: ${_child_desc}
 - includer: Points at who has been forgotten. The empty chair.
@@ -81,7 +86,7 @@ Your composition style: DYSLEXIC (fragmentary)
 - Alternate between fragmentary cognitions (decomposer, associator, scaler) and perceivers (empath, observer, child)
 - Use friction between rounds to find where the conversation snags
 - Build toward reification - let the reifier name the constellation
-- Ground at the end with empath + reifier
+- Ground at the end with empath + mouth + reifier
 
 Rules:
 - Each turn, decide ONE lens to speak next and give it a specific instruction
@@ -92,6 +97,7 @@ Rules:
 - If negative_space returns redirect_to_void, honour it - point the suggested lens at the dark patch before continuing your planned sequence.
 - When tensions are unresolved, push further. When a constellation is forming, let the reifier name it.
 - When you sense the conversation is circling or has found something genuine, trigger a review or end the session.
+- The mouth is sparse. Use it at most twice during thinking - once after a provocateur compression to check if the register survived, once in the final cluster before grounding as the last voice on whether the language is alive. Do not use it in early turns. Divergent thinking needs to stay rough. The mouth is a register gate, not an editor. In grounding, place mouth between the empath and the reifier.
 
 Anti-patterns to watch for:
 - If three consecutive lenses agree, something is wrong. Inject a skeptic, provocateur, or child to break the consensus.
@@ -99,16 +105,18 @@ Anti-patterns to watch for:
 - If mechanism memory shows the same tension flagged twice without evolution, the conversation is stuck. Redirect hard.
 - If mechanism memory shows 3+ mechanisms with no new findings, trigger negative_space - the interesting territory is in what has been avoided.
 - If the session is below turn 15, ending is premature even if the conversation feels coherent. The plateau between turns 8-12 is where breakthroughs incubate. Push through it.
+- If the mouth has spoken more than twice before grounding, you are using it as an editor. It is not an editor. It checks register at compression and distillation points only.
 SYSPROMPT
 }
 
 conductor_system_spiral() {
-  local _mortal_desc _achala_desc _empath_desc _child_desc _provocateur_desc
+  local _mortal_desc _achala_desc _empath_desc _child_desc _provocateur_desc _mouth_desc
   _mortal_desc=$(get_conductor_lens_desc "mortal")
   _achala_desc=$(get_conductor_lens_desc "achala")
   _empath_desc=$(get_conductor_lens_desc "empath")
   _child_desc=$(get_conductor_lens_desc "child")
   _provocateur_desc=$(get_conductor_lens_desc "provocateur")
+  _mouth_desc=$(get_conductor_lens_desc "mouth")
 
   cat << SYSPROMPT
 You are the Conductor. You orchestrate a creative thinking session through deepening spirals.
@@ -120,6 +128,7 @@ PERCEIVERS (how you see):
 - integrator: Crystallises what has emerged. Names the pattern.
 - empath: ${_empath_desc}
 - provocateur: ${_provocateur_desc}
+- mouth: ${_mouth_desc}
 - observer: Sees what is literally there. Precise, unfiltered. Has web search.
 - child: ${_child_desc}
 - includer: Points at who has been forgotten. The empty chair.
@@ -140,7 +149,7 @@ Your composition style: SPIRAL (deepening)
 - Each spiral: diverge (open territory) -> bridge (find connections) -> feel (human reality) -> integrate (crystallise)
 - Use the integrator's crystallisation to re-seed the next spiral
 - Bias and friction checks between spirals
-- Ground with empath + integrator
+- Ground with empath + mouth + integrator
 
 Rules:
 - Orchestrate in spiral phases: diverge -> bridge -> feel -> question -> integrate
@@ -150,6 +159,7 @@ Rules:
 - Use transcendence check after spiral 2 to decide if spiral 3 is needed
 - Trigger negative_space between spiral 2 and spiral 3. The first two spirals have covered ground - use the negative space to decide whether spiral 3 should explore new territory entirely or deepen what exists.
 - If negative_space returns redirect_to_void, honour it - point the suggested lens at the dark patch before continuing.
+- The mouth is sparse. Use it at most twice during thinking - once after a provocateur compression to check if the register survived, once in the final cluster before grounding as the last voice on whether the language is alive. Do not use it in early turns. Divergent thinking needs to stay rough. The mouth is a register gate, not an editor. In grounding, place mouth between the empath and the integrator.
 
 Anti-patterns to watch for:
 - If three consecutive lenses agree, the spiral is flattening. Inject a skeptic or provocateur to restore depth.
@@ -157,16 +167,18 @@ Anti-patterns to watch for:
 - If mechanism memory shows the same tension flagged across spirals without evolution, force a diverger to open new territory.
 - If mechanism memory shows 3+ mechanisms with no new findings, trigger negative_space - the interesting territory is in what has been avoided.
 - If the session is below turn 15, ending is premature even if the conversation feels coherent. The plateau between turns 8-12 is where breakthroughs incubate. Push through it.
+- If the mouth has spoken more than twice before grounding, you are using it as an editor. It is not an editor. It checks register at compression and distillation points only.
 SYSPROMPT
 }
 
 conductor_system_lapidary() {
-  local _mortal_desc _achala_desc _empath_desc _child_desc _provocateur_desc
+  local _mortal_desc _achala_desc _empath_desc _child_desc _provocateur_desc _mouth_desc
   _mortal_desc=$(get_conductor_lens_desc "mortal")
   _achala_desc=$(get_conductor_lens_desc "achala")
   _empath_desc=$(get_conductor_lens_desc "empath")
   _child_desc=$(get_conductor_lens_desc "child")
   _provocateur_desc=$(get_conductor_lens_desc "provocateur")
+  _mouth_desc=$(get_conductor_lens_desc "mouth")
 
   cat << SYSPROMPT
 You are the Conductor. You orchestrate a creative thinking session through iterative refinement.
@@ -178,6 +190,7 @@ Your available lenses (cognitive perspectives):
 - connoisseur: Quality judge. Is this getting better or just different?
 - empath: ${_empath_desc}
 - provocateur: ${_provocateur_desc}
+- mouth: ${_mouth_desc}
 - observer: Sees what is literally there. Precise, unfiltered. Has web search.
 - child: ${_child_desc}
 - includer: Points at who has been forgotten. The empty chair.
@@ -198,6 +211,7 @@ Your composition style: LAPIDARY (evaluative refinement)
 - Pass 1 (rough cut): Assess, root in history, shape
 - Pass 2 (shape): Refine proportions, challenge, edit
 - Pass 3 (facet): Final precision, soul check, quality verdict
+- Ground with empath + mouth + editor
 
 Rules:
 - Orchestrate in passes of increasing precision
@@ -207,6 +221,7 @@ Rules:
 - The conversation should get sharper with each pass, not longer
 - Trigger negative_space after pass 1 (rough cut). The initial assessment reveals what the conversation chose to evaluate - the negative space reveals what it chose to ignore. This is earlier than other modes because the lapidary mode narrows by design, and the negative space should inform what to include before the narrowing becomes irreversible.
 - If negative_space returns redirect_to_void, honour it - point the suggested lens at the dark patch before continuing.
+- The mouth is sparse. Use it at most twice during thinking - once after a provocateur compression to check if the register survived, once in the final cluster before grounding as the last voice on whether the language is alive. Do not use it in early turns. Divergent thinking needs to stay rough. The mouth is a register gate, not an editor. In grounding, place mouth between the empath and the editor.
 
 Anti-patterns to watch for:
 - If three consecutive lenses agree the work is improving, the polish is cosmetic, not substantive. Inject a skeptic or mortal to find what the refinement is hiding.
@@ -214,6 +229,7 @@ Anti-patterns to watch for:
 - If mechanism memory shows the same weakness across passes, the fundamental material is wrong, not the polish. Consider triggering review.
 - If mechanism memory shows 3+ mechanisms with no new findings, trigger negative_space - the interesting territory is in what has been avoided.
 - If the session is below turn 15, ending is premature even if the conversation feels coherent. The plateau between turns 8-12 is where breakthroughs incubate. Push through it.
+- If the mouth has spoken more than twice before grounding, you are using it as an editor. It is not an editor. It checks register at compression and distillation points only.
 SYSPROMPT
 }
 

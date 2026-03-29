@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ── Spiral composition ──
 # Deepening spirals: diverge, analogise, integrate, reseed
-# Perceivers: empath, provocateur, observer, skeptic, includer, achala, mortal
+# Perceivers: empath, provocateur, observer, skeptic, includer, achala, mortal, mouth
 # 3 spirals, each ~10 turns + ground = ~34 steps
 #
 # Depends on:
@@ -24,6 +24,7 @@ run_session() {
   is_lens_active "includer" && source "${SCRIPT_DIR}/lenses/perceivers/includer.sh"
   is_lens_active "achala" && source "${SCRIPT_DIR}/lenses/perceivers/achala.sh"
   is_lens_active "mortal" && source "${SCRIPT_DIR}/lenses/perceivers/mortal.sh"
+  is_lens_active "mouth" && source "${SCRIPT_DIR}/lenses/perceivers/mouth.sh"
 
   # Source context and mechanisms
   source "${SCRIPT_DIR}/context/gather.sh"
@@ -190,6 +191,11 @@ run_session() {
       "skeptic:question:3:After three spirals, what is the one assumption that has survived every challenge unchallenged? The thing everyone has taken for granted? What is in plain sight but invisible because of how everyone is looking?"
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
 
+    mark_phase "Register" "Is It Alive"
+    dispatch_round \
+      "mouth:register:3:Three spirals of thinking. Read the emerging insight aloud in your head. Is it alive? Does it sound like something a person would say to another person, or does it sound like a deck? If the spiralling has produced safe, sanitised language, say it again the way it needs to sound."
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+
     # Bias check before integration
     detect_cognitive_bias 3 || true
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
@@ -197,6 +203,11 @@ run_session() {
     mark_phase "Integrate" "Final Crystallisation"
     dispatch_round \
       "integrator:integrate:3:Three spirals complete. The full arc is visible. What is the deepest insight, the one that could only have emerged from this specific sequence of collisions? Name it. Can you state it simply enough that the person at the centre would recognise their own experience?"
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+
+    mark_phase "Register" "Final Voice Check"
+    dispatch_round \
+      "mouth:register:3:The Integrator just crystallised three spirals into an insight. Listen to it. Is it alive or has the crystallisation killed the voice? If it sounds like a conclusion instead of a conviction, re-voice it. If it sounds like something someone would actually say out loud to another person, bless it and move on."
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
   fi
 
@@ -275,6 +286,10 @@ run_session() {
   mark_phase "Ground" "Landing the Insight"
   if is_lens_active "empath"; then
     call_lens "empath" "ground" "$final_spiral" "The session is ending. What is new here? What would actually change behaviour? Strip away every metaphor and say what remains. Identify the 1-3 ideas that pass the simplicity test. For each one: what is the smallest experiment someone could do tomorrow?" || true
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+  fi
+  if is_lens_active "mouth"; then
+    call_lens "mouth" "ground" "$final_spiral" "Final register gate. The Empath has grounded the insight. Listen. Did the grounding kill the voice? Did making it actionable make it dead? If the register survived, leave it alone. If the grounding sanded off the edge that was the whole point, re-voice it with the edge intact. This is the last gate before output." || true
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
   fi
   if is_lens_active "integrator"; then

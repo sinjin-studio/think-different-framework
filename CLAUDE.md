@@ -48,7 +48,7 @@ A multi-lens structured divergence framework for Claude Code CLI. It runs creati
 - `--include/--exclude lenses` - Force lens inclusion/exclusion
 - `--audience TEXT` - Target audience (auto-inferred from input if not set). Shapes provocations and all presentation output toward audience-facing content
 - `--tone TONE` - Provocation tone: `provocative` (default), `generous`, `personal`, `absurd`, `daydream`, `mixed`. Comma-separated for custom mix (e.g. `--tone provocative,generous`)
-- `--depth LEVEL` - Lens depth: `deep` (default), `deeper`, `deepest`. Per-lens: `mortal:deepest,achala:deeper`. Controls how deep into fundamental human drivers the lenses go. Affects Mortal, Achala, Empath, Child, Provocateur
+- `--depth LEVEL` - Lens depth: `deep` (default), `deeper`, `deepest`. Per-lens: `mortal:deepest,achala:deeper`. Controls how deep into fundamental human drivers the lenses go. Affects Mortal, Achala, Empath, Child, Provocateur, Mouth
 - `--type TYPES` - Output types: `insight,brief,manifesto` (default: all three). Comma-separated
 - `--lines N` - Number of angles to generate (default: 3, max: 7). Each angle outputs two altitudes: Platform (strategic truth) and Expression (audience-facing punch)
 - `--practitioners LIST` - Comma-separated creative practitioners as quality bar for The Line (default: random 3 from built-in pool)
@@ -82,7 +82,7 @@ think-different "seed topic"   # or: td "seed topic"
 
 ### Three-Layer Lens Taxonomy
 
-1. **Perceivers** (9 lenses) - How you see. Each has a cognitive bias (empathy, compression, literal, finitude/impermanence/urgency, naivety, absence, incongruence, quality/proportion, resolve/interconnection).
+1. **Perceivers** (10 lenses) - How you see. Each has a cognitive bias (empathy, compression, literal, finitude/impermanence/urgency, naivety, absence, incongruence, quality/proportion, resolve/interconnection, register/rhythm).
 2. **Cognitions** (11 lenses) - What you do with what you see. Grouped into fragmentary (break, leap, shift, name), deepening (open, rhyme, integrate), and evaluative (weigh, root, pare).
 3. **Compositions** (3 modes) - How you sequence perceivers + cognitions together.
 
@@ -181,7 +181,7 @@ Every `claude_call*` invocation is logged to `$SESSION_DIR/log.jsonl` (JSONL for
 
 ### Key Directories
 
-- `lenses/` - 20 lenses across `perceivers/`, `cognitions/{fragmentary,deepening,evaluative}/`, `hybrids/`, plus `conductor.sh`
+- `lenses/` - 21 lenses across `perceivers/`, `cognitions/{fragmentary,deepening,evaluative}/`, `hybrids/`, plus `conductor.sh`
 - `modes/` - Three composition orchestrators (used in non-autonomous mode, become conductor presets in autonomous mode)
 - `context/` - Input handling (gather, ground preamble, provoke, fracture, tune, appraise)
 - `mechanisms/` - Meta-cognitive operations (friction, sensory, bias, transcendence, negative_space, reseed, polish, review)

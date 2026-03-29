@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # ── Dyslexic composition ──
 # Fragmentary thinking: decompose, associate, scale, reify
-# Perceivers: empath, provocateur, observer, mortal, child, includer
+# Perceivers: empath, provocateur, observer, mortal, child, includer, mouth
 # Skeptic excluded by default but can be force-included (placed in Round 3)
 # ~25 lens turns + 3 friction + 1 sensory + 1 bias = ~30 steps
 #
 # Depends on:
 #   lenses/cognitions/fragmentary/*.sh
 #   lenses/hybrids/logician.sh
-#   lenses/perceivers/empath.sh, provocateur.sh, observer.sh, mortal.sh, child.sh
+#   lenses/perceivers/empath.sh, provocateur.sh, observer.sh, mortal.sh, child.sh, mouth.sh
 #   context/gather.sh, context/fracture.sh
 #   mechanisms/friction.sh, mechanisms/sensory.sh, mechanisms/bias.sh
 #   lib/call_lens.sh, lib/markers.sh
@@ -28,6 +28,7 @@ run_session() {
   is_lens_active "child" && source "${SCRIPT_DIR}/lenses/perceivers/child.sh"
   is_lens_active "includer" && source "${SCRIPT_DIR}/lenses/perceivers/includer.sh"
   is_lens_active "achala" && source "${SCRIPT_DIR}/lenses/perceivers/achala.sh"
+  is_lens_active "mouth" && source "${SCRIPT_DIR}/lenses/perceivers/mouth.sh"
   is_lens_active "logician" && source "${SCRIPT_DIR}/lenses/hybrids/logician.sh"
 
   # Skeptic: excluded by default in dyslexic, but --include skeptic overrides
@@ -89,6 +90,7 @@ run_session() {
       "child:naivety:2:Look at everything the conversation has assumed so far. Ask the question nobody is asking because they think the answer is obvious. Why can't you just...? What if you didn't? What would happen if you did it backwards?" \
       "associator:associate:2:The Scaler just showed us the problem at a new altitude. What connections are visible now that were invisible before, especially connections that work with the contradictions?" \
       "provocateur:provoke:2:The conversation has been building something. Strip it. What is the uncomfortable simplification? What is everyone avoiding saying because it is too direct? Say it in as few words as possible." \
+      "mouth:register:2:The Provocateur just compressed something. Is it alive? Does the register match the truth, or did the truth get polished into something safe on the way to language? If the register is wrong, say it again the way it needs to sound." \
       "achala:devotion:2:The conversation has been fragmenting and scaling. Before it goes further, name the thing people would sacrifice for here. Not the stated need. The sacred thing underneath. What do people actually love about this situation, and what would it mean to honour that rather than optimise it?" \
       "logician:trace:2:The Scaler just shifted altitude twice. At this new scale, what causal chains are visible that were hidden before? Trace one forward - if this is true, what necessarily follows? Trace one backward - what is the structural root cause that nobody has named yet?" \
       "scaler:scale:2:Zoom again. The other direction. If you zoomed out last time, zoom in to the microscopic. If you zoomed in, pull up to the cosmic. The problem should look completely different from here."
@@ -181,7 +183,8 @@ run_session() {
     "associator:associate:${final_round}:The Reifier just drew a constellation. What adjacent thing does that constellation look like? What else in the world has this same shape? One final connection that makes the named insight feel inevitable rather than invented." \
     "achala:devotion:${final_round}:The constellation has been named. Now ask: is this worthy of devotion? Would someone give their time, their reputation, their sleep to this? If not, what would make it worthy?" \
     "mortal:urgency:${final_round}:Achala named what is sacred. Now name the cost of not acting on it. What is being lost while this remains an idea instead of a thing in the world? If this constellation is true, what is the price of another quarter of deliberation?" \
-    "provocateur:provoke:${final_round}:The constellation has been named and connected. Now compress it. What is the five-word version? The version that makes the room go quiet? Not a tagline. The truth, compressed."
+    "provocateur:provoke:${final_round}:The constellation has been named and connected. Now compress it. What is the five-word version? The version that makes the room go quiet? Not a tagline. The truth, compressed." \
+    "mouth:register:${final_round}:The Provocateur just compressed the constellation. Listen to it. Is it alive or has the compression killed the voice? If it sounds like a tagline instead of a truth, re-voice it. If it sounds like something someone would actually say out loud to another person, bless it and move on."
   [ "$CAP_LIMIT_HIT" = "true" ] && return 0
 
   # ── GROUND ──
@@ -192,6 +195,10 @@ run_session() {
   mark_phase "Ground" "Landing the Insight"
   if is_lens_active "empath"; then
     call_lens "empath" "ground" "$final_round" "This is the end. Deliver the verdict. What is new here? What would actually change behaviour, create value, solve a real problem? Strip away the metaphors. Say what remains. Identify the 1-3 ideas that pass the simplicity test. For each one: what is the smallest experiment someone could take tomorrow?" || true
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+  fi
+  if is_lens_active "mouth"; then
+    call_lens "mouth" "ground" "$final_round" "The Empath just grounded the insight. Listen. Did the grounding kill the voice? Did making it actionable make it dead? If the register survived, leave it alone. If the grounding sanded off the edge that was the whole point, re-voice it with the edge intact. This is the last gate before output." || true
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
   fi
   if is_lens_active "reifier"; then

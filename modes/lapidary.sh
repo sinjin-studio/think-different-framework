@@ -5,14 +5,14 @@
 # From the Latin lapidarius - one who works with stones.
 #
 # Cognitions: Evaluative (appraiser, historian, editor)
-# Perceivers: empath, connoisseur, provocateur, observer, skeptic
+# Perceivers: empath, connoisseur, provocateur, observer, skeptic, mouth
 # Child excluded by default (mature judgement, not wild generation)
 # 3 passes + ground = ~23 steps
 #
 # Depends on:
 #   lenses/cognitions/evaluative/*.sh
 #   lenses/hybrids/logician.sh
-#   lenses/perceivers/empath.sh, connoisseur.sh, provocateur.sh, observer.sh, skeptic.sh
+#   lenses/perceivers/empath.sh, connoisseur.sh, provocateur.sh, observer.sh, skeptic.sh, mouth.sh
 #   context/gather.sh, context/appraise.sh
 #   mechanisms/friction.sh, mechanisms/polish.sh, mechanisms/bias.sh
 #   lib/call_lens.sh, lib/markers.sh
@@ -33,6 +33,7 @@ run_session() {
   is_lens_active "skeptic" && source "${SCRIPT_DIR}/lenses/perceivers/skeptic.sh"
   is_lens_active "achala" && source "${SCRIPT_DIR}/lenses/perceivers/achala.sh"
   is_lens_active "mortal" && source "${SCRIPT_DIR}/lenses/perceivers/mortal.sh"
+  is_lens_active "mouth" && source "${SCRIPT_DIR}/lenses/perceivers/mouth.sh"
   is_lens_active "logician" && source "${SCRIPT_DIR}/lenses/hybrids/logician.sh"
 
   # Source context and mechanisms
@@ -113,6 +114,7 @@ run_session() {
       "achala:devotion:3:Three passes of refinement. The material has been cut, shaped, and faceted. Now the final question: does it have soul? Not polish, not quality, not craft. Soul. Is this something someone would devote themselves to? Or is it merely well-made?" \
       "mortal:urgency:3:Three passes of refinement. Achala asked whether this has soul. Now ask whether it has urgency. Is this material that demands to exist now, or could it wait another year without loss? If there is no urgency, what would create it? Name the cost of delay in human terms, not business terms." \
       "editor:pare:3:Final cut. Every word must be load-bearing. Every element structural. This is the pass where good becomes accomplished. Remove the last thing that is not the thing. Show the finished shape." \
+      "mouth:register:3:Three passes of refinement. The editor has made the final cut. Now hear what remains. Is it more alive than the last draft, or just more polished? Polish that removes voice is damage, not improvement. If any phrase is dead on arrival, say what it should sound like." \
       "connoisseur:evaluate:3:Final verdict. Is this finished or merely stopped? Not perfect - finished. Does it have the quality of something made with care and attention? Would you want to live with it? Is it ready to leave the workshop?"
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
 
@@ -172,6 +174,10 @@ run_session() {
   mark_phase "Ground" "Landing the Insight"
   if is_lens_active "empath"; then
     call_lens "empath" "ground" "$final_pass" "The session is ending. Three passes of refinement have shaped this material. Forget the craft for a moment. What does the person at the centre of this actually need? What would change their behaviour? Strip away everything and say what remains. Identify the 1-3 ideas that pass the simplicity test. For each: what is the smallest experiment someone could do tomorrow?" || true
+    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+  fi
+  if is_lens_active "mouth"; then
+    call_lens "mouth" "ground" "$final_pass" "Final register gate. The Empath has landed the insight. Before the editor gives it final form, hear it. Did the grounding kill the voice? Did making it actionable make it dead? If the register survived, leave it alone. If the grounding sanded off the edge that was the whole point, re-voice it with the edge intact." || true
     [ "$CAP_LIMIT_HIT" = "true" ] && return 0
   fi
   if is_lens_active "editor"; then
