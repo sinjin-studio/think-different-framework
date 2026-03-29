@@ -3,8 +3,10 @@
 # Distills raw input (brief, brand, notes, project context) into
 # seed provocations that drive separate thinking sessions.
 # Expects globals: $SEED_COUNT (default 3), $PROJECT_CONTEXT (optional),
-#                  $PROVOCATION_TONE (default "provocative")
-# Sets: $PROVOCATIONS (array), $ZEITGEIST_SOURCES (array)
+#                  $PROVOCATION_TONE (default "provocative"),
+#                  $AUTONOMOUS_MODE, $RUNNER_UP_PROVOCATIONS (initialized)
+# Sets: $PROVOCATIONS (array), $ZEITGEIST_SOURCES (array),
+#       $RUNNER_UP_PROVOCATIONS (array, non-selected pool entries)
 
 # ── Tone-specific prompt blocks ──
 
@@ -138,6 +140,11 @@ generate_provocations() {
   local input_material="$1"
   local input_type="$2"  # "brief", "brand", "notes", "project"
 
+  # Pool size: generate more provocations than SEED_COUNT, pick best later
+  local pool_size=$(( SEED_COUNT * 3 ))
+  if [ "$pool_size" -lt 3 ]; then pool_size=3; fi
+  if [ "$pool_size" -gt 12 ]; then pool_size=12; fi
+
   # Progress emoji based on tone
   local tone_emoji="💣🌶️"
   local tone_label="${PROVOCATION_TONE:-provocative}"
@@ -190,7 +197,7 @@ Provocations should challenge how to reach, move, or transform this audience. Do
 
     local tone_assignments=""
     local i
-    for (( i=1; i<=SEED_COUNT; i++ )); do
+    for (( i=1; i<=pool_size; i++ )); do
       local tone_idx=$(( (i - 1) % tone_count ))
       local assigned_tone="${tone_arr[$tone_idx]}"
       local assigned_block
@@ -201,11 +208,11 @@ ${assigned_block}
 "
     done
 
-    provoke_prompt="${research_preamble}You are a provocateur preparing a creative thinking session. You have been given some input material. Your job is to digest it and produce exactly ${SEED_COUNT} SEED PROVOCATIONS, each in a DIFFERENT TONE as specified below.
+    provoke_prompt="${research_preamble}You are a provocateur preparing a creative thinking session. You have been given some input material. Your job is to digest it and produce exactly ${pool_size} SEED PROVOCATIONS, each in a DIFFERENT TONE as specified below. We will select the strongest ${SEED_COUNT} later, so generate a full pool of ${pool_size}.
 
 ${tone_assignments}
 
-Format: Output ONLY the provocations, one per line, numbered 1-${SEED_COUNT}. No preamble, no explanation, no meta-commentary. Each provocation should be a single sentence. Do NOT label the tones in your output. Do NOT output error messages, apologies, or sign-off statements. If you struggle with the input, generate provocations anyway - use whatever angle you can find.
+Format: Output ONLY the provocations, one per line, numbered 1-${pool_size}. No preamble, no explanation, no meta-commentary. Each provocation should be a single sentence. Do NOT label the tones in your output. Do NOT output error messages, apologies, or sign-off statements. If you struggle with the input, generate provocations anyway - use whatever angle you can find.
 
 INPUT TYPE: ${input_type}
 
@@ -218,11 +225,11 @@ ${context_block}${audience_block}"
     local tone_block
     tone_block=$(get_tone_prompt "${PROVOCATION_TONE:-provocative}")
 
-    provoke_prompt="${research_preamble}You are a provocateur preparing a creative thinking session. You have been given some input material. Your job is to digest it and produce exactly ${SEED_COUNT} SEED PROVOCATIONS.
+    provoke_prompt="${research_preamble}You are a provocateur preparing a creative thinking session. You have been given some input material. Your job is to digest it and produce exactly ${pool_size} SEED PROVOCATIONS. We will select the strongest ${SEED_COUNT} later, so generate a full pool of ${pool_size}.
 
 ${tone_block}
 
-Format: Output ONLY the provocations, one per line, numbered 1-${SEED_COUNT}. No preamble, no explanation, no meta-commentary. Each provocation should be a single sentence. Do NOT output error messages, apologies, or sign-off statements. If you struggle with the input, generate provocations anyway - use whatever angle you can find.
+Format: Output ONLY the provocations, one per line, numbered 1-${pool_size}. No preamble, no explanation, no meta-commentary. Each provocation should be a single sentence. Do NOT output error messages, apologies, or sign-off statements. If you struggle with the input, generate provocations anyway - use whatever angle you can find.
 
 INPUT TYPE: ${input_type}
 
@@ -278,9 +285,9 @@ ${context_block}${audience_block}"
     esac
   done <<< "$raw_provocations"
 
-  # Safety net: enforce --seeds count if Claude still over-generated
-  if [ ${#PROVOCATIONS[@]} -gt ${SEED_COUNT} ]; then
-    PROVOCATIONS=("${PROVOCATIONS[@]:0:${SEED_COUNT}}")
+  # Safety net: clamp to pool size if Claude over-generated
+  if [ ${#PROVOCATIONS[@]} -gt ${pool_size} ]; then
+    PROVOCATIONS=("${PROVOCATIONS[@]:0:${pool_size}}")
   fi
 
   # Detect meta-commentary / sign-off / error responses instead of real provocations
@@ -302,7 +309,7 @@ ${context_block}${audience_block}"
 
   # Retry once with reinforced prompt if we got no usable provocations
   if [ ${#PROVOCATIONS[@]} -eq 0 ]; then
-    local retry_prompt="CRITICAL: You must output exactly ${SEED_COUNT} numbered provocations. No meta-commentary, no error messages, no apologies, no sign-off statements. Just the provocations, one per line, numbered.
+    local retry_prompt="CRITICAL: You must output exactly ${pool_size} numbered provocations. No meta-commentary, no error messages, no apologies, no sign-off statements. Just the provocations, one per line, numbered.
 
 ${provoke_prompt}"
     local retry_tmp
@@ -329,8 +336,8 @@ ${provoke_prompt}"
             PROVOCATIONS+=("$cleaned") ;;
         esac
       done <<< "$CLAUDE_RESPONSE"
-      if [ ${#PROVOCATIONS[@]} -gt ${SEED_COUNT} ]; then
-        PROVOCATIONS=("${PROVOCATIONS[@]:0:${SEED_COUNT}}")
+      if [ ${#PROVOCATIONS[@]} -gt ${pool_size} ]; then
+        PROVOCATIONS=("${PROVOCATIONS[@]:0:${pool_size}}")
       fi
     fi
     rm -f "$retry_tmp"
@@ -603,6 +610,93 @@ for p in provs:
 
   rm -f "$tmpfile"
   stop_spinner "done"
+}
+
+# ── Provocation selection ──
+# When the pool has more provocations than SEED_COUNT, rank and pick the best.
+# Stores non-selected provocations in RUNNER_UP_PROVOCATIONS for the presentation.
+select_provocations() {
+  [ "${#PROVOCATIONS[@]}" -le ${SEED_COUNT} ] && return
+  [ "${AUTONOMOUS_MODE:-}" != "true" ] && return
+
+  start_spinner "🎯 Selecting top ${SEED_COUNT} from ${#PROVOCATIONS[@]} provocations"
+
+  local prov_list=""
+  local i=1
+  for prov in "${PROVOCATIONS[@]}"; do
+    prov_list="${prov_list}
+${i}. ${prov}"
+    i=$((i + 1))
+  done
+
+  local select_prompt="You are selecting the strongest seed provocations for a creative thinking session. Each selected provocation will drive a separate full thinking session.
+
+From this pool, select the TOP ${SEED_COUNT} provocations. Rank by:
+1. TENSION: Which provocations contain the sharpest, most uncomfortable tension?
+2. TERRITORY: Which open the most distinct, non-overlapping territory?
+3. GRIP: Which give creative lenses the most to work with?
+
+POOL:
+${prov_list}
+
+Return the indices of the ${SEED_COUNT} strongest provocations, ranked best-first."
+
+  local json_schema='{"type":"object","properties":{"selected":{"type":"array","items":{"type":"integer"},"description":"Indices of selected provocations, ranked best-first"},"reasoning":{"type":"string","description":"Brief reasoning for selection"}},"required":["selected","reasoning"]}'
+
+  local tmpfile
+  tmpfile=$(mktemp)
+  echo "$select_prompt" > "$tmpfile"
+
+  VERBOSE_CALLER="provoke:select"
+  if claude_call_json "$tmpfile" "$json_schema"; then
+    local select_json="$CLAUDE_RESPONSE"
+
+    # Parse selected indices
+    local selected_indices=""
+    selected_indices=$(echo "$select_json" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+selected = d.get('selected', [])
+print(','.join(str(i) for i in selected))
+" 2>/dev/null || echo "")
+
+    if [ -n "$selected_indices" ]; then
+      local new_selected=()
+      local new_runners=()
+      i=1
+      for prov in "${PROVOCATIONS[@]}"; do
+        if [[ ",$selected_indices," == *",$i,"* ]]; then
+          new_selected+=("$prov")
+        else
+          new_runners+=("$prov")
+        fi
+        i=$((i + 1))
+      done
+
+      if [ "${#new_selected[@]}" -gt 0 ]; then
+        PROVOCATIONS=("${new_selected[@]}")
+        RUNNER_UP_PROVOCATIONS=("${new_runners[@]+"${new_runners[@]}"}")
+      fi
+    fi
+  fi
+
+  rm -f "$tmpfile"
+  stop_spinner "done (${#PROVOCATIONS[@]} selected, ${#RUNNER_UP_PROVOCATIONS[@]} runner-ups)"
+
+  echo ""
+  i=1
+  for prov in "${PROVOCATIONS[@]}"; do
+    echo "  ✓ ${i}. ${prov}"
+    i=$((i + 1))
+  done
+  if [ ${#RUNNER_UP_PROVOCATIONS[@]} -gt 0 ]; then
+    echo ""
+    echo "  Runner-ups (stored for presentation):"
+    for prov in "${RUNNER_UP_PROVOCATIONS[@]}"; do
+      echo "    ○ ${prov}"
+    done
+  fi
+  echo ""
 }
 
 read_input_material() {

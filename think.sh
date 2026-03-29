@@ -847,6 +847,7 @@ TURN_COUNT=0
 PROJECT_CONTEXT=""
 ZEITGEIST_CONTEXT=""
 ZEITGEIST_SOURCES=()
+RUNNER_UP_PROVOCATIONS=()
 
 # ── Build experiment banner lines ──
 EXPERIMENT_LINES=()
@@ -1056,6 +1057,10 @@ review_provocations
 
 # ── 3c. Prosecute provocations for quality (autonomous mode) ──
 prosecute_provocations
+
+# ── 3d. Select top provocations from pool (autonomous mode) ──
+RUNNER_UP_PROVOCATIONS=()
+select_provocations
 SEEDS=("${PROVOCATIONS[@]}")
 
 # ── 4. Warn if many seeds ──

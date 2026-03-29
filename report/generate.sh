@@ -1304,6 +1304,21 @@ PRESHEADER
     fi
   fi
 
+  # Runner-up provocations (non-selected pool entries)
+  if [ ${#RUNNER_UP_PROVOCATIONS[@]} -gt 0 ]; then
+    echo "" >> "$output_file"
+    echo "### Runner-Up Provocations" >> "$output_file"
+    echo "" >> "$output_file"
+    echo "These provocations were generated but not selected for full sessions:" >> "$output_file"
+    echo "" >> "$output_file"
+    local rp_i=1
+    for rp in "${RUNNER_UP_PROVOCATIONS[@]}"; do
+      echo "${rp_i}. ${rp}" >> "$output_file"
+      rp_i=$((rp_i + 1))
+    done
+    echo "" >> "$output_file"
+  fi
+
   # Branded footer
   cat >> "$output_file" << 'FOOTER'
 
