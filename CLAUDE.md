@@ -82,7 +82,7 @@ think-different "seed topic"   # or: td "seed topic"
 
 ### Three-Layer Lens Taxonomy
 
-1. **Perceivers** (9 lenses) - How you see. Each has a cognitive bias (empathy, compression, literal, finitude/impermanence/urgency, naivety, absence, incongruence, quality/proportion, devotion/interconnection).
+1. **Perceivers** (9 lenses) - How you see. Each has a cognitive bias (empathy, compression, literal, finitude/impermanence/urgency, naivety, absence, incongruence, quality/proportion, resolve/interconnection).
 2. **Cognitions** (11 lenses) - What you do with what you see. Grouped into fragmentary (break, leap, shift, name), deepening (open, rhyme, integrate), and evaluative (weigh, root, pare).
 3. **Compositions** (3 modes) - How you sequence perceivers + cognitions together.
 
@@ -144,7 +144,9 @@ Lenses do not receive zeitgeist directly - they encounter it through mechanisms,
 
 ### Provocation Review Gate
 
-When multiple provocations are generated (`--autonomous` mode), they're reviewed for distinctness before sessions begin. Similar provocations get merged, weak ones get reframed. Each provocation should open territory the others cannot reach.
+When multiple provocations are generated (`--autonomous` mode), they pass through two gates:
+1. **Distinctness review** - Similar provocations get merged, weak ones get reframed. Each should open territory the others cannot reach.
+2. **Quality prosecution** - Each provocation is prosecuted for genuine quality: is it truly provocative or just unusual phrasing of a common question? Does it contain real tension? Weak provocations get sharpened.
 
 ### Session Reviewer
 
@@ -154,6 +156,15 @@ Adversarial quality gate (`mechanisms/review.sh`) using a prosecution/defense/ve
 3. **Verdict** - Decides restart/proceed from the adversarial exchange. Identifies unpushed tensions and provides a reframed seed if restart needed.
 
 Can trigger a **restart with mutations**: different mode, shuffled lens order, reframed seed. 2-run ceiling per provocation. Synthesises across both runs.
+
+### Line Prosecution
+
+After The Line is generated and the strongest expression picked, the winning PLATFORM+EXPRESSION pair passes through an adversarial prosecution loop (max 2 iterations):
+1. **Prosecute** - Tests briefability (can a team build from it?), cold-readability (lands on a wall?), and specificity (only works for this topic?)
+2. **Improve** - If weak, generates 2 alternatives that fix identified weaknesses
+3. **Re-judge** - Picks between original and alternatives
+
+This ensures The Line, the most visible output, receives adversarial treatment comparable to the session review.
 
 ### Verbose Session Log
 
@@ -181,7 +192,7 @@ Every `claude_call*` invocation is logged to `$SESSION_DIR/log.jsonl` (JSONL for
 ### Output
 
 Sessions produce files in `./think-different-output/<slug>_<timestamp>/`:
-- `presentation.md` - Combined output: The Line (winning platform + expression), the experiment, the asset (sensory description), creative brief, manifesto, insight article (controlled by `--type`), session findings (novel ideas for inspiration)
+- `presentation.md` - Combined output: The Line (winning platform + expression), the experiment, the asset (sensory description), creative brief, manifesto, insight article (controlled by `--type`), session findings (novel ideas for inspiration), runner-up lines (non-winning platform/expression pairs)
 - `presentation.docx` - Branded Word document (if python-docx available)
 - `presentation.html` - Cinematic scroll presentation with GSAP ScrollTrigger (enable with `--html`, experimental)
 - `session.md` / `session.json` - Full transcript (markdown + machine-readable)

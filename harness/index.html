@@ -582,6 +582,7 @@ input[type="range"] {
 
 /* Hidden */
 .hidden { display: none !important; }
+.expand-indicator { display: none; }
 
 /* Responsive */
 @media (max-width: 900px) {
@@ -594,15 +595,47 @@ input[type="range"] {
     left: 0;
     right: 0;
     height: auto;
-    max-height: 50vh;
     padding: 0;
     z-index: 100;
     flex-direction: column;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
   }
-  .preview-box { border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+  .preview-box {
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    max-height: none;
+  }
+  .preview-header {
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .preview-header .expand-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-family: var(--mono);
+  }
+  .preview-header .expand-chevron {
+    transition: transform 0.2s;
+    font-size: 0.6rem;
+  }
+  .preview-col.expanded .expand-chevron {
+    transform: rotate(180deg);
+  }
+  .preview-code {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    padding: 0 1rem;
+  }
+  .preview-col.expanded .preview-code {
+    max-height: 35vh;
+    overflow: auto;
+    padding: 1rem;
+  }
   .config-box { display: none; }
-  .form-col { padding-bottom: 180px; }
-  .preview-code { max-height: 25vh; }
+  .form-col { padding-bottom: 80px; }
 }
 </style>
 </head>
@@ -984,8 +1017,9 @@ input[type="range"] {
   <!-- Right column: Preview + Config -->
   <div class="preview-col">
     <div class="preview-box">
-      <div class="preview-header">
+      <div class="preview-header" id="preview-header">
         <h2>Command</h2>
+        <span class="expand-indicator"><span class="expand-chevron">&#9650;</span> <span class="expand-label">Show</span></span>
         <div class="prefix-toggle" id="prefix-toggle">
           <button class="active" data-value="./think.sh">./think.sh</button>
           <button data-value="td">td</button>
@@ -1314,6 +1348,15 @@ function bindEvents() {
       if (STATE.formats.length === 0) STATE.formats = ['all'];
       render();
     });
+  });
+
+  // Mobile: toggle command preview expand/collapse
+  document.getElementById('preview-header').addEventListener('click', () => {
+    if (window.innerWidth > 900) return;
+    const col = document.querySelector('.preview-col');
+    const label = document.querySelector('.expand-label');
+    col.classList.toggle('expanded');
+    label.textContent = col.classList.contains('expanded') ? 'Hide' : 'Show';
   });
 
   // Lens chips (include/exclude)
