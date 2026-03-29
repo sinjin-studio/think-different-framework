@@ -161,7 +161,7 @@ ${assigned_block}
 
 ${tone_assignments}
 
-Format: Output ONLY the provocations, one per line, numbered 1-${SEED_COUNT}. No preamble, no explanation, no meta-commentary. Each provocation should be a single sentence. Do NOT label the tones in your output.
+Format: Output ONLY the provocations, one per line, numbered 1-${SEED_COUNT}. No preamble, no explanation, no meta-commentary. Each provocation should be a single sentence. Do NOT label the tones in your output. Do NOT output error messages, apologies, or sign-off statements. If you struggle with the input, generate provocations anyway - use whatever angle you can find.
 
 INPUT TYPE: ${input_type}
 
@@ -178,7 +178,7 @@ ${context_block}${audience_block}"
 
 ${tone_block}
 
-Format: Output ONLY the provocations, one per line, numbered 1-${SEED_COUNT}. No preamble, no explanation, no meta-commentary. Each provocation should be a single sentence.
+Format: Output ONLY the provocations, one per line, numbered 1-${SEED_COUNT}. No preamble, no explanation, no meta-commentary. Each provocation should be a single sentence. Do NOT output error messages, apologies, or sign-off statements. If you struggle with the input, generate provocations anyway - use whatever angle you can find.
 
 INPUT TYPE: ${input_type}
 
@@ -237,6 +237,58 @@ ${context_block}${audience_block}"
   # Safety net: enforce --seeds count if Claude still over-generated
   if [ ${#PROVOCATIONS[@]} -gt ${SEED_COUNT} ]; then
     PROVOCATIONS=("${PROVOCATIONS[@]:0:${SEED_COUNT}}")
+  fi
+
+  # Detect meta-commentary / sign-off / error responses instead of real provocations
+  if [ ${#PROVOCATIONS[@]} -gt 0 ]; then
+    local first="${PROVOCATIONS[0]}"
+    local is_meta="false"
+    case "$first" in
+      *GENERATION_FAILED*|*"No provocations"*|*"sign-off"*|*"upstream step"*|*"Re-run"*)
+        is_meta="true" ;;
+      *"Thank you"*|*"Best of luck"*|*"Good luck"*|*"Hope this"*|*"I apologize"*|*"I cannot"*|*"I'm sorry"*|*"I'm unable"*)
+        is_meta="true" ;;
+    esac
+    if [ "$is_meta" = "true" ]; then
+      echo "  ⚠ Provocation generation returned meta-commentary, retrying..." >&2
+      PROVOCATIONS=()
+    fi
+  fi
+
+  # Retry once with reinforced prompt if we got no usable provocations
+  if [ ${#PROVOCATIONS[@]} -eq 0 ]; then
+    local retry_prompt="CRITICAL: You must output exactly ${SEED_COUNT} numbered provocations. No meta-commentary, no error messages, no apologies, no sign-off statements. Just the provocations, one per line, numbered.
+
+${provoke_prompt}"
+    local retry_tmp
+    retry_tmp=$(mktemp)
+    echo "$retry_prompt" > "$retry_tmp"
+    VERBOSE_CALLER="provoke:retry"
+    if claude_call "$retry_tmp"; then
+      while IFS= read -r line; do
+        local cleaned
+        cleaned=$(echo "$line" | sed 's/^[0-9]*\.\s*//' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+        if [ -z "$cleaned" ]; then
+          continue
+        fi
+        case "$cleaned" in
+          "Sources:"*|"Sources"*|"References:"*|"References"*)
+            continue ;;
+          "- ["*|"* ["*)
+            ZEITGEIST_SOURCES+=("$cleaned") ;;
+          "http://"*|"https://"*)
+            ZEITGEIST_SOURCES+=("$cleaned") ;;
+          "- http://"*|"- https://"*)
+            ZEITGEIST_SOURCES+=("$cleaned") ;;
+          *)
+            PROVOCATIONS+=("$cleaned") ;;
+        esac
+      done <<< "$CLAUDE_RESPONSE"
+      if [ ${#PROVOCATIONS[@]} -gt ${SEED_COUNT} ]; then
+        PROVOCATIONS=("${PROVOCATIONS[@]:0:${SEED_COUNT}}")
+      fi
+    fi
+    rm -f "$retry_tmp"
   fi
 
   stop_spinner "done (${#PROVOCATIONS[@]} provocations, ${#ZEITGEIST_SOURCES[@]} sources captured)"

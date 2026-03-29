@@ -1,4 +1,5 @@
 think-different-output/
 .DS_Store
+.context/
 node_modules/
 __pycache__/
