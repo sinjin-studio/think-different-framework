@@ -1053,6 +1053,9 @@ fi
 
 # ── 3b. Review provocations for distinctness (autonomous mode) ──
 review_provocations
+
+# ── 3c. Prosecute provocations for quality (autonomous mode) ──
+prosecute_provocations
 SEEDS=("${PROVOCATIONS[@]}")
 
 # ── 4. Warn if many seeds ──

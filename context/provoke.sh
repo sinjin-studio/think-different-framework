@@ -398,6 +398,86 @@ for idx, text in reframes.items():
   fi
 }
 
+# ── Provocation quality prosecution ──
+# Prosecutes each provocation for genuine quality (not just distinctness).
+# A provocation that's unusual phrasing of a common question wastes a session.
+prosecute_provocations() {
+  [ "${#PROVOCATIONS[@]}" -eq 0 ] && return
+  [ "${AUTONOMOUS_MODE:-}" != "true" ] && return
+
+  start_spinner "⚖️  Prosecuting provocations for quality"
+
+  local prov_list=""
+  local i=1
+  for prov in "${PROVOCATIONS[@]}"; do
+    prov_list="${prov_list}
+${i}. ${prov}"
+    i=$((i + 1))
+  done
+
+  local prose_prompt="You are prosecuting seed provocations for a creative thinking session. A provocation must force genuine divergent thinking, not just ask an unusual question.
+
+For each provocation, test:
+1. NOVELTY: Is this genuinely provocative, or is it unusual phrasing of a question any strategist would ask?
+2. TENSION: Does it contain a real tension that forces a position, or is it open-ended enough to invite safe answers?
+3. ACTIONABILITY: Could creative lenses actually grip this and produce thinking, or is it too abstract?
+
+PROVOCATIONS:
+${prov_list}
+
+For each, respond: keep (genuinely provocative) or sharpen (rephrase to add real teeth).
+If sharpening, provide a rewritten provocation that forces a specific, uncomfortable position."
+
+  local json_schema='{"type":"object","properties":{"provocations":{"type":"array","items":{"type":"object","properties":{"index":{"type":"integer"},"verdict":{"type":"string","enum":["keep","sharpen"]},"sharpened":{"type":"string"},"reason":{"type":"string"}},"required":["index","verdict","reason"]}}},"required":["provocations"]}'
+
+  local tmpfile
+  tmpfile=$(mktemp)
+  echo "$prose_prompt" > "$tmpfile"
+
+  VERBOSE_CALLER="provoke:prosecute"
+  if claude_call_json "$tmpfile" "$json_schema"; then
+    local prose_json="$CLAUDE_RESPONSE"
+
+    # Process sharpening decisions
+    eval "$(echo "$prose_json" | python3 -c "
+import sys, json, shlex
+
+d = json.load(sys.stdin)
+provs = d.get('provocations', [])
+
+for p in provs:
+    idx = p.get('index', 0)
+    verdict = p.get('verdict', 'keep')
+    if verdict == 'sharpen':
+        sharpened = p.get('sharpened', '')
+        if sharpened:
+            print(f'SHARPEN_{idx}=' + shlex.quote(sharpened))
+" 2>/dev/null || echo "")"
+
+    # Apply sharpened provocations
+    local new_provs=()
+    i=1
+    for prov in "${PROVOCATIONS[@]}"; do
+      local sharpen_var="SHARPEN_${i}"
+      local sharpened="${!sharpen_var:-}"
+      if [ -n "$sharpened" ]; then
+        echo "  ⚡ Provocation ${i} sharpened" >&2
+        new_provs+=("$sharpened")
+      else
+        new_provs+=("$prov")
+      fi
+      i=$((i + 1))
+    done
+
+    if [ "${#new_provs[@]}" -gt 0 ]; then
+      PROVOCATIONS=("${new_provs[@]}")
+    fi
+  fi
+
+  rm -f "$tmpfile"
+  stop_spinner "done"
+}
+
 read_input_material() {
   local input_type="$1"
   local input_value="$2"
