@@ -1050,6 +1050,82 @@ input[type="range"] {
 </div>
 
 <script>
+// ── Placeholder Pools ────────────────────────────────
+const PLACEHOLDERS = {
+  seedTopic: [
+    'How might luxury wellness appeal to Gen Z?',
+    'What if a funeral home became the most life-affirming brand?',
+    'How could a public library compete with TikTok for attention?',
+    'What if loneliness was a market, not a problem?',
+    'How might a tractor brand become a cultural icon again?',
+    'What if sustainability felt like rebellion, not obligation?',
+    'How could a bank make people actually excited about saving?',
+    'What if aging was aspirational instead of something to fix?',
+    'How might a fast food chain earn genuine trust?',
+    'What if a hardware store became the third place for a neighborhood?',
+    'How could an airline make economy class feel like a gift?',
+    'What if boredom was a luxury product?',
+    'What if a dentist\'s office was somewhere people actually wanted to go?',
+    'What if a grocery store became a place people wanted to linger?',
+    'How could a toothpaste brand start a cultural movement?',
+    'What if sleep was the next status symbol?',
+    'How might a shipping company make waiting feel like anticipation?',
+    'What if a parking garage became the most Instagrammed place in a city?',
+    'How could a cleaning brand make domesticity feel radical?',
+    'What if silence was a product you could sell?',
+  ],
+  brandName: [
+    'Nike', 'Patagonia', 'Duolingo', 'IKEA', 'Guinness',
+    'Lego', 'Glossier', 'John Deere', 'Rolls-Royce', 'Muji',
+    'Dr. Bronner\'s', 'Ace Hardware', 'Aesop', 'Mailchimp', 'Yeti',
+    'Arc\'teryx', 'Sonos', 'Liquid Death', 'Figma', 'Diptyque',
+  ],
+  notesText: [
+    'luxury wellness, Gen Z, sustainability',
+    'nostalgia marketing, vinyl revival, analog experiences',
+    'AI anxiety, creative professionals, tool vs threat',
+    'micro-dosing culture, mainstream wellness, taboo to trend',
+    'death positivity, end of life planning, millennial attitudes',
+    'urban farming, food deserts, community resilience',
+    'attention economy, digital detox, reclaiming boredom',
+    'solo dining, loneliness epidemic, third places',
+    'gender-neutral fragrance, identity fluidity, sensory branding',
+    'repair culture, right to fix, anti-disposability',
+    'sleep economy, hustle culture backlash, rest as resistance',
+    'pet humanisation, childless millennials, emotional surrogate',
+    'accessible luxury, dupe culture, democratized taste',
+    'climate grief, eco-anxiety, hope as strategy',
+    'sports betting, dopamine culture, gamification ethics',
+    'elder tech, aging in place, dignity in design',
+    'sound branding, sonic identity, audio-first experiences',
+    'neurodivergent design, ADHD economy, friction as feature',
+    'feral luxury, goblin mode, aspirational imperfection',
+    'friendship recession, adult social skills, platonic intimacy',
+  ],
+  audience: [
+    'Gen Z first-time homebuyers',
+    'Retiring tradespeople who never had a desk job',
+    'Parents who feel guilty about screen time',
+    'Creative directors tired of AI discourse',
+    'Teenagers who think environmentalism is cringe',
+    'Solo female travelers over 60',
+    'Small-town barbers with no online presence',
+    'Gamers who secretly want to go outside',
+    'New fathers with no paternity leave',
+    'Immigrant entrepreneurs in secondary cities',
+    'Teachers moonlighting as content creators',
+    'Widowers learning to cook for one',
+    'Skateboarders entering their 40s',
+    'First-generation college students',
+    'Nurses burned out by the pandemic',
+    'Hobby farmers with day jobs',
+    'Kids who prefer books to screens',
+    'Middle managers in a layoff cycle',
+    'Dog owners who hate dog culture',
+    'Vinyl collectors under 25',
+  ],
+};
+
 // ── Data ──────────────────────────────────────────────
 const LENSES = {
   perceivers: [
@@ -1085,8 +1161,12 @@ const LENSES = {
 };
 
 const PRACTITIONERS = [
-  'Paul Arden', 'Dave Trott', 'Bill Bernbach', 'John Hegarty',
-  'David Abbott', 'George Lois', 'Rory Sutherland', 'Mary Wells Lawrence'
+  'Bill Bernbach', 'George Lois', 'Dave Trott', 'Mary Wells Lawrence',
+  'Rory Sutherland', 'Oliviero Toscani', 'Kenya Hara', 'Zaha Hadid',
+  'Agnès Varda', 'Pina Bausch', 'Ursula K. Le Guin', 'James Baldwin',
+  'Yayoi Kusama', 'El Anatsui', 'Virgil Abloh', 'Muriel Cooper',
+  'Emily Kame Kngwarreye', 'Pualani Kanakaole Kanahele',
+  'Lygia Clark', 'Satyajit Ray'
 ];
 
 const DEFAULTS = {
@@ -1121,8 +1201,28 @@ const DEFAULTS = {
 
 let STATE = JSON.parse(JSON.stringify(DEFAULTS));
 
+// ── Placeholder Rotation ─────────────────────────────
+function rotatePlaceholders() {
+  for (const [fieldId, pool] of Object.entries(PLACEHOLDERS)) {
+    const el = document.getElementById(fieldId);
+    if (!el) continue;
+    const storageKey = 'td-ph-seen-' + fieldId;
+    let seen = [];
+    try { seen = JSON.parse(localStorage.getItem(storageKey)) || []; } catch(e) { seen = []; }
+    // Reset if all have been shown
+    if (seen.length >= pool.length) seen = [];
+    // Pick a random unseen index
+    const unseen = pool.map((_, i) => i).filter(i => !seen.includes(i));
+    const pick = unseen[Math.floor(Math.random() * unseen.length)];
+    el.setAttribute('placeholder', pool[pick]);
+    seen.push(pick);
+    localStorage.setItem(storageKey, JSON.stringify(seen));
+  }
+}
+
 // ── Init ──────────────────────────────────────────────
 function init() {
+  rotatePlaceholders();
   buildPractitionerChips();
   buildLensSelectors();
   loadLastState();

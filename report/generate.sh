@@ -19,7 +19,7 @@ STYLE_RULES='Style rules:
 - If a paragraph could appear in any strategy deck for any client, delete it and try again'
 
 # ── Default practitioner pool ──
-DEFAULT_PRACTITIONERS="Paul Arden,Dave Trott,Bill Bernbach,John Hegarty,David Abbott,George Lois,Rory Sutherland,Mary Wells Lawrence"
+DEFAULT_PRACTITIONERS="Bill Bernbach,George Lois,Dave Trott,Mary Wells Lawrence,Rory Sutherland,Oliviero Toscani,Kenya Hara,Zaha Hadid,Agnès Varda,Pina Bausch,Ursula K. Le Guin,James Baldwin,Yayoi Kusama,El Anatsui,Virgil Abloh,Muriel Cooper,Emily Kame Kngwarreye,Pualani Kanakaole Kanahele,Lygia Clark,Satyajit Ray"
 
 # ── Pick 3 random practitioners from a pool (bash 3.2 compatible) ──
 pick_practitioners() {
