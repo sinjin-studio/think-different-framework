@@ -591,13 +591,14 @@ input[type="range"] {
   }
   .preview-col {
     position: fixed;
+    top: auto;
     bottom: 0;
     left: 0;
     right: 0;
     height: auto;
     padding: 0;
     z-index: 100;
-    flex-direction: column;
+    justify-content: flex-end;
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
   }
   .preview-box {
@@ -634,8 +635,15 @@ input[type="range"] {
     overflow: auto;
     padding: 1rem;
   }
+  .preview-header {
+    padding: 0.5rem 0.8rem;
+  }
+  .copy-btn {
+    padding: 0.45rem;
+    font-size: 0.78rem;
+  }
   .config-box { display: none; }
-  .form-col { padding-bottom: 80px; }
+  .form-col { padding-bottom: 45vh; }
 }
 </style>
 </head>
@@ -1350,7 +1358,11 @@ function bindEvents() {
     });
   });
 
-  // Mobile: toggle command preview expand/collapse
+  // Mobile: default to expanded, toggle on tap
+  if (window.innerWidth <= 900) {
+    document.querySelector('.preview-col').classList.add('expanded');
+    document.querySelector('.expand-label').textContent = 'Hide';
+  }
   document.getElementById('preview-header').addEventListener('click', () => {
     if (window.innerWidth > 900) return;
     const col = document.querySelector('.preview-col');
