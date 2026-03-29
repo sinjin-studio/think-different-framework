@@ -242,11 +242,27 @@ ${context_block}${audience_block}"
   tmpfile=$(mktemp)
   echo "$provoke_prompt" > "$tmpfile"
 
+  local prompt_size
+  prompt_size=$(wc -c < "$tmpfile" | tr -d ' ')
+  echo "  [debug] Prompt size: ${prompt_size} bytes, pool_size: ${pool_size}, seed_count: ${SEED_COUNT}" >&2
+
   local raw_provocations
   VERBOSE_CALLER="provoke"
   if claude_call "$tmpfile"; then
     raw_provocations="$CLAUDE_RESPONSE"
+    local response_size=${#raw_provocations}
+    echo "  [debug] Response size: ${response_size} chars" >&2
+    if [ "$response_size" -lt 10 ]; then
+      echo "  [debug] Response content: ${raw_provocations}" >&2
+    fi
   else
+    echo "  [debug] claude_call failed - exit_code: ${LAST_CLAUDE_EXIT_CODE}, cap_hit: ${CAP_LIMIT_HIT:-false}" >&2
+    if [ -n "${LAST_CLAUDE_ERROR:-}" ]; then
+      echo "  [debug] stderr: ${LAST_CLAUDE_ERROR:0:500}" >&2
+    fi
+    if [ -n "${CLAUDE_RESPONSE:-}" ]; then
+      echo "  [debug] partial response: ${CLAUDE_RESPONSE:0:300}" >&2
+    fi
     rm -f "$tmpfile"
     if [ "$CAP_LIMIT_HIT" = "true" ]; then
       stop_spinner "cap limit"

@@ -70,12 +70,38 @@ is_cap_hit() {
   local response="$2"
   local stderr="$3"
 
-  # Non-zero exit code
+  # Check for cap/rate-limit strings in response or stderr (bash 3.2 compatible)
+  local lower_response lower_stderr
+  lower_response=$(echo "$response" | tr '[:upper:]' '[:lower:]')
+  lower_stderr=$(echo "$stderr" | tr '[:upper:]' '[:lower:]')
+
+  local pattern
+  for pattern in "rate limit" "usage limit" "quota" "capacity" "too many requests" "429" "overloaded" "token limit" "exceeded"; do
+    case "$lower_response" in *"$pattern"*) return 0 ;; esac
+    case "$lower_stderr" in *"$pattern"*) return 0 ;; esac
+  done
+
+  # Non-zero exit code with empty response suggests cap hit
+  # But only if stderr also doesn't indicate a non-cap error
   if [ "$exit_code" -ne 0 ]; then
-    return 0
+    local trimmed
+    trimmed=$(echo "$response" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+    if [ -z "$trimmed" ]; then
+      # Empty response + non-zero exit = likely cap, unless stderr says otherwise
+      local has_non_cap_error="false"
+      for pattern in "invalid" "parse error" "syntax" "unexpected" "permission" "not found" "timeout" "timed out" "connection"; do
+        case "$lower_stderr" in *"$pattern"*) has_non_cap_error="true" ;; esac
+      done
+      if [ "$has_non_cap_error" = "true" ]; then
+        return 1  # Non-cap error - don't treat as cap hit
+      fi
+      return 0  # Empty response + exit code + no clear non-cap signal = assume cap
+    fi
+    # Non-zero exit but we got a response - not a cap hit
+    return 1
   fi
 
-  # Empty or whitespace-only response - only a cap hit if there's also an error signal
+  # Empty or whitespace-only response with zero exit - only cap if stderr has content
   local trimmed
   trimmed=$(echo "$response" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
   if [ -z "$trimmed" ]; then
@@ -86,17 +112,6 @@ is_cap_hit() {
     fi
     return 1  # Empty response but no error signal - not a cap hit
   fi
-
-  # Check for error strings in response or stderr (bash 3.2 compatible)
-  local lower_response lower_stderr
-  lower_response=$(echo "$response" | tr '[:upper:]' '[:lower:]')
-  lower_stderr=$(echo "$stderr" | tr '[:upper:]' '[:lower:]')
-
-  local pattern
-  for pattern in "rate limit" "usage limit" "quota" "capacity" "too many requests" "429" "overloaded" "token limit" "exceeded"; do
-    case "$lower_response" in *"$pattern"*) return 0 ;; esac
-    case "$lower_stderr" in *"$pattern"*) return 0 ;; esac
-  done
 
   return 1
 }
@@ -271,6 +286,23 @@ claude_call() {
         fi
       fi
       verbose_log_entry "claude_call" "$tmpfile" "" "$exit_code" "true"
+      CLAUDE_RESPONSE=""
+      return 1
+    fi
+
+    # Non-cap failure: exit code non-zero but not a cap hit
+    if [ "$exit_code" -ne 0 ]; then
+      LAST_CLAUDE_ERROR="$stderr_content"
+      LAST_CLAUDE_EXIT_CODE="$exit_code"
+      verbose_log_entry "claude_call" "$tmpfile" "$CLAUDE_RESPONSE" "$exit_code" "false"
+      # If we got a response despite the error, treat it as success
+      local trimmed_resp
+      trimmed_resp=$(echo "$CLAUDE_RESPONSE" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+      if [ -n "$trimmed_resp" ]; then
+        CAP_FAIL_COUNT=0
+        return 0
+      fi
+      # No response and non-zero exit = real failure
       CLAUDE_RESPONSE=""
       return 1
     fi
