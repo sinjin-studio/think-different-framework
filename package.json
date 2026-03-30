@@ -1,6 +1,6 @@
 {
   "name": "@sinjin/think-different-framework",
-  "version": "0.5.8",
+  "version": "0.5.9",
   "description": "Multi-lens structured divergence framework for Claude Code CLI. Multiple cognitive lenses think together, then distil their collisions into insight.",
   "scripts": {
     "harness": "node bin/harness.js"

@@ -1,3 +1,4 @@
+```
 💞🪷  ⏳💀  👁️🔍  🧿🪞  💣🌶️  🗣️🔥  🧒❓  ⚔️❤️‍🔥  🏺⚖️  🪑👤  🔮🧬  🧐🕸️  🧭🌀  🔍🫧  💎👁️‍🗨️ 
 
 ┌───────────────────────────┐     ┌──────────────────┐          ┌──────────────────────────┐
@@ -19,7 +20,8 @@
 
                 T H I N K   D I F F E R E N T   F R A M E W O R K
             21 lenses  ·  3 modes  ·  structured divergence via Claude
-
+            
+```
 Here's to the crazy ones. The misfits. The rebels. The troublemakers. The round pegs in square holes.
 
 Multi-lens structured divergence via Claude Code CLI. Multiple cognitive lenses think together, then distil their collisions into a publishable presentation. You plant a seed. They see differently. You harvest the insight.
