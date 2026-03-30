@@ -76,7 +76,7 @@ is_cap_hit() {
   lower_stderr=$(echo "$stderr" | tr '[:upper:]' '[:lower:]')
 
   local pattern
-  for pattern in "rate limit" "usage limit" "quota" "capacity" "too many requests" "429" "overloaded" "token limit" "exceeded"; do
+  for pattern in "rate limit" "usage limit" "extra usage" "quota" "capacity" "too many requests" "429" "overloaded" "token limit" "exceeded"; do
     case "$lower_response" in *"$pattern"*) return 0 ;; esac
     case "$lower_stderr" in *"$pattern"*) return 0 ;; esac
   done
