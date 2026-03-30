@@ -635,7 +635,8 @@ select_provocations() {
   [ "${#PROVOCATIONS[@]}" -le ${SEED_COUNT} ] && return
   [ "${AUTONOMOUS_MODE:-}" != "true" ] && return
 
-  start_spinner "🎯 Selecting top ${SEED_COUNT} from ${#PROVOCATIONS[@]} provocations"
+  local total=${#PROVOCATIONS[@]}
+  start_spinner "🎯 Selecting top ${SEED_COUNT} from ${total} provocations"
 
   local prov_list=""
   local i=1
@@ -647,7 +648,7 @@ ${i}. ${prov}"
 
   local select_prompt="You are selecting the strongest seed provocations for a creative thinking session. Each selected provocation will drive a separate full thinking session.
 
-From this pool, select the TOP ${SEED_COUNT} provocations. Rank by:
+From this pool, select EXACTLY ${SEED_COUNT} provocations. No more, no less. Rank by:
 1. TENSION: Which provocations contain the sharpest, most uncomfortable tension?
 2. TERRITORY: Which open the most distinct, non-overlapping territory?
 3. GRIP: Which give creative lenses the most to work with?
@@ -655,45 +656,90 @@ From this pool, select the TOP ${SEED_COUNT} provocations. Rank by:
 POOL:
 ${prov_list}
 
-Return the indices of the ${SEED_COUNT} strongest provocations, ranked best-first."
+Return EXACTLY ${SEED_COUNT} indices, ranked best-first. You MUST select exactly ${SEED_COUNT}."
 
-  local json_schema='{"type":"object","properties":{"selected":{"type":"array","items":{"type":"integer"},"description":"Indices of selected provocations, ranked best-first"},"reasoning":{"type":"string","description":"Brief reasoning for selection"}},"required":["selected","reasoning"]}'
+  local json_schema='{"type":"object","properties":{"selected":{"type":"array","items":{"type":"integer"},"description":"Indices of selected provocations, ranked best-first","minItems":'"${SEED_COUNT}"',"maxItems":'"${SEED_COUNT}"'},"reasoning":{"type":"string","description":"Brief reasoning for selection"}},"required":["selected","reasoning"]}'
+
+  # Helper: parse selected indices from JSON, enforce SEED_COUNT limit (ranked best-first)
+  _parse_selection() {
+    local json="$1"
+    echo "$json" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+selected = d.get('selected', [])
+limit = int(sys.argv[1])
+# Take only first 'limit' entries (they're ranked best-first)
+selected = selected[:limit]
+print(','.join(str(i) for i in selected))
+" "$SEED_COUNT" 2>/dev/null || echo ""
+  }
+
+  # Helper: apply selection indices to PROVOCATIONS
+  _apply_selection() {
+    local selected_indices="$1"
+    if [ -z "$selected_indices" ]; then
+      return 1
+    fi
+    local new_selected=()
+    local new_runners=()
+    local j=1
+    for prov in "${PROVOCATIONS[@]}"; do
+      if [[ ",$selected_indices," == *",$j,"* ]]; then
+        new_selected+=("$prov")
+      else
+        new_runners+=("$prov")
+      fi
+      j=$((j + 1))
+    done
+    if [ "${#new_selected[@]}" -gt 0 ] && [ "${#new_selected[@]}" -le "${SEED_COUNT}" ]; then
+      PROVOCATIONS=("${new_selected[@]}")
+      RUNNER_UP_PROVOCATIONS=("${new_runners[@]+"${new_runners[@]}"}")
+      return 0
+    fi
+    return 1
+  }
 
   local tmpfile
   tmpfile=$(mktemp)
   echo "$select_prompt" > "$tmpfile"
 
+  local selection_done="false"
+
+  # Attempt 1: full selection call
   VERBOSE_CALLER="provoke:select"
   if claude_call_json "$tmpfile" "$json_schema"; then
-    local select_json="$CLAUDE_RESPONSE"
+    local selected_indices
+    selected_indices=$(_parse_selection "$CLAUDE_RESPONSE")
+    if _apply_selection "$selected_indices"; then
+      selection_done="true"
+    fi
+  fi
 
-    # Parse selected indices
-    local selected_indices=""
-    selected_indices=$(echo "$select_json" | python3 -c "
-import sys, json
-d = json.load(sys.stdin)
-selected = d.get('selected', [])
-print(','.join(str(i) for i in selected))
-" 2>/dev/null || echo "")
-
-    if [ -n "$selected_indices" ]; then
-      local new_selected=()
-      local new_runners=()
-      i=1
-      for prov in "${PROVOCATIONS[@]}"; do
-        if [[ ",$selected_indices," == *",$i,"* ]]; then
-          new_selected+=("$prov")
-        else
-          new_runners+=("$prov")
-        fi
-        i=$((i + 1))
-      done
-
-      if [ "${#new_selected[@]}" -gt 0 ]; then
-        PROVOCATIONS=("${new_selected[@]}")
-        RUNNER_UP_PROVOCATIONS=("${new_runners[@]+"${new_runners[@]}"}")
+  # Attempt 2: retry with simpler prompt
+  if [ "$selection_done" = "false" ]; then
+    echo "  ⚠ Selection failed, retrying..." >&2
+    local retry_prompt="Pick the ${SEED_COUNT} strongest provocations from this numbered list. Return ONLY their index numbers, ranked best-first.
+${prov_list}"
+    local retry_tmp
+    retry_tmp=$(mktemp)
+    echo "$retry_prompt" > "$retry_tmp"
+    VERBOSE_CALLER="provoke:select:retry"
+    if claude_call_json "$retry_tmp" "$json_schema"; then
+      local selected_indices
+      selected_indices=$(_parse_selection "$CLAUDE_RESPONSE")
+      if _apply_selection "$selected_indices"; then
+        selection_done="true"
       fi
     fi
+    rm -f "$retry_tmp"
+  fi
+
+  # Safety net: if selection still failed, enforce SEED_COUNT
+  if [ "$selection_done" = "false" ] && [ "${#PROVOCATIONS[@]}" -gt "${SEED_COUNT}" ]; then
+    echo "  ⚠ Selection could not complete, taking first ${SEED_COUNT}" >&2
+    local overflow=("${PROVOCATIONS[@]:${SEED_COUNT}}")
+    PROVOCATIONS=("${PROVOCATIONS[@]:0:${SEED_COUNT}}")
+    RUNNER_UP_PROVOCATIONS=("${overflow[@]}")
   fi
 
   rm -f "$tmpfile"
