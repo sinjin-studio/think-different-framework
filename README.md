@@ -16,8 +16,6 @@
            │▒▒▒▒▒▒▒│               └──────────────────┘ ┘         │░░░░░░░░
 
  
-
-
                 T H I N K   D I F F E R E N T   F R A M E W O R K
             21 lenses  ·  3 modes  ·  structured divergence via Claude
 
