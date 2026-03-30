@@ -925,9 +925,10 @@ input[type="range"] {
         <div class="practitioner-add-row">
           <input type="text" id="practitioner-input" placeholder="Add a practitioner...">
           <button class="btn" id="practitioner-add">Add</button>
+          <button class="btn" id="practitioner-shuffle">Shuffle</button>
           <button class="btn" id="practitioner-reset">Reset</button>
         </div>
-        <div class="help">All active = default (no flag set). Toggle off or add custom names.</div>
+        <div class="help">3 random from pool each run. Shuffle to re-roll, toggle to curate, or add custom names.</div>
       </div>
 
       <div class="field">
@@ -1170,6 +1171,17 @@ const PRACTITIONERS = [
   'Lygia Clark', 'Satyajit Ray'
 ];
 
+function pickRandom(arr, n) {
+  const copy = [...arr];
+  const result = [];
+  for (let i = 0; i < Math.min(n, copy.length); i++) {
+    const j = i + Math.floor(Math.random() * (copy.length - i));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+    result.push(copy[i]);
+  }
+  return result;
+}
+
 const DEFAULTS = {
   workflow: 'session',
   seedTopic: '', briefFile: '', brandName: '', notesText: '',
@@ -1185,7 +1197,7 @@ const DEFAULTS = {
   audience: '',
   type: ['insight', 'brief', 'manifesto'],
   lines: 3,
-  practitioners: [...PRACTITIONERS],
+  practitioners: pickRandom(PRACTITIONERS, 3),
   html: false,
   formats: ['all'],
   depth: 'deep', depthCustom: '',
@@ -1434,9 +1446,16 @@ function bindEvents() {
     if (e.key === 'Enter') addPractitioner();
   });
 
-  // Reset practitioners to defaults
+  // Shuffle practitioners - pick 3 new random
+  document.getElementById('practitioner-shuffle').addEventListener('click', () => {
+    STATE.practitioners = pickRandom(PRACTITIONERS, 3);
+    buildPractitionerChips();
+    render();
+  });
+
+  // Reset practitioners to a fresh random 3
   document.getElementById('practitioner-reset').addEventListener('click', () => {
-    STATE.practitioners = [...PRACTITIONERS];
+    STATE.practitioners = pickRandom(PRACTITIONERS, 3);
     buildPractitionerChips();
     render();
   });
