@@ -21,7 +21,7 @@
 
 🔭🔬  🪢🌉  💎👁️‍🗨️  🔍🫧  🧭🌀  🧐🕸️  🔮🧬  🧩🧮  ⚖️🎚️  📜🏛️  ✂️🪶  🏺⚖️  🪑👤  ⚔️❤️‍🔥  🧒❓
 ```
-Here's to the crazy ones. The misfits. The rebels. The troublemakers. The round pegs in square holes.
+_**Here's to the crazy ones. The misfits. The rebels. The troublemakers. The round pegs in square holes.**_
 
 Multi-lens structured divergence via Claude Code CLI. Multiple cognitive lenses think together, then distil their collisions into a publishable presentation. You plant a seed. They see differently. You harvest the insight.
 
