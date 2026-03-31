@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Think Different Framework - Taxonomy Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600;7..72,700&display=swap" rel="stylesheet">
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #181818;
+  --bg-surface: #222;
+  --bg-elevated: #2a2a2a;
+  --border: #333;
+  --text: #e0e0e0;
+  --text-muted: #777;
+  --text-dim: #555;
+  --green: #169B62;
+  --green-dim: #0d6b42;
+  --orange: #FF8200;
+  --gold: #C8A54E;
+  --font: 'Literata', Georgia, serif;
+  --radius: 6px;
+}
+html { font-size: 16px; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  line-height: 1.5;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+header {
+  padding: 1.5rem 1.5rem 0;
+  text-align: center;
+  max-width: 960px;
+  width: 100%;
+}
+header h1 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--green);
+  margin-bottom: 0.25rem;
+}
+header p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+.mode-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+.mode-btn {
+  font-family: var(--font);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.5rem 1.2rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-bottom: 3px solid transparent;
+}
+.mode-btn:hover {
+  color: var(--text);
+  border-color: var(--text-dim);
+}
+.mode-btn.active {
+  color: var(--text);
+  border-bottom-width: 3px;
+}
+.mode-btn[data-mode="dyslexic"].active {
+  border-bottom-color: var(--orange);
+  color: var(--orange);
+}
+.mode-btn[data-mode="spiral"].active {
+  border-bottom-color: var(--green);
+  color: var(--green);
+}
+.mode-btn[data-mode="lapidary"].active {
+  border-bottom-color: var(--gold);
+  color: var(--gold);
+}
+#chart-container {
+  width: 100%;
+  max-width: 960px;
+  aspect-ratio: 1;
+  position: relative;
+}
+#chart-container svg {
+  width: 100%;
+  height: 100%;
+}
+.tooltip {
+  position: fixed;
+  pointer-events: none;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.8rem;
+  font-family: var(--font);
+  font-size: 0.78rem;
+  color: var(--text);
+  line-height: 1.5;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 100;
+  max-width: 280px;
+}
+.tooltip .tt-name {
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin-bottom: 0.15rem;
+}
+.tooltip .tt-bias {
+  color: var(--text-muted);
+  font-style: italic;
+}
+.tooltip .tt-type {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.3rem;
+}
+.tooltip .tt-modes {
+  margin-top: 0.3rem;
+  font-size: 0.75rem;
+}
+.tooltip .tt-modes span {
+  display: inline-block;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  margin-right: 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+#info-panel {
+  max-width: 960px;
+  width: 100%;
+  padding: 0 1.5rem 2rem;
+  text-align: center;
+  min-height: 4rem;
+}
+#info-panel .mode-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+#info-panel .mode-desc {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+#info-panel .mode-lenses {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  margin-top: 0.35rem;
+}
+.legend {
+  display: flex;
+  gap: 1.2rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  padding: 0 1.5rem 0.5rem;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid var(--text-dim);
+  display: inline-block;
+}
+.legend-swatch.diamond {
+  border-radius: 0;
+  transform: rotate(45deg);
+  width: 8px;
+  height: 8px;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Think Different Framework</h1>
+  <p>Radial taxonomy - select a composition mode to see which lenses activate</p>
+  <div class="mode-buttons">
+    <button class="mode-btn" data-mode="dyslexic">Dyslexic</button>
+    <button class="mode-btn" data-mode="spiral">Spiral</button>
+    <button class="mode-btn" data-mode="lapidary">Lapidary</button>
+  </div>
+</header>
+
+<div class="legend">
+  <span class="legend-item"><span class="legend-swatch" style="background:#169B62"></span> Perceiver</span>
+  <span class="legend-item"><span class="legend-swatch" style="background:#5BA3CF"></span> Cognition</span>
+  <span class="legend-item"><span class="legend-swatch" style="background:#B07DD6"></span> Hybrid</span>
+  <span class="legend-item"><span class="legend-swatch diamond" style="background:#8A8A6A"></span> Mechanism</span>
+  <span class="legend-item"><span class="legend-swatch" style="background:#D4A84E; width:12px; height:12px"></span> Conductor (center)</span>
+</div>
+
+<div id="chart-container"></div>
+
+<div id="info-panel">
+  <div class="mode-desc">Click a mode above to highlight its active lenses</div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+// --- DATA ---
+const data = {
+  name: "Conductor", emoji: "\u{1F3BC}", type: "root", key: "orchestrator",
+  bias: "Autonomous session orchestration",
+  children: [
+    {
+      name: "Perceivers", subtitle: "How you see", type: "category", nodeColor: "#169B62",
+      children: [
+        { name: "Empath", key: "empath", emoji: "\u{1F49E}\u{1FAB7}", bias: "Desire, Anxiety & Simplicity", type: "perceiver" },
+        { name: "Provocateur", key: "provocateur", emoji: "\u{1F4A3}\u{1F336}\uFE0F", bias: "Compression & Confrontation", type: "perceiver" },
+        { name: "Observer", key: "observer", emoji: "\u{1F441}\uFE0F\u{1F50D}", bias: "Literal & Precise", type: "perceiver" },
+        { name: "Skeptic", key: "skeptic", emoji: "\u{1F9FF}\u{1FA9E}", bias: "Incongruence Detection", type: "perceiver" },
+        { name: "Mortal", key: "mortal", emoji: "\u23F3\u{1F480}", bias: "Finitude, Impermanence & Urgency", type: "perceiver" },
+        { name: "Child", key: "child", emoji: "\u{1F9D2}\u2753", bias: "Radical Naivety", type: "perceiver" },
+        { name: "Includer", key: "includer", emoji: "\u{1FA91}\u{1F464}", bias: "Absence Perception", type: "perceiver" },
+        { name: "Connoisseur", key: "connoisseur", emoji: "\u{1F3FA}\u2696\uFE0F", bias: "Quality, Proportion & Resonance", type: "perceiver" },
+        { name: "Achala", key: "achala", emoji: "\u2694\uFE0F\u2764\uFE0F\u200D\u{1F525}", bias: "Resolve, Interconnection & the Sacred", type: "perceiver" },
+        { name: "Mouth", key: "mouth", emoji: "\u{1F5E3}\uFE0F\u{1F525}", bias: "Register, Rhythm & the Right Word", type: "perceiver" }
+      ]
+    },
+    {
+      name: "Cognitions", subtitle: "What you do with what you see", type: "category", nodeColor: "#5BA3CF",
+      children: [
+        {
+          name: "Fragmentary", type: "subgroup",
+          children: [
+            { name: "Decomposer", key: "decomposer", emoji: "\u{1F50D}\u{1FAE7}", bias: "Pieces & Partial Patterns", type: "cognition" },
+            { name: "Associator", key: "associator", emoji: "\u{1FAA2}\u{1F309}", bias: "Adjacent & Absurd Links", type: "cognition" },
+            { name: "Scaler", key: "scaler", emoji: "\u{1F52D}\u{1F52C}", bias: "Scale Shifts", type: "cognition" },
+            { name: "Reifier", key: "reifier", emoji: "\u{1F48E}\u{1F441}\uFE0F\u200D\u{1F5E8}\uFE0F", bias: "Shape & Constellation", type: "cognition" }
+          ]
+        },
+        {
+          name: "Deepening", type: "subgroup",
+          children: [
+            { name: "Diverger", key: "diverger", emoji: "\u{1F9ED}\u{1F300}", bias: "Novelty & Divergence", type: "cognition" },
+            { name: "Analogiser", key: "analogiser", emoji: "\u{1F52E}\u{1F9EC}", bias: "Rhyme & Resonance", type: "cognition" },
+            { name: "Integrator", key: "integrator", emoji: "\u{1F9D0}\u{1F578}\uFE0F", bias: "Integration & Naming", type: "cognition" }
+          ]
+        },
+        {
+          name: "Evaluative", type: "subgroup",
+          children: [
+            { name: "Appraiser", key: "appraiser", emoji: "\u2696\uFE0F\u{1F39A}\uFE0F", bias: "Weight & Proportion", type: "cognition" },
+            { name: "Historian", key: "historian", emoji: "\u{1F4DC}\u{1F3DB}\uFE0F", bias: "Lineage & Precedent", type: "cognition" },
+            { name: "Editor", key: "editor", emoji: "\u2702\uFE0F\u{1FAB6}", bias: "Economy & Precision", type: "cognition" }
+          ]
+        }
+      ]
+    },
+    {
+      name: "Hybrids", type: "category", nodeColor: "#B07DD6",
+      children: [
+        { name: "Logician", key: "logician", emoji: "\u{1F9E9}\u{1F9EE}", bias: "Structure, Causation & First Principles", type: "hybrid" }
+      ]
+    },
+    {
+      name: "Mechanisms", subtitle: "Metacognitive operations", type: "category", nodeColor: "#8A8A6A",
+      children: [
+        { name: "Friction", key: "friction", emoji: "\u26A1", bias: "Prediction error detection", type: "mechanism" },
+        { name: "Sensory", key: "sensory", emoji: "\u{1F30A}", bias: "Ground truth injection", type: "mechanism" },
+        { name: "Bias", key: "bias_mech", emoji: "\u{1FA9E}", bias: "Cognitive bias as fuel", type: "mechanism" },
+        { name: "Transcendence", key: "transcendence", emoji: "\u2728", bias: "Breakthrough detection", type: "mechanism" },
+        { name: "Negative Space", key: "negative_space", emoji: "\u{1F573}\uFE0F", bias: "Mapping the unexplored", type: "mechanism" }
+      ]
+    }
+  ]
+};
+
+// --- MODE DEFINITIONS ---
+const MODES = {
+  dyslexic: {
+    color: "#FF8200",
+    label: "Dyslexic",
+    character: "Fragment and collide - leaping, collision-driven thinking",
+    cognitionGroup: "Fragmentary",
+    lenses: new Set([
+      "empath", "provocateur", "observer", "mortal", "child",
+      "includer", "achala", "mouth", "logician",
+      "decomposer", "associator", "scaler", "reifier",
+      "friction", "sensory", "bias_mech", "transcendence", "negative_space", "orchestrator"
+    ]),
+    excluded: new Set(["skeptic"])
+  },
+  spiral: {
+    color: "#169B62",
+    label: "Spiral",
+    character: "Widen and crystallise - 5 widening-then-crystallizing spirals",
+    cognitionGroup: "Deepening",
+    lenses: new Set([
+      "empath", "provocateur", "observer", "skeptic",
+      "includer", "achala", "mortal", "mouth",
+      "diverger", "analogiser", "integrator",
+      "friction", "sensory", "bias_mech", "transcendence", "negative_space", "orchestrator"
+    ]),
+    excluded: new Set([])
+  },
+  lapidary: {
+    color: "#C8A54E",
+    label: "Lapidary",
+    character: "Iterative refinement - successive passes, each more precise",
+    cognitionGroup: "Evaluative",
+    lenses: new Set([
+      "empath", "connoisseur", "provocateur", "observer",
+      "skeptic", "achala", "mortal", "mouth", "logician",
+      "appraiser", "historian", "editor",
+      "friction", "sensory", "bias_mech", "transcendence", "negative_space", "orchestrator"
+    ]),
+    excluded: new Set(["child"])
+  }
+};
+
+// Which modes include each lens key
+function modesForKey(key) {
+  const result = [];
+  for (const [mode, def] of Object.entries(MODES)) {
+    if (def.lenses.has(key)) result.push({ mode, label: def.label, color: def.color });
+    else if (def.excluded.has(key)) result.push({ mode, label: def.label + " (excluded)", color: def.color });
+  }
+  return result;
+}
+
+// --- CHART ---
+const width = 960, height = 960;
+const cx = width / 2, cy = height / 2;
+const radius = 340;
+
+const root = d3.hierarchy(data);
+const tree = d3.cluster()
+  .size([2 * Math.PI, radius])
+  .separation((a, b) => (a.parent === b.parent ? 1 : 2) / a.depth);
+
+tree(root);
+
+const svg = d3.select("#chart-container")
+  .append("svg")
+  .attr("viewBox", `0 0 ${width} ${height}`)
+  .attr("preserveAspectRatio", "xMidYMid meet");
+
+const g = svg.append("g")
+  .attr("transform", `translate(${cx},${cy})`);
+
+// --- LINKS ---
+const linkGen = d3.linkRadial()
+  .angle(d => d.x)
+  .radius(d => d.y);
+
+const links = g.selectAll(".link")
+  .data(root.links())
+  .join("path")
+  .attr("class", "link")
+  .attr("d", linkGen)
+  .attr("fill", "none")
+  .attr("stroke", "#333")
+  .attr("stroke-opacity", 0.4)
+  .attr("stroke-width", 1.2);
+
+// --- NODES ---
+const nodeGroups = g.selectAll(".node")
+  .data(root.descendants())
+  .join("g")
+  .attr("class", "node")
+  .attr("transform", d => `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0)`);
+
+// Node color based on category ancestry
+function getNodeColor(d) {
+  if (d.data.type === "root") return "#D4A84E";
+  // Walk up to find category with nodeColor
+  let node = d;
+  while (node) {
+    if (node.data.nodeColor) return node.data.nodeColor;
+    node = node.parent;
+  }
+  return "#169B62";
+}
+
+function nodeRadius(d) {
+  if (d.data.type === "root") return 18;
+  if (d.data.type === "category") return 10;
+  if (d.data.type === "subgroup") return 8;
+  if (d.data.type === "conductor") return 11;
+  return 7;
+}
+
+// Draw shapes
+nodeGroups.each(function(d) {
+  const el = d3.select(this);
+  const r = nodeRadius(d);
+  const color = getNodeColor(d);
+
+  if (d.data.type === "mechanism") {
+    // Diamond shape
+    const s = r;
+    el.append("rect")
+      .attr("class", "node-shape")
+      .attr("x", -s)
+      .attr("y", -s)
+      .attr("width", s * 2)
+      .attr("height", s * 2)
+      .attr("transform", "rotate(45)")
+      .attr("fill", color)
+      .attr("fill-opacity", 0.2)
+      .attr("stroke", color)
+      .attr("stroke-width", 1.5);
+  } else if (d.data.type === "conductor") {
+    // Hexagon
+    const hex = d3.range(6).map(i => {
+      const angle = (Math.PI / 3) * i - Math.PI / 6;
+      return [r * Math.cos(angle), r * Math.sin(angle)];
+    });
+    el.append("polygon")
+      .attr("class", "node-shape")
+      .attr("points", hex.map(p => p.join(",")).join(" "))
+      .attr("fill", color)
+      .attr("fill-opacity", 0.25)
+      .attr("stroke", color)
+      .attr("stroke-width", 1.5);
+  } else if (d.data.type === "root") {
+    // Hexagon for conductor at center
+    const hex = d3.range(6).map(i => {
+      const angle = (Math.PI / 3) * i - Math.PI / 6;
+      return [r * Math.cos(angle), r * Math.sin(angle)];
+    });
+    el.append("polygon")
+      .attr("class", "node-shape")
+      .attr("points", hex.map(p => p.join(",")).join(" "))
+      .attr("fill", color)
+      .attr("fill-opacity", 0.3)
+      .attr("stroke", color)
+      .attr("stroke-width", 2);
+  } else {
+    el.append("circle")
+      .attr("class", "node-shape")
+      .attr("r", r)
+      .attr("fill", color)
+      .attr("fill-opacity", 0.2)
+      .attr("stroke", color)
+      .attr("stroke-width", 1.5);
+  }
+});
+
+// Emoji label for conductor at center
+nodeGroups.filter(d => d.data.type === "root")
+  .append("text")
+  .attr("class", "node-emoji")
+  .attr("dy", "0.35em")
+  .attr("text-anchor", "middle")
+  .attr("font-size", "16px")
+  .text(d => d.data.emoji);
+
+// Emoji labels for leaf nodes
+nodeGroups.filter(d => d.data.emoji && !d.children)
+  .append("text")
+  .attr("class", "node-emoji")
+  .attr("dy", "0.35em")
+  .attr("text-anchor", "middle")
+  .attr("font-size", "11px")
+  .attr("transform", d => `rotate(${-(d.x * 180 / Math.PI - 90)})`)
+  .text(d => d.data.emoji.slice(0, 2));
+
+// Text labels
+nodeGroups.append("text")
+  .attr("class", "node-label")
+  .attr("dy", "0.35em")
+  .attr("font-family", "'Literata', Georgia, serif")
+  .attr("font-size", d => {
+    if (d.data.type === "root") return "13px";
+    if (d.data.type === "category") return "11px";
+    if (d.data.type === "subgroup") return "10px";
+    return "10px";
+  })
+  .attr("font-weight", d => (d.data.type === "root" || d.data.type === "category") ? 700 : 400)
+  .attr("fill", d => d.data.type === "root" ? "#D4A84E" : "#ccc")
+  .attr("transform", d => {
+    if (d.depth === 0) return `rotate(${-(d.x * 180 / Math.PI - 90)})`;
+    const angle = d.x * 180 / Math.PI;
+    const flip = angle > 0 && angle < 180;
+    return `rotate(${flip ? 0 : 180})`;
+  })
+  .attr("x", d => {
+    if (d.depth === 0) return 0;
+    const r = nodeRadius(d) + 6;
+    const angle = d.x * 180 / Math.PI;
+    return (angle > 0 && angle < 180) ? r : -r;
+  })
+  .attr("text-anchor", d => {
+    if (d.depth === 0) return "middle";
+    const angle = d.x * 180 / Math.PI;
+    return (angle > 0 && angle < 180) ? "start" : "end";
+  })
+  .text(d => d.data.name);
+
+// --- TOOLTIP ---
+const tooltip = d3.select("#tooltip");
+
+nodeGroups.filter(d => d.data.key)
+  .on("mouseenter", function(event, d) {
+    const modes = modesForKey(d.data.key);
+    const modesHtml = modes.length > 0
+      ? modes.map(m => `<span style="background:${m.color}22; color:${m.color}; border:1px solid ${m.color}44">${m.label}</span>`).join(" ")
+      : '<span style="color:#555">None</span>';
+
+    tooltip.html(`
+      <div class="tt-name">${d.data.emoji} ${d.data.name}</div>
+      <div class="tt-bias">${d.data.bias}</div>
+      <div class="tt-type">${d.data.type}</div>
+      <div class="tt-modes">${modesHtml}</div>
+    `);
+    tooltip.style("opacity", 1);
+  })
+  .on("mousemove", function(event) {
+    const x = event.clientX + 15;
+    const y = event.clientY - 10;
+    tooltip.style("left", x + "px").style("top", y + "px");
+  })
+  .on("mouseleave", function() {
+    tooltip.style("opacity", 0);
+  });
+
+// --- MODE SWITCHING ---
+let activeMode = null;
+
+function isNodeActive(d, mode) {
+  if (!mode) return true;
+  const def = MODES[mode];
+  // Leaf with key
+  if (d.data.key) return def.lenses.has(d.data.key);
+  // Branch: active if any descendant is active
+  if (d.children) return d.descendants().some(c => c.data.key && def.lenses.has(c.data.key));
+  return true;
+}
+
+function isNodeExcluded(d, mode) {
+  if (!mode || !d.data.key) return false;
+  return MODES[mode].excluded.has(d.data.key);
+}
+
+function isLinkActive(d, mode) {
+  if (!mode) return true;
+  return isNodeActive(d.source, mode) && isNodeActive(d.target, mode);
+}
+
+function setMode(mode) {
+  if (activeMode === mode) {
+    activeMode = null;
+  } else {
+    activeMode = mode;
+  }
+
+  // Update buttons
+  document.querySelectorAll(".mode-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.mode === activeMode);
+  });
+
+  const modeColor = activeMode ? MODES[activeMode].color : null;
+  const dur = 500;
+
+  // Transition nodes
+  nodeGroups.transition().duration(dur)
+    .attr("opacity", d => {
+      if (!activeMode) return 1;
+      if (isNodeActive(d, activeMode)) return 1;
+      if (isNodeExcluded(d, activeMode)) return 0.5;
+      return 0.12;
+    });
+
+  // Transition shapes
+  nodeGroups.selectAll(".node-shape").transition().duration(dur)
+    .attr("stroke", d => {
+      if (!activeMode) return getNodeColor(d);
+      if (isNodeExcluded(d, activeMode)) return modeColor;
+      if (isNodeActive(d, activeMode)) return modeColor;
+      return "#333";
+    })
+    .attr("stroke-dasharray", d => {
+      if (activeMode && isNodeExcluded(d, activeMode)) return "4 3";
+      return "none";
+    })
+    .attr("fill", d => {
+      if (!activeMode) return getNodeColor(d);
+      if (isNodeActive(d, activeMode)) return modeColor;
+      return "#333";
+    })
+    .attr("fill-opacity", d => {
+      if (!activeMode) return d.data.type === "root" ? 0.3 : 0.2;
+      if (isNodeActive(d, activeMode)) return 0.35;
+      return 0.05;
+    });
+
+  // Transition labels
+  nodeGroups.selectAll(".node-label").transition().duration(dur)
+    .attr("fill", d => {
+      if (!activeMode) return d.data.type === "root" ? "#D4A84E" : "#ccc";
+      if (isNodeActive(d, activeMode)) return modeColor;
+      return "#444";
+    });
+
+  // Transition links
+  links.transition().duration(dur)
+    .attr("stroke", d => {
+      if (!activeMode) return "#333";
+      if (isLinkActive(d, activeMode)) return modeColor;
+      return "#222";
+    })
+    .attr("stroke-opacity", d => {
+      if (!activeMode) return 0.4;
+      if (isLinkActive(d, activeMode)) return 0.7;
+      return 0.06;
+    })
+    .attr("stroke-width", d => {
+      if (!activeMode) return 1.2;
+      if (isLinkActive(d, activeMode)) return 2.2;
+      return 0.8;
+    });
+
+  // Update info panel
+  const panel = document.getElementById("info-panel");
+  if (!activeMode) {
+    panel.innerHTML = '<div class="mode-desc">Click a mode above to highlight its active lenses</div>';
+  } else {
+    const def = MODES[activeMode];
+    const lensCount = [...def.lenses].filter(k => !["friction","sensory","bias_mech","transcendence","negative_space","orchestrator"].includes(k)).length;
+    const excludedList = [...def.excluded];
+    const excludedNote = excludedList.length > 0
+      ? `<br><span style="color:${def.color}; opacity:0.7">Excluded: ${excludedList.join(", ")} (dashed outline)</span>`
+      : "";
+    panel.innerHTML = `
+      <div class="mode-title" style="color:${def.color}">${def.label} Mode</div>
+      <div class="mode-desc">${def.character}</div>
+      <div class="mode-lenses">Cognition group: ${def.cognitionGroup} - ${lensCount} active lenses${excludedNote}</div>
+    `;
+  }
+}
+
+// Button handlers
+document.querySelectorAll(".mode-btn").forEach(btn => {
+  btn.addEventListener("click", () => setMode(btn.dataset.mode));
+});
+</script>
+</body>
+</html>

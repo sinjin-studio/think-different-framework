@@ -767,6 +767,8 @@ SVG rules:
 - Font-size inside circles: r=55 max 11, r=65 max 13, r=80 max 16. Never exceed radius x 0.2
 - Two text lines max per circle: primary label (larger, light) and optional subtitle (smaller, dimmer)
 - Layout consistency: all circles at the same hierarchy level must share the same radius. Size the largest label first, then apply that radius to its siblings
+- Connection lines: lines must connect circle edges, not centers. For a horizontal row: x1 = left_cx + left_r + 10, x2 = right_cx - right_r - 10 (the 10px gap gives breathing room). Lines must never pass through any circle
+- Connection labels: position each label at the midpoint of its line segment (midpoint of x1,x2). Use dy="-8" so text sits above the dashed stroke. If the midpoint falls within any circle's x-range (cx +/- r), shift the label outward until clear
 
 ${length_guidance}
 INSIGHTSYS
@@ -885,6 +887,8 @@ SVG rules:
 - Font-size inside circles: r=55 max 11, r=65 max 13, r=80 max 16. Never exceed radius x 0.2
 - Two text lines max per circle: primary label (larger, light) and optional subtitle (smaller, dimmer)
 - Layout consistency: all circles at the same hierarchy level must share the same radius. Size the largest label first, then apply that radius to its siblings
+- Connection lines: lines must connect circle edges, not centers. For a horizontal row: x1 = left_cx + left_r + 10, x2 = right_cx - right_r - 10 (the 10px gap gives breathing room). Lines must never pass through any circle
+- Connection labels: position each label at the midpoint of its line segment (midpoint of x1,x2). Use dy="-8" so text sits above the dashed stroke. If the midpoint falls within any circle's x-range (cx +/- r), shift the label outward until clear
 
 ${length_guidance}
 BRIEFSYS
