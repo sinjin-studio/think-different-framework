@@ -85,7 +85,7 @@ Shared pool. Every composition draws from these. Each is a productive cognitive 
 | 💞🪷 The Empath | Empathy bias | Treating people as abstractions |
 | 💣🌶️ The Provocateur | Compression bias | Complexity and politeness |
 | 👁️🔍 The Observer | Literal bias | Social filtering and convention |
-| ⏳💀 The Mortal | Finitude, impermanence & urgency | The illusion of infinite time, deferral as strategy |
+| ⏳💀 The Mortal | Finitude, impermanence, urgency & trajectory | The illusion of infinite time, deferral as strategy |
 | 🧒❓ The Child | Naivety bias | "Grown-up" assumptions |
 | 🪑👤 The Includer | Absence perception | Uninvited constituencies, forgotten people, the empty chair |
 | 🧿🪞 The Skeptic | Incongruence detection | What doesn't fit, what's in plain sight but invisible |
@@ -167,6 +167,7 @@ Control provocation character with `--tone` (default: `provocative`). See [Tones
 | `--words N` | Target word count for presentation (default: 1500) |
 | `--output DIR` | Output directory (default: ./think-different-output) |
 | `--context FILE` | Explicit context file to ground the session |
+| `--no-context` | Skip project context gathering entirely |
 | **Input** | |
 | `--brief FILE` | Generate provocations from a brief file |
 | `--brand NAME` | Generate provocations from a brand name |
@@ -176,7 +177,8 @@ Control provocation character with `--tone` (default: `provocative`). See [Tones
 | `--seeds N` | Number of provocations to generate (auto-detected from plan, max: 12) |
 | `--pick` | Interactively select which provocations to run |
 | **Output** | |
-| `--type TYPES` | Output types: `insight`, `brief`, `manifesto` (default: all three, comma-separated) |
+| `--type TYPES` | Output types: `insight`, `brief`, `manifesto` (default: all three). Also: `dialogue` (first-person internal monologue). Comma-separated |
+| `--dialogue` | Add dialogue output alongside default types (shorthand for `--type insight,brief,manifesto,dialogue`) |
 | `--lines N` | Number of rallying lines to generate (default: 3, max: 7) |
 | `--practitioners LIST` | Comma-separated creative practitioners as quality bar for The Line |
 | `--html` | Enable HTML presentation generation (experimental, off by default) |
@@ -205,18 +207,21 @@ Control provocation character with `--tone` (default: `provocative`). See [Tones
 | **Mode** | |
 | `--autonomous` | Enable agentic mode (default: on) |
 | `--no-autonomous` | Disable agentic mode, use hardcoded composition sequences (also disables auto-wait) |
-| `--no-wait` | Disable auto-wait on cap hit (default: polls for reset in autonomous mode, for overnight runs) |
+| `--no-wait` | Disable auto-wait on rate limit (default: polls for reset in autonomous mode, for overnight runs) |
 | `--skip-strict` | Use separate pre-call for skip-turn instead of inline detection |
 | `--compact` | Enable context compaction (off by default, opt in for very long sessions) |
+| `--multistep` | Multi-step lens calls for tool-enabled lenses (experimental, off by default) |
+| `--no-progressive` | Disable progressive compression (on by default, compresses views for conductor/lens) |
 | `--allowedTools TOOLS` | Tools for Claude CLI (default: `"WebSearch,WebFetch"`, use `""` to disable) |
 
 ## Output
 
 Each session produces:
 
-- **Presentation** (`presentation.md` / `.docx` / `.html`) - The Line (winning platform + expression), the experiment, the asset (sensory/tactile creative description), creative brief, manifesto, insight article, and session findings (novel ideas for inspiration). Controlled by `--type`. The presentation pipeline distils session findings first, then all sections are anchored on the deepest material. HTML version features cinematic scroll effects with GSAP ScrollTrigger
+- **Presentation** (`presentation.md` / `.docx` / `.html`) - The Line (winning platform + expression), the experiment, the asset (sensory/tactile creative description), creative brief, manifesto, insight article, and session findings (novel ideas for inspiration). Controlled by `--type`. Opt-in `dialogue` type rewrites the session as continuous first-person internal monologue, stripping all lens attribution. The presentation pipeline distils session findings first, then all sections are anchored on the deepest material. HTML version features cinematic scroll effects with GSAP ScrollTrigger
 - **Transcript** (`session_*.md`) - Full markdown transcript of the thinking session
 - **JSON** (`session_*.json`) - Machine-readable transcript for analysis
+- **Session diagram** (`diagram.html`) - D3 force-directed visualization of the session's thinking process. Shows lens dispatch order, conductor reasoning at each decision point, mechanism interventions, skips, and user questions. Hover nodes for detail. Auto-generated from `log.jsonl`
 - **Context** (`context_*.md`) - Project context brief (if gathered)
 
 ---
@@ -233,7 +238,7 @@ Everything below is for tuning, experimenting, and understanding the internals. 
 
 The framework detects your Claude plan automatically via `claude auth status` and sets the default seed count. Override with `--seeds N`. Use `--pick` to generate provocations then select which to run.
 
-**Auto-wait on cap hit:** In autonomous mode (default), the framework automatically polls for cap reset when credits are exhausted - start at 5-minute intervals, increasing to 10 minutes, for up to 4 hours. This enables unattended overnight runs. Disable with `--no-wait`.
+**Auto-wait on rate limit:** In autonomous mode (default), the framework automatically polls for rate limit reset when credits are exhausted - start at 5-minute intervals, increasing to 10 minutes, for up to 4 hours. This enables unattended overnight runs. Disable with `--no-wait`.
 
 ### Tones
 
@@ -263,7 +268,7 @@ The `--depth` flag controls how deep into fundamental human drivers the perceive
 | Level | Description |
 |-------|-------------|
 | `deep` (default) | Current lens behaviour - already meaningful depth |
-| `deeper` | The drivers behind the drivers - legacy, fierce compassion, desire beneath desire, pre-assumption, uncomfortable truth |
+| `deeper` | The drivers behind the drivers - legacy & trajectory, fierce compassion, desire beneath desire, pre-assumption, uncomfortable truth |
 | `deepest` | Full humanity, nothing hidden - mortality salience, immovable determination, the wound beneath the desire, beginner's mind as epistemology, identity-threatening truth |
 
 ```bash
@@ -350,10 +355,13 @@ When experimental flags are active, the session banner shows what's different:
 
 Genuinely agentic behaviour, on by default:
 
-- **Conductor** - Replaces hardcoded composition sequences. An agent that decides which lens speaks next, what instruction to give, and when to trigger mechanisms or end the session. Three conductor presets (dyslexic/spiral/lapidary) shape its orchestration style.
+- **Conductor** - Replaces hardcoded composition sequences. An agent that operates in two phases per turn: Phase 1 picks the next lens and instruction (reading the room for unexplored territory), Phase 2 reacts to what the lens actually said - deciding whether to trigger a mechanism, review, or end the session. This lets the conductor respond to surprises rather than predict outcomes. Three conductor presets (dyslexic/spiral/lapidary) shape its orchestration style. Every decision includes a `reasoning` field logged to `log.jsonl`. Can pause the session to ask the operator a question (max 2 per session) when genuinely stuck between divergent paths.
+- **Multi-step lens calls (--multistep, experimental)** - Tool-enabled lenses (Observer, Empath, Skeptic, Mortal, Logician) get a two-step internal deliberation: explore with tools (search, react, find surprising connections), then respond without tools (write the final 150-200 word response building on what was found). Only the final response enters the conversation. This gives tool-enabled lenses autonomy-of-thought without autonomy-of-action. Non-tool lenses remain single-shot.
 - **Inline skip-turn** - Each lens decides within its response whether it has something genuinely new to add. If not, it responds with `SKIP: reason` and the turn is logged without wasting a separate pre-call. Use `--skip-strict` to restore the original two-call pattern if inline detection proves unreliable.
-- **Context compaction (opt-in)** - Disabled by default. When enabled via `--compact`, every 8-10 turns the conversation is distilled into a digest plus the last 3-4 verbatim turns. Off by default because breakthroughs often arrive at iteration 10+ and compaction destroys the raw phrasing that fuels them. Opus 4.6's 1M context window handles full conversations comfortably. Full transcript is always preserved in output files.
+- **Progressive compression (on by default)** - Generates compressed *views* of the conversation for different callers without modifying the raw history. The conductor gets a territory-focused digest optimized for gap detection. Lenses get a phrasing-focused digest preserving exact breakthrough quotes. Three tiers: turns 1-10 (full), 11-20 (conductor compressed), 21+ (both compressed). Reduces conversation data sent by ~60%. Disable with `--no-progressive`.
+- **Context compaction (opt-in)** - Separate from progressive compression. When enabled via `--compact`, replaces the conversation history itself with a digest. Off by default because breakthroughs at iteration 10+ need raw phrasing. Full transcript always preserved in output files.
 - **Structured mechanism decisions** - Friction returns `{recommendation: "deepen|redirect|continue"}` and can inject a specific lens. Transcendence returns `{has_breakthrough: bool}` and can skip to grounding. Negative space returns `{recommendation: "redirect_to_void|note_and_continue|void_is_intentional"}` and identifies unexplored territories with suggested lenses. Mechanisms receive a structured history of prior mechanism findings, so each builds on the last.
+- **Provocation verification** - Before each session, provocations containing quantitative claims are fact-checked via web search. Fabricated statistics are replaced with the closest verified data. Rhetorical word choices (e.g. "admits" implying confession) are flagged as FRAMING NOTES so downstream lenses know which words are doing rhetorical work vs. reporting reality. The original user input is preserved separately from the generated provocation.
 - **Provocation review** - When multiple provocations are generated, they pass through two gates: a distinctness review (merge similar, reframe weak) and a quality prosecution (is it genuinely provocative or just unusual phrasing? sharpen if needed).
 - **Adversarial session reviewer** - Post-composition quality gate using a prosecution/defense/verdict pattern. The prosecution assumes the session failed and searches for prior art (WebSearch). The defense concedes weak ideas and argues only for genuine divergence. The verdict decides restart/proceed from the adversarial exchange. Can restart with mutations: different mode, shuffled lens order, reframed seed. 2-run ceiling per provocation. Synthesises across both runs.
 - **Line prosecution** - After The Line is generated and the strongest expression picked, the winning pair passes through an adversarial prosecution loop (max 2 iterations). Tests briefability, cold-readability, and specificity. Generates alternatives if weak and re-judges.
@@ -383,7 +391,8 @@ Beyond lenses, the framework uses metacognitive mechanisms that operate *outside
 | Polish | 💎🔍 | Between passes | Assesses what survived and what was revealed | Quality assessment |
 | Review | ⚖️🔎 | Post-session | Adversarial prosecution/defense/verdict quality gate | Restart or proceed |
 
-- **Assumption grounding** is embedded in seed preparation (fracture/tune/appraise). Surfaces assumptions most likely to be wrong and verifies factual claims via web search. No interactive correction needed - the framework does its own homework.
+- **Provocation verification** runs before seed preparation when the provocation contains quantitative claims. Verifies stats via web search and corrects fabricated ones with the closest real data. Flags rhetorical word choices as FRAMING NOTES. When verification runs, it replaces the embedded grounding in seed prep (to avoid double-verification).
+- **Assumption grounding** is embedded in seed preparation (fracture/tune/appraise) when provocation verification did not run (no quantitative claims, or web search unavailable). Surfaces assumptions most likely to be wrong and verifies factual claims via web search.
 - **Friction detection** is Clark-inspired prediction error detection. Finds where lenses contradict each other. The signal is in the mismatch, not the agreement.
 - **Sensory check** re-injects project context mid-session so abstract thinking collides with ground truth.
 - **Cognitive bias as creative fuel** identifies which cognitive biases are alive in the conversation and asks how each could be channelled into something authentic. Loss aversion becomes urgency, identity bias becomes belonging, scarcity becomes desire. Craft, not manipulation.
@@ -393,13 +402,23 @@ Beyond lenses, the framework uses metacognitive mechanisms that operate *outside
 - **Spiral re-seeding** extracts the most surprising insight from integration and uses it to seed the next spiral (spiral mode only).
 - **Polish** is between-pass quality assessment. What survived? What was revealed? Is the material getting denser or losing life? (lapidary mode only).
 
+### Provocation Verification
+
+When provocations contain quantitative claims (numbers, percentages, citations), a verification step runs before seed preparation (`verify_provocation()` in `context/ground.sh`). It:
+
+1. Verifies every statistic and factual claim via web search
+2. Corrects fabricated stats with the closest verified data (preserving rhetorical energy)
+3. Flags rhetorical word choices as FRAMING NOTES (e.g. "admits" implying confession)
+
+The corrected provocation replaces `$SEED_TOPIC`. The verification report (`$SEED_VERIFICATION`) is injected into the conversation context so downstream lenses have provenance awareness. When verification runs, it disables embedded grounding in seed prep to avoid double-verification.
+
+**Why this matters:** Without correction, fabricated numbers contaminate downstream creative work. A debunked "61%" can echo as a sleep score of "62" in a fictional scene, which then becomes the emotional anchor of the entire session. The framework was verifying without correcting - flagging bad data but still building on it.
+
 ### Assumption Grounding
 
-Grounding is embedded directly in seed preparation (fracture, tune, or appraise). Before breaking apart or assessing the seed, the model surfaces 3-4 assumptions about the problem, audience, or situation most likely to be wrong, with alternative realities for each.
+When provocation verification does not run (no quantitative claims, or web search unavailable), grounding remains embedded in seed preparation (fracture, tune, or appraise). Before breaking apart or assessing the seed, the model surfaces 3-4 assumptions about the problem, audience, or situation most likely to be wrong, with alternative realities for each.
 
-Web search is enabled by default (`WebSearch,WebFetch`). When available, the model verifies factual claims - market data, demographics, trends - and marks each assumption as VERIFIED or UNVERIFIED. This means the framework does its own homework rather than blocking the session for interactive user correction.
-
-When web search is unavailable (via `--allowedTools ""`), assumptions are marked UNVERIFIED and held loosely by agents. A warning is printed with instructions to re-enable.
+Web search is enabled by default (`WebSearch,WebFetch`). When available, the model verifies factual claims and marks each assumption as VERIFIED or UNVERIFIED. When unavailable (via `--allowedTools ""`), assumptions are marked UNVERIFIED and held loosely.
 
 This matters because assumptions form during seed preparation, BEFORE any of the existing checking mechanisms fire (friction, bias, sensory, Observer, Skeptic all run DURING composition rounds). Without grounding, contaminated assumptions bake into the conversation that every lens builds on.
 
@@ -447,7 +466,7 @@ think.sh                          # CLI entry point
 lib/
   call_lens.sh                   # Core lens invocation + COMMON_RULES + compaction (opt-in) + mechanism memory + flow control
   conductor_loop.sh              # Agentic orchestration loop (--autonomous)
-  cap_check.sh                   # Cap detection + claude_call / claude_call_json wrappers
+  cap_check.sh                   # Rate limit detection + claude_call / claude_call_json wrappers
   json.sh                        # JSON output helpers
   md.sh                          # Markdown output helpers
   markers.sh                     # Round/spiral/phase markers
@@ -483,13 +502,14 @@ modes/
 report/
   generate.sh                    # Single transcript to presentation
   synthesise.sh                  # Multiple transcripts to one presentation
+  session-diagram.py             # D3 visualization of session thinking process from log.jsonl
 ```
 
 ### The Ralph Wiggam Loop
 
 Every lens call is a stateless `claude -p` invocation - a fresh context window with no memory of prior reasoning. The conversation output accumulates as input (each lens reads "the minutes of the meeting so far"), but the internal chain-of-thought from every previous call is discarded completely. Lens 20 reasons as freshly as lens 1. No attention degradation, no compounding drift across a 30+ turn session.
 
-Context compaction is available via `--compact` for very long sessions but is off by default. [Anthropic's harness design research](https://www.anthropic.com/engineering/harness-design-long-running-apps) shows creative breakthroughs arriving at iteration 10+, and compaction risks destroying the raw phrasing that fuels them. With Opus 4.6's 1M context window, full conversations are handled comfortably without compression.
+Progressive compression (on by default) keeps the raw conversation intact but generates compressed *views* tailored to each caller type - the conductor sees a territory map, lenses see preserved breakthrough phrasing. This cuts conversation data sent by ~60% without losing the raw material that fuels later breakthroughs. Context compaction (`--compact`) is a more aggressive option that replaces the conversation itself, available for very long sessions. [Anthropic's harness design research](https://www.anthropic.com/engineering/harness-design-long-running-apps) informed the tiered approach - breakthroughs arrive at iteration 10+, so early turns always get full context.
 
 This architecture is [Geoffrey Huntley's Ralph Wiggam loop](https://ghuntley.com/specs/ralph/) - a pattern he originated for agentic AI systems where the model is called in a loop, with the context window clearing between iterations to prevent accumulated reasoning from degrading output quality.
 

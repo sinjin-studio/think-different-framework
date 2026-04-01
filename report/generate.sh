@@ -98,13 +98,14 @@ allocate_budget() {
   esac
 
   # Count which types are requested
-  local has_brief="" has_manifesto="" has_insight=""
+  local has_brief="" has_manifesto="" has_insight="" has_dialogue=""
   local IFS=','
   for t in $output_type; do
     case "$t" in
       brief) has_brief="true" ;;
       manifesto) has_manifesto="true" ;;
       insight) has_insight="true" ;;
+      dialogue) has_dialogue="true" ;;
     esac
   done
   IFS=$' \t\n'
@@ -113,16 +114,46 @@ allocate_budget() {
   BUDGET_MANIFESTO=0
   BUDGET_INSIGHT=0
   BUDGET_EXPERIMENT=0
+  BUDGET_DIALOGUE=0
   ACTIVE_TYPES=""
 
   # If user explicitly set --type, respect all their choices
   if [ "${TYPE_EXPLICIT:-}" = "true" ]; then
+    # Count non-dialogue types
     local type_count=0
     [ -n "$has_brief" ] && type_count=$((type_count + 1))
     [ -n "$has_manifesto" ] && type_count=$((type_count + 1))
     [ -n "$has_insight" ] && type_count=$((type_count + 1))
 
-    if [ "$type_count" -eq 1 ]; then
+    if [ -n "$has_dialogue" ]; then
+      # Dialogue present - it gets the lion's share
+      if [ "$type_count" -eq 0 ]; then
+        # Dialogue only
+        BUDGET_DIALOGUE=$total
+      elif [ "$type_count" -eq 1 ]; then
+        # Dialogue + 1 other
+        BUDGET_DIALOGUE=$((total * 55 / 100))
+        local remainder=$((total - BUDGET_DIALOGUE))
+        [ -n "$has_brief" ] && BUDGET_BRIEF=$remainder
+        [ -n "$has_manifesto" ] && BUDGET_MANIFESTO=$remainder
+        [ -n "$has_insight" ] && BUDGET_INSIGHT=$remainder
+      elif [ "$type_count" -eq 2 ]; then
+        # Dialogue + 2 others
+        BUDGET_DIALOGUE=$((total * 45 / 100))
+        local remainder=$((total - BUDGET_DIALOGUE))
+        local per_other=$((remainder / 2))
+        [ -n "$has_brief" ] && BUDGET_BRIEF=$per_other
+        [ -n "$has_manifesto" ] && BUDGET_MANIFESTO=$per_other
+        [ -n "$has_insight" ] && BUDGET_INSIGHT=$per_other
+      else
+        # Dialogue + all 3 others
+        BUDGET_DIALOGUE=$((total * 40 / 100))
+        local remainder=$((total - BUDGET_DIALOGUE))
+        BUDGET_BRIEF=$((remainder * 40 / 100))
+        BUDGET_INSIGHT=$((remainder * 35 / 100))
+        BUDGET_MANIFESTO=$((remainder * 25 / 100))
+      fi
+    elif [ "$type_count" -eq 1 ]; then
       [ -n "$has_brief" ] && BUDGET_BRIEF=$total
       [ -n "$has_manifesto" ] && BUDGET_MANIFESTO=$total
       [ -n "$has_insight" ] && BUDGET_INSIGHT=$total
@@ -156,8 +187,11 @@ allocate_budget() {
     local min_budget=150
     if { [ -n "$has_brief" ] && [ "$BUDGET_BRIEF" -lt "$min_budget" ]; } || \
        { [ -n "$has_manifesto" ] && [ "$BUDGET_MANIFESTO" -lt "$min_budget" ]; } || \
-       { [ -n "$has_insight" ] && [ "$BUDGET_INSIGHT" -lt "$min_budget" ]; }; then
-      echo "  Warning: ${total} words across ${type_count} types may produce thin output" >&2
+       { [ -n "$has_insight" ] && [ "$BUDGET_INSIGHT" -lt "$min_budget" ]; } || \
+       { [ -n "$has_dialogue" ] && [ "$BUDGET_DIALOGUE" -lt "$min_budget" ]; }; then
+      local total_types=$type_count
+      [ -n "$has_dialogue" ] && total_types=$((total_types + 1))
+      echo "  Warning: ${total} words across ${total_types} types may produce thin output" >&2
     fi
 
     ACTIVE_TYPES="$output_type"
@@ -224,7 +258,7 @@ ${conversation_text}"
 
   local result=""
   VERBOSE_CALLER="report:distil"
-  if claude_call_no_cap "$tmpfile" "$DISTIL_SYSTEM"; then
+  if claude_call "$tmpfile" "$DISTIL_SYSTEM"; then
     result="$CLAUDE_RESPONSE"
   fi
   rm -f "$tmpfile"
@@ -275,7 +309,7 @@ Describe one creative asset that embodies the deepest finding from this session.
 
   local result=""
   VERBOSE_CALLER="report:asset"
-  if claude_call_no_cap "$tmpfile" "$ASSET_SYSTEM"; then
+  if claude_call "$tmpfile" "$ASSET_SYSTEM"; then
     result="$CLAUDE_RESPONSE"
   fi
   rm -f "$tmpfile"
@@ -397,7 +431,7 @@ Write the lines. Platform first, then expression. Each angle should carry the in
 
   local the_lines=""
   VERBOSE_CALLER="report:generate"
-  if claude_call_no_cap "$tmpfile" "$LINE_SYSTEM"; then
+  if claude_call "$tmpfile" "$LINE_SYSTEM"; then
     the_lines="$CLAUDE_RESPONSE"
   else
     echo "    ! The Line generation failed (exit=${LAST_CLAUDE_EXIT_CODE})" >&2
@@ -435,7 +469,7 @@ ${the_lines}"
 
   local pick=""
   VERBOSE_CALLER="report:pick_line"
-  if claude_call_no_cap "$tmpfile"; then
+  if claude_call "$tmpfile"; then
     pick=$(echo "$CLAUDE_RESPONSE" | tr -dc '0-9' | head -c 1)
   fi
   rm -f "$tmpfile"
@@ -548,7 +582,7 @@ Nothing else."
 
     local alternatives=""
     VERBOSE_CALLER="report:improve_line"
-    if claude_call_no_cap "$tmpfile" ""; then
+    if claude_call "$tmpfile" ""; then
       alternatives="$CLAUDE_RESPONSE"
     fi
     rm -f "$tmpfile"
@@ -573,7 +607,7 @@ Respond with ONLY the label: ORIGINAL, 1, or 2. Nothing else."
 
     local pick=""
     VERBOSE_CALLER="report:judge_line"
-    if claude_call_no_cap "$tmpfile" ""; then
+    if claude_call "$tmpfile" ""; then
       pick=$(echo "$CLAUDE_RESPONSE" | tr -d '[:space:]')
     fi
     rm -f "$tmpfile"
@@ -667,7 +701,7 @@ Write the experiment. Hypothesis, the thing to try, success signal. No headers."
 
   local result=""
   VERBOSE_CALLER="report:generate"
-  if claude_call_no_cap "$tmpfile" "$EXPERIMENT_SYSTEM"; then
+  if claude_call "$tmpfile" "$EXPERIMENT_SYSTEM"; then
     result="$CLAUDE_RESPONSE"
   else
     local err_detail=""
@@ -754,6 +788,7 @@ After the six text sections, include a single SVG diagram that visualises the in
 
 SVG rules:
 - Output raw <svg> markup (no markdown fencing, no wrapping HTML)
+- CRITICAL: No blank lines anywhere inside the SVG block. Markdown (CommonMark) terminates HTML blocks at blank lines, which breaks the SVG. Every line from <svg> to </svg> must contain content
 - Use viewBox attribute, no fixed width/height
 - Colours: only #169B62 (green, for nodes/accents), #FF8200 (orange, for highlights), #e8e8e8 (light text), #999999 (secondary), #181818 (background fills)
 - Font: font-family="Literata, Georgia, serif"
@@ -763,6 +798,8 @@ SVG rules:
 - Diagram type: a journey/flow showing Provocation -> Landscape -> Insight -> Tension as connected nodes, with the core insight node visually emphasised
 - Short labels only (2-4 words per node, extracted from your actual content)
 - No decorative elements - clean, minimal, functional
+- No HTML/XML comments (<!-- -->) inside the SVG - markdown renderers break SVG parsing on comment boundaries
+- The <svg> opening tag must start at column 1 (no leading whitespace) so markdown treats it as an HTML block
 - Circle text fitting: min radius 55 for text nodes. Each text line must be 10 chars or fewer; if a label needs more, increase the radius (add 6px per extra char) before abbreviating
 - Font-size inside circles: r=55 max 11, r=65 max 13, r=80 max 16. Never exceed radius x 0.2
 - Two text lines max per circle: primary label (larger, light) and optional subtitle (smaller, dimmer)
@@ -815,7 +852,7 @@ Write the article. ${length_guidance} Four sections plus sources. First person v
 
   local result=""
   VERBOSE_CALLER="report:generate"
-  if claude_call_no_cap "$tmpfile" "$INSIGHT_SYSTEM"; then
+  if claude_call "$tmpfile" "$INSIGHT_SYSTEM"; then
     result="$CLAUDE_RESPONSE"
   else
     local err_detail=""
@@ -874,6 +911,7 @@ After the five text sections, include a single SVG diagram that visualises the r
 
 SVG rules:
 - Output raw <svg> markup (no markdown fencing, no wrapping HTML)
+- CRITICAL: No blank lines anywhere inside the SVG block. Markdown (CommonMark) terminates HTML blocks at blank lines, which breaks the SVG. Every line from <svg> to </svg> must contain content
 - Use viewBox attribute, no fixed width/height
 - Colours: only #169B62 (green, for nodes/accents), #FF8200 (orange, for highlights), #e8e8e8 (light text), #999999 (secondary), #181818 (background fills)
 - Font: font-family="Literata, Georgia, serif"
@@ -883,6 +921,8 @@ SVG rules:
 - Diagram type: show the audience and the territory as two poles, with the proposition as the bridge or resolution between them. Use labels drawn from your actual content, not the section names. The proposition node should be visually emphasised (larger, orange)
 - Short labels only (2-4 words per node, extracted from your actual content)
 - No decorative elements - clean, minimal, functional
+- No HTML/XML comments (<!-- -->) inside the SVG - markdown renderers break SVG parsing on comment boundaries
+- The <svg> opening tag must start at column 1 (no leading whitespace) so markdown treats it as an HTML block
 - Circle text fitting: min radius 55 for text nodes. Each text line must be 10 chars or fewer; if a label needs more, increase the radius (add 6px per extra char) before abbreviating
 - Font-size inside circles: r=55 max 11, r=65 max 13, r=80 max 16. Never exceed radius x 0.2
 - Two text lines max per circle: primary label (larger, light) and optional subtitle (smaller, dimmer)
@@ -920,7 +960,7 @@ Write the brief. Be direct. Every word earns its place."
 
   local result=""
   VERBOSE_CALLER="report:generate"
-  if claude_call_no_cap "$tmpfile" "$BRIEF_SYSTEM"; then
+  if claude_call "$tmpfile" "$BRIEF_SYSTEM"; then
     result="$CLAUDE_RESPONSE"
   else
     local err_detail=""
@@ -1009,12 +1049,78 @@ Write the manifesto. Open with the line in bold. Build conviction. End with a ca
 
   local result=""
   VERBOSE_CALLER="report:generate"
-  if claude_call_no_cap "$tmpfile" "$MANIFESTO_SYSTEM"; then
+  if claude_call "$tmpfile" "$MANIFESTO_SYSTEM"; then
     result="$CLAUDE_RESPONSE"
   else
     local err_detail=""
     [ -n "$LAST_CLAUDE_ERROR" ] && err_detail=" $(echo "$LAST_CLAUDE_ERROR" | head -c 200)"
     result="[Manifesto generation failed (exit=${LAST_CLAUDE_EXIT_CODE}).${err_detail} The transcript is available for manual review.]"
+  fi
+  rm -f "$tmpfile"
+
+  echo "$result"
+}
+
+# ── Generate dialogue (internal monologue) ──
+generate_dialogue() {
+  local conversation_text="$1"
+  local seed="$2"
+  local words="${3:-1500}"
+  local distillation="${4:-}"
+  local low=$((words - words / 10))
+  local high=$((words + words / 10))
+
+read -r -d '' DIALOGUE_SYSTEM << DIALOGUESYS || true
+You are rewriting a creative thinking session as your own internal monologue. One mind. First person. No characters, no named voices, no roles.
+
+Stay within ${low}-${high} words.
+
+CRITICAL: Strip every trace of named voices, lenses, or roles. No "one part of me," no "another angle," no "the skeptic in me." Just: I thought X. Then I realised Y. But that can't be right because Z.
+
+Where the thinking contradicts itself, keep both contradictions alive. A mind changing itself is more honest than a mind that was always right. Do not resolve tensions artificially. End where the thinking actually ends, not where it gets neat.
+
+Use paragraph breaks and sentence length to mark turns of thought. A short sentence after a long one signals a pivot. A single-sentence paragraph is a stop-and-think moment. No headers, no section breaks, no labels.
+
+Write as if you had these thoughts yourself. No references to sessions, transcripts, research notes, or any process. You were thinking about this topic and this is where the thinking went.
+${AUDIENCE_TEXT:+
+The thinking is ultimately about: ${AUDIENCE_TEXT}. Keep them human throughout.}
+
+${STYLE_RULES}
+DIALOGUESYS
+
+  local distil_block=""
+  if [ -n "$distillation" ]; then
+    distil_block="THE STRONGEST FINDINGS (anchor on these):
+${distillation}
+
+---
+
+"
+  fi
+
+  local dialogue_prompt="${distil_block}Read this thinking session transcript. Rewrite it as your own internal monologue. One mind wrestling with a problem, arriving at insight through contradiction.
+
+TOPIC: ${seed}
+
+THINKING SESSION TRANSCRIPT:
+${conversation_text}
+
+---
+
+Rewrite this as your own thinking. First person. One mind. No characters. No attributed voices. Just thinking."
+
+  local tmpfile
+  tmpfile=$(mktemp)
+  echo "$dialogue_prompt" > "$tmpfile"
+
+  local result=""
+  VERBOSE_CALLER="report:dialogue"
+  if claude_call "$tmpfile" "$DIALOGUE_SYSTEM"; then
+    result="$CLAUDE_RESPONSE"
+  else
+    local err_detail=""
+    [ -n "$LAST_CLAUDE_ERROR" ] && err_detail=" $(echo "$LAST_CLAUDE_ERROR" | head -c 200)"
+    result="[Dialogue generation failed (exit=${LAST_CLAUDE_EXIT_CODE}).${err_detail} The transcript is available for manual review.]"
   fi
   rm -f "$tmpfile"
 
@@ -1038,8 +1144,13 @@ generate_presentation() {
   echo "  ━━━ WRITING PRESENTATION ━━━━━━━━━━━━━━━━━━━━━━━"
   echo "  Target: ${words} words (total)"
   echo "  Types: ${output_type}"
-  if [ "$BUDGET_BRIEF" -gt 0 ] || [ "$BUDGET_MANIFESTO" -gt 0 ] || [ "$BUDGET_INSIGHT" -gt 0 ]; then
-    echo "  Budget: experiment=${BUDGET_EXPERIMENT}w brief=${BUDGET_BRIEF}w insight=${BUDGET_INSIGHT}w manifesto=${BUDGET_MANIFESTO}w"
+  if [ "$BUDGET_BRIEF" -gt 0 ] || [ "$BUDGET_MANIFESTO" -gt 0 ] || [ "$BUDGET_INSIGHT" -gt 0 ] || [ "$BUDGET_DIALOGUE" -gt 0 ]; then
+    local budget_display="experiment=${BUDGET_EXPERIMENT}w"
+    [ "$BUDGET_BRIEF" -gt 0 ] && budget_display="${budget_display} brief=${BUDGET_BRIEF}w"
+    [ "$BUDGET_INSIGHT" -gt 0 ] && budget_display="${budget_display} insight=${BUDGET_INSIGHT}w"
+    [ "$BUDGET_MANIFESTO" -gt 0 ] && budget_display="${budget_display} manifesto=${BUDGET_MANIFESTO}w"
+    [ "$BUDGET_DIALOGUE" -gt 0 ] && budget_display="${budget_display} dialogue=${BUDGET_DIALOGUE}w"
+    echo "  Budget: ${budget_display}"
   fi
   echo ""
 
@@ -1114,13 +1225,14 @@ EXPRESSION: ${new_expression}"
   local prior_sections=""
 
   # Check which types are active
-  local do_brief="" do_manifesto="" do_insight=""
+  local do_brief="" do_manifesto="" do_insight="" do_dialogue=""
   local IFS=','
   for t in $output_type; do
     case "$t" in
       brief) do_brief="true" ;;
       manifesto) do_manifesto="true" ;;
       insight) do_insight="true" ;;
+      dialogue) do_dialogue="true" ;;
     esac
   done
   IFS=$' \t\n'
@@ -1167,6 +1279,14 @@ ${insight_content}"
     stop_spinner "done"
   fi
 
+  # Dialogue (internal monologue rewrite - opt-in only)
+  local dialogue_content=""
+  if [ -n "$do_dialogue" ] && [ "$BUDGET_DIALOGUE" -gt 0 ]; then
+    start_spinner "💭 Writing dialogue (~${BUDGET_DIALOGUE}w)"
+    dialogue_content=$(generate_dialogue "$conversation_text" "$seed" "$BUDGET_DIALOGUE" "$distillation")
+    stop_spinner "done"
+  fi
+
   # Asset (always generated - sensory/tactile description of an object that embodies the insight)
   local asset_content=""
   if [ -n "$first_line" ] && [ -n "$distillation" ]; then
@@ -1178,10 +1298,18 @@ ${insight_content}"
   # ── Step 3: Assemble output ──
   local mode_label="$(mode_emoji "${MODE:-dyslexic}") ${MODE:-dyslexic}"
 
+  local seed_label
+  if [ -n "${ORIGINAL_INPUT:-}" ] && [ "${ORIGINAL_INPUT}" != "${seed}" ]; then
+    seed_label="> **Input:** ${ORIGINAL_INPUT}
+> **Provocation:** ${seed}"
+  else
+    seed_label="> **Seed:** ${seed}"
+  fi
+
   cat > "$output_file" << PRESHEADER
 # Think Different Presentation
 
-> **Seed:** ${seed}
+${seed_label}
 > **Date:** $(date '+%Y-%m-%d %H:%M')
 > **Words:** ~${words}
 ${turn_info:+> **Source:** ${turn_info}}
@@ -1268,6 +1396,16 @@ PRESHEADER
     echo "## Manifesto" >> "$output_file"
     echo "" >> "$output_file"
     echo "$manifesto_content" >> "$output_file"
+    echo "" >> "$output_file"
+  fi
+
+  # The Dialogue - internal monologue rewrite
+  if [ -n "$dialogue_content" ]; then
+    echo "---" >> "$output_file"
+    echo "" >> "$output_file"
+    echo "## The Dialogue" >> "$output_file"
+    echo "" >> "$output_file"
+    echo "$dialogue_content" >> "$output_file"
     echo "" >> "$output_file"
   fi
 
@@ -1381,6 +1519,15 @@ ${manifesto_content}"
 THE ASSET:
 
 ${asset_content}"
+  fi
+  if [ -n "$dialogue_content" ]; then
+    combined="${combined}
+
+---
+
+THE DIALOGUE:
+
+${dialogue_content}"
   fi
   echo "$combined"
 }

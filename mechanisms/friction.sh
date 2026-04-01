@@ -28,7 +28,7 @@ Respond with a JSON object containing:
 - inject_lens: if recommendation is 'redirect', which lens key should be injected next (e.g. 'skeptic', 'observer', 'empath'). Empty string if not applicable.
 ${mechanism_history}
 CONVERSATION:
-${CONVERSATION}"
+$(get_conversation_for "mechanism")"
 
   local tmpfile
   tmpfile=$(mktemp)
@@ -63,8 +63,8 @@ for obs in d.get('observations', []):
     append_mechanism_memory "friction" "$unit_num" "$friction_rec_mem" "$friction_summary"
   else
     rm -f "$tmpfile"
-    if [ "$CAP_LIMIT_HIT" = "true" ]; then
-      stop_spinner "cap limit"
+    if [ "$RATE_LIMIT_HIT" = "true" ]; then
+      stop_spinner "rate limit"
       return 1
     fi
     errors="No prediction errors detected."

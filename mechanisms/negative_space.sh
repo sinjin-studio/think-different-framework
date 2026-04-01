@@ -29,13 +29,7 @@ Read the conversation and the seed topic. Then:
 
 1. Map the territory the conversation HAS covered. What domains, scales, audiences, emotions, time horizons, and stakeholders have been addressed?
 
-2. Now map what is missing. Not what is wrong - what is ABSENT. Think about:
-   - Scales not visited (if everything is personal, what about institutional? If everything is strategic, what about the moment of use?)
-   - Audiences not considered (who has not been imagined as the person at the centre?)
-   - Time horizons not explored (if everything is immediate, what about generational? If everything is aspirational, what about right now?)
-   - Emotions not touched (if the conversation is all urgency, where is tenderness? If all hope, where is grief?)
-   - Domains not crossed into (what adjacent fields could illuminate this but have not been mentioned?)
-   - The uncomfortable question nobody has asked
+2. Now map what is missing. Not what is wrong - what is ABSENT. Do not work from a checklist. Read the conversation and feel the shape of the silence. What is conspicuously absent given this specific topic and where the conversation has gone? The voids should be emergent from the material, not from a generic list of categories. Think about scales, audiences, time horizons, emotions, adjacent domains, the uncomfortable question nobody has asked - but only the ones that matter for THIS conversation. Name 2-4 voids that would genuinely change the session's direction if explored.
 
 3. For each void territory (2-4 territories), suggest which lens key is best equipped to explore it. A void in empathy calls for the empath. A void in scale calls for the scaler. A void in what is literally there calls for the observer.
 
@@ -54,7 +48,7 @@ Respond with a JSON object containing:
 - recommendation: one of 'redirect_to_void' (the unexplored territory is the most interesting place to go next), 'note_and_continue' (voids are noted but current direction is productive), or 'void_is_intentional' (the conversation has deliberately narrowed, which is appropriate for this stage)
 ${mechanism_history}
 CONVERSATION:
-${CONVERSATION}"
+$(get_conversation_for "mechanism")"
 
   local tmpfile
   tmpfile=$(mktemp)
@@ -102,8 +96,8 @@ print('Pattern of avoidance: ' + d.get('pattern_of_avoidance', ''))
   else
     rm -f "$tmpfile"
     ALLOWED_TOOLS_FLAG="$saved_tools"
-    if [ "$CAP_LIMIT_HIT" = "true" ]; then
-      stop_spinner "cap limit"
+    if [ "$RATE_LIMIT_HIT" = "true" ]; then
+      stop_spinner "rate limit"
       return 1
     fi
     territories="No negative space mapped."

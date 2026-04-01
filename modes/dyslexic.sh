@@ -54,9 +54,9 @@ run_session() {
 
   # Gather context, then fracture (grounding is embedded in fracture)
   gather_project_context || true
-  [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+  [ "$RATE_LIMIT_HIT" = "true" ] && return 0
   fracture_seed || true
-  [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+  [ "$RATE_LIMIT_HIT" = "true" ] && return 0
 
   # Determine round count (default 4)
   local total_rounds="${ROUND_COUNT:-7}"
@@ -72,13 +72,13 @@ run_session() {
       "observer:observe:1:Look at what has actually been said. Not the interpretations. What specific words were chosen? What was described but not named? What is literally happening that the metaphors are obscuring?" \
       "includer:include:1:The conversation has started framing the problem. Before it sets, look at who has been placed at the centre and notice who has not. Who is affected by this seed but has not been imagined yet? Who did the framing forget?" \
       "decomposer:decompose:1:Grab a DIFFERENT fragment from the seed. A piece that nobody would think is important. Look at the problem from inside it. What's visible from here that's invisible from the centre?"
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
 
     # Friction between rounds 1 and 2
     detect_prediction_errors 1 || true
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
     handle_friction_decision 1
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
   fi
 
   # ── ROUND 2: Scale Shift ──
@@ -94,11 +94,11 @@ run_session() {
       "achala:devotion:2:The conversation has been fragmenting and scaling. Before it goes further, name the thing people would sacrifice for here. Not the stated need. The sacred thing underneath. What do people actually love about this situation, and what would it mean to honour that rather than optimise it?" \
       "logician:trace:2:The Scaler just shifted altitude twice. At this new scale, what causal chains are visible that were hidden before? Trace one forward - if this is true, what necessarily follows? Trace one backward - what is the structural root cause that nobody has named yet?" \
       "scaler:scale:2:Zoom again. The other direction. If you zoomed out last time, zoom in to the microscopic. If you zoomed in, pull up to the cosmic. The problem should look completely different from here."
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
 
     # Friction + sensory check
     detect_prediction_errors 2 || true
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
     sensory_check
   fi
 
@@ -122,17 +122,17 @@ run_session() {
     fi
 
     dispatch_round "${round3_lenses[@]}"
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
 
     # Friction + void + bias check
     detect_prediction_errors 3 || true
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
     map_negative_space 3 || true
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
     handle_negative_space_decision 3
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
     detect_cognitive_bias 3 || true
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
     # Transcendence moved to after round 5 in extended rounds loop
   fi
 
@@ -146,22 +146,22 @@ run_session() {
       "associator:associate:${r}:Round ${r}. Connect across all previous rounds. Find the most unexpected link." \
       "scaler:scale:${r}:Round ${r}. Change altitude again. Show the problem from a distance nobody has tried." \
       "empath:empathise:${r}:Round ${r}. Reality check. What does the person at the centre actually need right now?"
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
 
     detect_prediction_errors "$r" || true
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
 
     # Transcendence + void checks from round 5 onwards
     if [ "$r" -ge 5 ]; then
       if [ "$NEGATIVE_SPACE_ENABLED" = "true" ]; then
         map_negative_space "$r" || true
-        [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+        [ "$RATE_LIMIT_HIT" = "true" ] && return 0
         handle_negative_space_decision "$r"
-        [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+        [ "$RATE_LIMIT_HIT" = "true" ] && return 0
       fi
       if [ "$TRANSCENDENCE_ENABLED" = "true" ]; then
         transcendence_check "$r" || true
-        [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+        [ "$RATE_LIMIT_HIT" = "true" ] && return 0
         handle_transcendence_decision
         if [ "$MECHANISM_SKIP_TO_GROUND" = "true" ]; then
           r=$((r + 1))
@@ -185,7 +185,7 @@ run_session() {
     "mortal:urgency:${final_round}:Achala named what is sacred. Now name the cost of not acting on it. What is being lost while this remains an idea instead of a thing in the world? If this constellation is true, what is the price of another quarter of deliberation?" \
     "provocateur:provoke:${final_round}:The constellation has been named and connected. Now compress it. What is the five-word version? The version that makes the room go quiet? Not a tagline. The truth, compressed." \
     "mouth:register:${final_round}:The Provocateur just compressed the constellation. Listen to it. Is it alive or has the compression killed the voice? If it sounds like a tagline instead of a truth, re-voice it. If it sounds like something someone would actually say out loud to another person, bless it and move on."
-  [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+  [ "$RATE_LIMIT_HIT" = "true" ] && return 0
 
   # ── GROUND ──
   echo ""
@@ -195,14 +195,14 @@ run_session() {
   mark_phase "Ground" "Landing the Insight"
   if is_lens_active "empath"; then
     call_lens "empath" "ground" "$final_round" "This is the end. Deliver the verdict. What is new here? What would actually change behaviour, create value, solve a real problem? Strip away the metaphors. Say what remains. Identify the 1-3 ideas that pass the simplicity test. For each one: what is the smallest experiment someone could take tomorrow?" || true
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
   fi
   if is_lens_active "mouth"; then
     call_lens "mouth" "ground" "$final_round" "The Empath just grounded the insight. Listen. Did the grounding kill the voice? Did making it actionable make it dead? If the register survived, leave it alone. If the grounding sanded off the edge that was the whole point, re-voice it with the edge intact. This is the last gate before output." || true
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
   fi
   if is_lens_active "reifier"; then
     call_lens "reifier" "ground" "$final_round" "Final word. State the single most important insight from this entire session. State it once with nuance. Then state it again in one sentence a child could understand. Both versions should be true. Make it portable enough to carry into real work." || true
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
   fi
 }

@@ -23,7 +23,7 @@ Output three short observations:
 One sentence each. No labels, no numbering. Write as a craftsperson assessing their own work between passes.
 
 CONVERSATION:
-${CONVERSATION}"
+$(get_conversation_for "mechanism")"
 
   local tmpfile
   tmpfile=$(mktemp)
@@ -43,8 +43,8 @@ ${CONVERSATION}"
     assessment="$CLAUDE_RESPONSE"
   else
     rm -f "$tmpfile"
-    if [ "$CAP_LIMIT_HIT" = "true" ]; then
-      stop_spinner "cap limit"
+    if [ "$RATE_LIMIT_HIT" = "true" ]; then
+      stop_spinner "rate limit"
       return 1
     fi
     assessment="The material is taking shape. Continue working."

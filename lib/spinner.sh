@@ -76,14 +76,14 @@ _spinner_loop() {
 # Usage: stop_spinner "done"
 #        stop_spinner "failed"
 #        stop_spinner "skipped (reason)"
-#        stop_spinner "cap limit"
+#        stop_spinner "rate limit"
 #
 # Completion format by status:
 #   "done"           ->  "    ✓ Message (4.8s)"
 #   "done (detail)"  ->  "    ✓ Message (detail, 4.8s)"
 #   "failed"         ->  "    ✗ Message (failed)"
 #   "skipped (...)"  ->  "    ○ Message (skipped ...)"
-#   "cap limit"      ->  "    ✗ Message (cap limit)"
+#   "rate limit"      ->  "    ✗ Message (rate limit)"
 #   "stale cache"    ->  "    ○ Message (stale cache)"
 stop_spinner() {
   local status="$1"
@@ -132,7 +132,7 @@ stop_spinner() {
       echo "    ○ ${msg} (${status})"
       ;;
     cap\ limit*)
-      echo "    ✗ ${msg} (cap limit)"
+      echo "    ✗ ${msg} (rate limit)"
       ;;
     *)
       # Generic fallback

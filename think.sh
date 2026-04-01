@@ -42,6 +42,7 @@ MODE="dyslexic"
 PRES_ONLY=""
 PRES_SOURCE=""
 CONTEXT_FILE=""
+NO_CONTEXT=""
 SYNTHESISE_MODE=""
 SYNTHESISE_FILES=()
 RUNNER_UP_PROVOCATIONS=()
@@ -64,7 +65,9 @@ SHUFFLE_ENABLED="false"
 AUTONOMOUS_MODE="true"
 SKIP_STRICT=""
 COMPACT_ENABLED="false"
-WAIT_FOR_CAP="true"
+MULTISTEP_ENABLED="false"
+PROGRESSIVE_ENABLED="true"
+WAIT_FOR_RATE_LIMIT="true"
 GROUND_ENABLED="true"
 GROUND_ONLY=""
 SEED_COUNT=""
@@ -77,6 +80,7 @@ PROVOCATION_TONE="provocative"
 LENS_DEPTH="deep"
 OUTPUT_TYPE="insight,brief,manifesto"
 TYPE_EXPLICIT=""
+DIALOGUE_ENABLED="false"
 LINE_COUNT=3
 LINE_PRACTITIONERS=""
 HTML_ENABLED="false"
@@ -111,6 +115,7 @@ show_help() {
   echo "    --words N        Total word budget across all sections (default: 1500)"
   echo "    --output DIR     Output directory (default: ./think-different-output)"
   echo "    --context FILE   Explicit context file to ground the session"
+  echo "    --no-context     Skip project context gathering entirely"
   echo "    --brief FILE     Generate provocations from a brief file"
   echo "    --brand NAME     Generate provocations from a brand name"
   echo "    --notes TEXT     Generate provocations from working notes"
@@ -119,7 +124,10 @@ show_help() {
   echo "    --tone TONE      Provocation tone: provocative (default), generous, personal,"
   echo "                     absurd, daydream, mixed. Comma-separated for custom mix"
   echo "    --type TYPES     Output types: insight,brief,manifesto (default: all three)"
+  echo "                     Also: dialogue (first-person internal monologue)"
   echo "                     Comma-separated list. Each type is a section in the output"
+  echo "    --dialogue       Add dialogue output alongside default types (shorthand for"
+  echo "                     --type insight,brief,manifesto,dialogue)"
   echo "    --lines N        Number of rallying lines to generate (default: 3, max: 7)"
   echo "    --practitioners  Comma-separated list of creative practitioners as quality bar"
   echo "                     (default: random 3 from built-in pool)"
@@ -148,9 +156,11 @@ show_help() {
   echo "    --shuffle        Randomize lens order within each round/phase"
   echo "    --autonomous     Enable agentic mode (default: on)"
   echo "    --no-autonomous  Disable agentic mode, use hardcoded composition sequences"
-  echo "    --no-wait        Disable auto-wait on cap hit (default: wait in autonomous mode)"
+  echo "    --no-wait        Disable auto-wait on rate limit (default: wait in autonomous mode)"
   echo "    --skip-strict    Use separate pre-call for skip-turn (default: inline detection)"
   echo "    --compact        Enable context compaction (off by default, opt in for very long sessions)"
+  echo "    --multistep      Enable multi-step lens calls for tool-enabled lenses (experimental)"
+  echo "    --no-progressive Disable progressive compression (on by default)"
   echo "    --no-ground      Skip assumption grounding embedded in seed prep"
   echo "    --ground-only    Run only the grounding step, then exit"
   echo "    --depth LEVEL    Lens depth: deep (default), deeper, deepest. Per-lens:"
@@ -280,7 +290,7 @@ while [ $# -gt 0 ]; do
       shift
       ;;
     --no-wait)
-      WAIT_FOR_CAP="false"
+      WAIT_FOR_RATE_LIMIT="false"
       shift
       ;;
     --skip-strict)
@@ -291,8 +301,20 @@ while [ $# -gt 0 ]; do
       COMPACT_ENABLED="true"
       shift
       ;;
+    --multistep)
+      MULTISTEP_ENABLED="true"
+      shift
+      ;;
+    --no-progressive)
+      PROGRESSIVE_ENABLED="false"
+      shift
+      ;;
     --no-ground)
       GROUND_ENABLED="false"
+      shift
+      ;;
+    --no-context)
+      NO_CONTEXT="true"
       shift
       ;;
     --ground-only)
@@ -348,6 +370,10 @@ while [ $# -gt 0 ]; do
       TYPE_EXPLICIT="true"
       shift
       ;;
+    --dialogue)
+      DIALOGUE_ENABLED="true"
+      shift
+      ;;
     --lines)
       shift
       LINE_COUNT="$1"
@@ -396,13 +422,18 @@ case "$MODE" in
     ;;
 esac
 
+# Append dialogue to output type if --dialogue flag set
+if [ "$DIALOGUE_ENABLED" = "true" ]; then
+  OUTPUT_TYPE="${OUTPUT_TYPE},dialogue"
+fi
+
 # Validate output types
 IFS=',' read -ra _TYPE_CHECK <<< "$OUTPUT_TYPE"
 for _ot in "${_TYPE_CHECK[@]}"; do
   case "$_ot" in
-    insight|brief|manifesto) ;;
+    insight|brief|manifesto|dialogue) ;;
     *)
-      echo "Error: unknown output type '$_ot'. Use: insight, brief, or manifesto (comma-separated)"
+      echo "Error: unknown output type '$_ot'. Use: insight, brief, manifesto, or dialogue (comma-separated)"
       exit 1
       ;;
   esac
@@ -555,6 +586,7 @@ source "${SCRIPT_DIR}/lib/md.sh"
 source "${SCRIPT_DIR}/lib/markers.sh"
 source "${SCRIPT_DIR}/lib/cap_check.sh"
 source "${SCRIPT_DIR}/lib/call_lens.sh"
+source "${SCRIPT_DIR}/lib/progressive_compress.sh"
 source "${SCRIPT_DIR}/lib/conductor_loop.sh"
 source "${SCRIPT_DIR}/lib/spinner.sh"
 source "${SCRIPT_DIR}/report/generate.sh"
@@ -588,7 +620,7 @@ convert_to_html() {
 # ── Register cleanup traps ──
 cleanup_all() {
   spinner_cleanup
-  cap_limit_cleanup
+  rate_limit_cleanup
 }
 trap cleanup_all EXIT
 trap 'spinner_cleanup; exit 130' INT
@@ -675,7 +707,7 @@ if [ -n "$PRES_ONLY" ]; then
   # If only doc/html requested, look for existing presentation.md
   if [ "$needs_md" = "true" ]; then
     # Generate new .md from transcript (uses tokens)
-    SEED_TOPIC=$(grep -m1 "Seed:" "$PRES_SOURCE" | sed 's/.*Seed:\*\* *//' | sed 's/^> \*\*Seed:\*\* //' | sed 's/^.*Seed: //')
+    SEED_TOPIC=$(grep -m1 -E "Seed:|Provocation:" "$PRES_SOURCE" | sed 's/.*Provocation:\*\* *//' | sed 's/.*Seed:\*\* *//' | sed 's/^> \*\*Seed:\*\* //' | sed 's/^> \*\*Provocation:\*\* //' | sed 's/^.*Seed: //' | sed 's/^.*Provocation: //') || true
     if [ -z "$SEED_TOPIC" ]; then
       SEED_TOPIC="[Seed not found in transcript]"
     fi
@@ -787,7 +819,7 @@ for entry in data:
     run_session || true
   fi
 
-  if [ "$CAP_LIMIT_HIT" = "true" ]; then
+  if [ "$RATE_LIMIT_HIT" = "true" ]; then
     exit 1
   fi
 
@@ -880,6 +912,8 @@ if [ "$AUTONOMOUS_MODE" = "true" ]; then
   fi
 fi
 [ "$COMPACT_ENABLED" = "true" ] && EXPERIMENT_LINES+=("    + compaction (enabled via --compact)")
+[ "$MULTISTEP_ENABLED" = "true" ] && EXPERIMENT_LINES+=("    + multistep (tool-enabled lenses explore then respond)")
+[ "$PROGRESSIVE_ENABLED" != "true" ] && EXPERIMENT_LINES+=("    - progressive compression (disabled via --no-progressive)")
 [ -n "${CONDUCTOR_MIN_TURNS:-}" ] && EXPERIMENT_LINES+=("    ~ min-turns: ${CONDUCTOR_MIN_TURNS} (via --min-turns)")
 [ "$GROUND_ENABLED" != "true" ] && EXPERIMENT_LINES+=("    - ground (disabled via --no-ground)")
 if [ -n "$ALLOWED_TOOLS" ]; then
@@ -893,7 +927,7 @@ fi
 # ── 1. Read input material ──
 # All paths produce INPUT_MATERIAL for distillation
 
-if [ -n "$CONTEXT_FILE" ] && [ -f "$CONTEXT_FILE" ]; then
+if [ "$NO_CONTEXT" != "true" ] && [ -n "$CONTEXT_FILE" ] && [ -f "$CONTEXT_FILE" ]; then
   PROJECT_CONTEXT=$(cat "$CONTEXT_FILE")
 fi
 
@@ -922,6 +956,9 @@ else
   fi
   INPUT_MATERIAL=$(read_input_material "project" "")
 fi
+
+# Preserve original user input before provocation generation may transform it
+ORIGINAL_INPUT="${SEED_TOPIC:-${INPUT_MATERIAL}}"
 
 # ── Auto-infer audience if not set ──
 if [ -z "$AUDIENCE_TEXT" ] && [ -n "$INPUT_MATERIAL" ]; then
@@ -1089,6 +1126,12 @@ if [ -n "$PROJECT_CONTEXT" ] && [ ! -f "$SESSION_DIR/context.md" ]; then
   echo "$PROJECT_CONTEXT" > "$SESSION_DIR/context.md"
 fi
 
+# Source ground.sh for verify_provocation (may already be sourced by modes, but safe to re-source)
+source "${SCRIPT_DIR}/context/ground.sh"
+
+# Preserve original grounding setting so it can be restored per-seed
+ORIGINAL_GROUND_ENABLED="${GROUND_ENABLED:-true}"
+
 TRANSCRIPT_FILES=()
 seed_num=1
 for seed in "${SEEDS[@]}"; do
@@ -1109,6 +1152,13 @@ for seed in "${SEEDS[@]}"; do
   CONVERSATION=""
   TURN_COUNT=0
   MECHANISM_MEMORY=()
+  SEED_VERIFICATION=""
+
+  # Verify and correct provocation claims before session starts
+  # Re-enable grounding for each seed (verify_provocation disables it after running)
+  GROUND_ENABLED="${ORIGINAL_GROUND_ENABLED:-true}"
+  verify_provocation || true
+  [ "$RATE_LIMIT_HIT" = "true" ] && break
 
   # Suffix for multiple sessions, clean for single
   if [ ${#SEEDS[@]} -gt 1 ]; then
@@ -1121,7 +1171,7 @@ for seed in "${SEEDS[@]}"; do
     STATE_FILE="$SESSION_DIR/session.state.json"
   fi
 
-  md_init_header "Think Different Session (Seed ${seed_num})" "$SEED_TOPIC"
+  md_init_header "Think Different Session (Seed ${seed_num})" "$SEED_TOPIC" "${ORIGINAL_INPUT:-}"
   json_open
 
   # Source review mechanism
@@ -1135,11 +1185,11 @@ for seed in "${SEEDS[@]}"; do
     run_session || true
   fi
 
-  # Final flush (always valid, even on cap hit)
+  # Final flush (always valid, even on rate limit)
   json_flush
   md_flush
 
-  if [ "$CAP_LIMIT_HIT" = "true" ]; then
+  if [ "$RATE_LIMIT_HIT" = "true" ]; then
     break
   fi
 
@@ -1149,7 +1199,7 @@ for seed in "${SEEDS[@]}"; do
 
     review_verdict=$(get_review_verdict)
 
-    if [ "$review_verdict" = "restart" ] && [ "$CAP_LIMIT_HIT" != "true" ]; then
+    if [ "$review_verdict" = "restart" ] && [ "$RATE_LIMIT_HIT" != "true" ]; then
       # Save first run transcript
       first_run_transcript="$TRANSCRIPT_MD"
       complete_state
@@ -1203,7 +1253,7 @@ for seed in "${SEEDS[@]}"; do
       json_flush
       md_flush
 
-      if [ "$CAP_LIMIT_HIT" != "true" ]; then
+      if [ "$RATE_LIMIT_HIT" != "true" ]; then
         complete_state
         # Both runs become synthesis inputs
         TRANSCRIPT_FILES+=("$first_run_transcript")
@@ -1228,7 +1278,7 @@ done
 
 # ── 6. Output ──
 # Skip presentation if cap was hit - transcript is saved, user can --report-only later
-if [ "$CAP_LIMIT_HIT" = "true" ]; then
+if [ "$RATE_LIMIT_HIT" = "true" ]; then
   exit 1
 fi
 
@@ -1267,8 +1317,16 @@ ${PRES_CONTENT}
   fi
   echo "  📄 Transcript:   $TRANSCRIPT_MD"
   echo "  📊 JSON:         $TRANSCRIPT_JSON"
+  # Generate session diagram if log exists
+  diagram_file="$SESSION_DIR/diagram.html"
+  if [ -f "$SESSION_DIR/log.jsonl" ]; then
+    python3 "${SCRIPT_DIR}/report/session-diagram.py" "$SESSION_DIR/log.jsonl" "$diagram_file" 2>/dev/null || true
+  fi
   if [ -f "$SESSION_DIR/context.md" ]; then
     echo "  📍 Context:      $SESSION_DIR/context.md"
+  fi
+  if [ -f "$diagram_file" ]; then
+    echo "  🔀 Diagram:      $diagram_file"
   fi
   echo ""
   echo "  Re-run presentation at different length:"

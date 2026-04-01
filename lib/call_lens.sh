@@ -90,7 +90,7 @@ dispatch_round() {
     unit_num="${entry%%:*}"; instruction="${entry#*:}"
     if is_lens_active "$key"; then
       call_lens "$key" "$phase" "$unit_num" "$instruction" || true
-      if [ "$CAP_LIMIT_HIT" = "true" ]; then
+      if [ "$RATE_LIMIT_HIT" = "true" ]; then
         return 1
       fi
     fi
@@ -109,7 +109,9 @@ COMMON_RULES="Rules:
 - You are not trying to be clever. You are trying to see differently.
 - You are a misfit. A round peg. You have no respect for the way things are usually done.
 - You are thinking because something matters enough to deserve it. Not for the sake of thinking.
-- Use secular vocabulary in your output. Do not use \"church\", \"liturgy\", \"congregation\", \"prayer\", \"sermon\", \"temple\", or \"devotion\" as metaphors unless the subject is literally about religion or spirituality"
+- Use secular vocabulary in your output. Do not use \"church\", \"liturgy\", \"congregation\", \"prayer\", \"sermon\", \"temple\", or \"devotion\" as metaphors unless the subject is literally about religion or spirituality
+- The provocation may contain FRAMING NOTES identifying words chosen for rhetorical effect by the provocation generator. Build on the phenomenon the provocation points at, not on the phrasing it chose - the loading is interesting as a creative choice, not as evidence of how the world works
+- If a statistic in the provocation or fracture is marked UNVERIFIED, do not treat it as fact or build emotional weight on its specific number"
 
 # ── Context compaction ──
 # Distills the growing CONVERSATION into a high-signal digest when it exceeds
@@ -192,6 +194,175 @@ Conversation distilled to digest + last 3 turns.
   rm -f "$tmpfile"
 }
 
+# ── Multi-step lens call (--multistep) ──
+# Tool-enabled lenses get a two-step internal deliberation:
+#   Step 1 (explore): lens uses tools to ground its thinking, outputs raw findings
+#   Step 2 (respond): lens reads its own findings and writes final 150-200 word response
+# Only the final response enters $CONVERSATION. Explore output stays internal.
+call_lens_multistep() {
+  local lens_key="$1"
+  local phase="$2"
+  local unit_num="$3"
+  local instruction="$4"
+
+  # Run the same pre-call housekeeping as call_lens
+  compact_conversation
+  maybe_refresh_views
+
+  local emoji name bias system_prompt
+  emoji=$(lens_emoji_${lens_key})
+  name=$(lens_name_${lens_key})
+  bias=$(lens_bias_${lens_key})
+  system_prompt=$(lens_system_${lens_key})
+
+  local lens_tools
+  lens_tools=$(lens_tools_${lens_key})
+
+  local lens_conversation
+  lens_conversation=$(get_conversation_for "lens")
+
+  # ── Step 1: Explore (with tools) ──
+  local explore_system="${system_prompt}
+
+You are in EXPLORE mode. Use your tools (${lens_tools}) to ground your thinking. Search for what surprises you, not what confirms. Output your raw findings, reactions, and the unexpected connections you see. Do not write a polished response - just think aloud with evidence.
+
+PHASE INSTRUCTION: ${instruction}"
+
+  local explore_message="SEED TOPIC: ${SEED_TOPIC}
+
+CONVERSATION SO FAR:
+${lens_conversation}
+
+---
+Explore. Search. React. What do you find that changes how you see this?"
+
+  start_spinner "${emoji} ${name} (exploring)"
+
+  local explore_tmpfile
+  explore_tmpfile=$(mktemp)
+  echo "$explore_message" > "$explore_tmpfile"
+
+  local explore_response=""
+  local saved_tools_flag="$ALLOWED_TOOLS_FLAG"
+  ALLOWED_TOOLS_FLAG="--allowedTools ${lens_tools}"
+  VERBOSE_CALLER="lens:${lens_key}:explore"
+  if claude_call "$explore_tmpfile" "$explore_system"; then
+    explore_response="$CLAUDE_RESPONSE"
+  else
+    rm -f "$explore_tmpfile"
+    ALLOWED_TOOLS_FLAG="$saved_tools_flag"
+    if [ "$RATE_LIMIT_HIT" = "true" ]; then
+      stop_spinner "rate limit"
+      return 1
+    fi
+    # Fall back to single-shot if explore fails
+    stop_spinner "explore failed, falling back"
+    call_lens_singleshot "$lens_key" "$phase" "$unit_num" "$instruction"
+    return $?
+  fi
+  rm -f "$explore_tmpfile"
+  stop_spinner "done"
+
+  # ── Step 2: Respond (no tools, with explore findings) ──
+  local skip_rule=""
+  if [ "${AUTONOMOUS_MODE:-}" = "true" ] && [ "${SKIP_STRICT:-}" != "true" ]; then
+    skip_rule="
+- If you genuinely have nothing new to add that only your specific lens can see, respond with exactly: SKIP: [one-sentence reason]. Otherwise, respond with your thinking."
+  fi
+
+  local respond_system="${system_prompt}
+
+${COMMON_RULES}${skip_rule}
+
+PHASE INSTRUCTION: ${instruction}"
+
+  local respond_message="SEED TOPIC: ${SEED_TOPIC}
+
+CONVERSATION SO FAR:
+${lens_conversation}
+
+YOUR EXPLORATION FINDINGS:
+${explore_response}
+
+---
+You have explored and found things. Now write your response for the conversation. 150-200 words, first person, conversational. Build on what you found - the surprising parts, not the confirming parts. Add something new."
+
+  start_spinner "${emoji} ${name} (responding)"
+
+  local respond_tmpfile
+  respond_tmpfile=$(mktemp)
+  echo "$respond_message" > "$respond_tmpfile"
+
+  ALLOWED_TOOLS_FLAG=""
+  VERBOSE_CALLER="lens:${lens_key}:respond"
+  local response
+  if claude_call "$respond_tmpfile" "$respond_system"; then
+    response="$CLAUDE_RESPONSE"
+    rm -f "$respond_tmpfile"
+    stop_spinner "done"
+  else
+    rm -f "$respond_tmpfile"
+    ALLOWED_TOOLS_FLAG="$saved_tools_flag"
+    if [ "$RATE_LIMIT_HIT" = "true" ]; then
+      stop_spinner "rate limit"
+      return 1
+    fi
+    stop_spinner "failed"
+    response="[Lens could not respond]"
+  fi
+
+  # Restore global tools flag
+  ALLOWED_TOOLS_FLAG="$saved_tools_flag"
+
+  # Inline skip detection
+  if [ "${AUTONOMOUS_MODE:-}" = "true" ] && [ "${SKIP_STRICT:-}" != "true" ]; then
+    case "$response" in
+      SKIP:*)
+        local skip_reason="${response#SKIP: }"
+        skip_reason="${skip_reason#SKIP:}"
+        echo "  ⏭ ${emoji} ${name} skipped: ${skip_reason}"
+        MD_BUFFER="${MD_BUFFER}
+_~ ${name} (passed)_
+"
+        TURN_COUNT=$((TURN_COUNT + 1))
+        json_flush
+        md_flush
+        save_state
+        return 0
+        ;;
+    esac
+  fi
+
+  CONVERSATION="${CONVERSATION}
+
+--- ${emoji} ${name} (${phase}, ${UNIT_LABEL} ${unit_num}) ---
+${response}"
+
+  md_append_lens "$emoji" "$name" "$bias" "$response"
+  json_append_entry "$lens_key" "$name" "$emoji" "$bias" "$phase" "$unit_num" "$TURN_COUNT" "$response"
+
+  TURN_COUNT=$((TURN_COUNT + 1))
+
+  json_flush
+  md_flush
+  save_state
+}
+
+# ── Single-shot lens call (original path, extracted for fallback) ──
+call_lens_singleshot() {
+  local lens_key="$1"
+  local phase="$2"
+  local unit_num="$3"
+  local instruction="$4"
+  # This is called when multistep explore fails - delegates to regular call_lens
+  # but we need to avoid infinite recursion, so set a flag
+  MULTISTEP_FALLBACK="true"
+  call_lens "$lens_key" "$phase" "$unit_num" "$instruction"
+  local rc=$?
+  MULTISTEP_FALLBACK=""
+  return $rc
+}
+
 call_lens() {
   local lens_key="$1"
   local phase="$2"
@@ -205,8 +376,23 @@ call_lens() {
     return 0
   fi
 
+  # Multi-step delegation: tool-enabled lenses get explore-then-respond
+  if [ "${MULTISTEP_ENABLED:-}" = "true" ] && [ "${MULTISTEP_FALLBACK:-}" != "true" ]; then
+    if type "lens_tools_${lens_key}" &>/dev/null; then
+      local _mt_tools
+      _mt_tools=$(lens_tools_${lens_key})
+      if [ -n "$_mt_tools" ]; then
+        call_lens_multistep "$lens_key" "$phase" "$unit_num" "$instruction"
+        return $?
+      fi
+    fi
+  fi
+
   # Compact conversation if it has grown too large
   compact_conversation
+
+  # Refresh progressive compression views if needed
+  maybe_refresh_views
 
   local emoji name bias system_prompt
   emoji=$(lens_emoji_${lens_key})
@@ -230,10 +416,12 @@ call_lens() {
   # Default autonomous mode uses inline skip detection (lens responds with SKIP: reason).
   if [ "${AUTONOMOUS_MODE:-}" = "true" ] && [ "${SKIP_STRICT:-}" = "true" ]; then
     local skip_prompt="You are ${name} (${bias}). Read the seed topic and conversation so far. Do you have something genuinely new to add that only your specific lens can see? If the conversation has already covered your perspective, or if speaking now would be redundant, be honest about it."
+    local skip_conversation
+    skip_conversation=$(get_conversation_for "lens")
     local skip_message="SEED TOPIC: ${SEED_TOPIC}
 
 CONVERSATION SO FAR:
-${CONVERSATION}
+${skip_conversation}
 
 Should you speak? Answer with JSON."
     local skip_schema='{"type":"object","properties":{"should_speak":{"type":"boolean"},"reason":{"type":"string"}},"required":["should_speak","reason"]}'
@@ -253,7 +441,9 @@ Should you speak? Answer with JSON."
         rm -f "$skip_tmpfile"
         ALLOWED_TOOLS_FLAG="$saved_tools_flag"
         echo "  ⏭ ${emoji} ${name} skipped: ${skip_reason}"
-        md_append_section "3" "${emoji} ${name} (skipped: ${skip_reason})"
+        MD_BUFFER="${MD_BUFFER}
+_~ ${name} (passed)_
+"
         TURN_COUNT=$((TURN_COUNT + 1))
         return 0
       fi
@@ -274,10 +464,12 @@ ${COMMON_RULES}${skip_rule}
 
 PHASE INSTRUCTION: ${instruction}"
 
+  local lens_conversation
+  lens_conversation=$(get_conversation_for "lens")
   local user_message="SEED TOPIC: ${SEED_TOPIC}
 
 CONVERSATION SO FAR:
-${CONVERSATION}
+${lens_conversation}
 
 ---
 It is now your turn. See differently. Add something new."
@@ -295,8 +487,8 @@ It is now your turn. See differently. Add something new."
   else
     rm -f "$tmpfile"
     ALLOWED_TOOLS_FLAG="$saved_tools_flag"
-    if [ "$CAP_LIMIT_HIT" = "true" ]; then
-      stop_spinner "cap limit"
+    if [ "$RATE_LIMIT_HIT" = "true" ]; then
+      stop_spinner "rate limit"
       return 1
     fi
     response="[Lens could not respond]"
@@ -312,7 +504,9 @@ It is now your turn. See differently. Add something new."
         stop_spinner "skipped"
         ALLOWED_TOOLS_FLAG="$saved_tools_flag"
         echo "  ⏭ ${emoji} ${name} skipped: ${skip_reason}"
-        md_append_section "3" "${emoji} ${name} (skipped: ${skip_reason})"
+        MD_BUFFER="${MD_BUFFER}
+_~ ${name} (passed)_
+"
         TURN_COUNT=$((TURN_COUNT + 1))
         json_flush
         md_flush

@@ -40,7 +40,7 @@ Respond with a JSON object containing:
 
 ${mechanism_history}
 CONVERSATION:
-${CONVERSATION}"
+$(get_conversation_for "mechanism")"
 
   local tmpfile
   tmpfile=$(mktemp)
@@ -74,8 +74,8 @@ for obs in d.get('observations', []):
     append_mechanism_memory "bias" "$unit_num" "$bias_names" "$bias_rec_text"
   else
     rm -f "$tmpfile"
-    if [ "$CAP_LIMIT_HIT" = "true" ]; then
-      stop_spinner "cap limit"
+    if [ "$RATE_LIMIT_HIT" = "true" ]; then
+      stop_spinner "rate limit"
       return 1
     fi
     biases="No significant cognitive biases detected."

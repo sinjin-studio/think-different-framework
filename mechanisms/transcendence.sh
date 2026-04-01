@@ -32,7 +32,7 @@ Respond with a JSON object containing:
 
 ${mechanism_history}
 CONVERSATION:
-${CONVERSATION}"
+$(get_conversation_for "mechanism")"
 
   local tmpfile
   tmpfile=$(mktemp)
@@ -66,8 +66,8 @@ for obs in d.get('observations', []):
     append_mechanism_memory "transcendence" "$unit_num" "$trans_rec_mem" "$trans_summary"
   else
     rm -f "$tmpfile"
-    if [ "$CAP_LIMIT_HIT" = "true" ]; then
-      stop_spinner "cap limit"
+    if [ "$RATE_LIMIT_HIT" = "true" ]; then
+      stop_spinner "rate limit"
       return 1
     fi
     observations="No transcendence signal detected."

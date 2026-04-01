@@ -11,10 +11,21 @@ MD_BUFFER=""
 md_init_header() {
   local title="$1"
   local seed="$2"
+  local original_input="${3:-}"
+
+  local seed_block
+  if [ -n "$original_input" ] && [ "$original_input" != "$seed" ]; then
+    # Provocation was generated from different input - show both
+    seed_block="> **Input:** ${original_input}
+> **Provocation:** ${seed}"
+  else
+    # Direct seed (user typed the provocation themselves)
+    seed_block="> **Seed:** ${seed}"
+  fi
 
   MD_HEADER="# ${title}
 
-> **Seed:** ${seed}
+${seed_block}
 > **Date:** $(date '+%Y-%m-%d %H:%M')
 
 ---
@@ -29,9 +40,9 @@ md_append_lens() {
   local content="$4"
 
   MD_BUFFER="${MD_BUFFER}
-**${emoji} ${name}** _${bias}_
-
 ${content}
+
+_~ ${name}_
 "
 }
 

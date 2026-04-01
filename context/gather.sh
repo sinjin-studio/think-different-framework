@@ -6,6 +6,11 @@
 # Sets: $PROJECT_CONTEXT
 
 gather_project_context() {
+  if [ "${NO_CONTEXT:-}" = "true" ]; then
+    PROJECT_CONTEXT=""
+    return
+  fi
+
   start_spinner "📍 Gathering project context"
 
   if [ -n "$CONTEXT_FILE" ]; then
@@ -94,8 +99,8 @@ Keep the brief under 500 words. Concrete and specific."
   else
     PROJECT_CONTEXT=""
     rm -f "$gather_tmpfile"
-    if [ "$CAP_LIMIT_HIT" = "true" ]; then
-      stop_spinner "cap limit"
+    if [ "$RATE_LIMIT_HIT" = "true" ]; then
+      stop_spinner "rate limit"
       return 1
     fi
     stop_spinner "failed (continuing without context)"

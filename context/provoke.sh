@@ -256,7 +256,7 @@ ${context_block}${audience_block}"
       echo "  [debug] Response content: ${raw_provocations}" >&2
     fi
   else
-    echo "  [debug] claude_call failed - exit_code: ${LAST_CLAUDE_EXIT_CODE}, cap_hit: ${CAP_LIMIT_HIT:-false}" >&2
+    echo "  [debug] claude_call failed - exit_code: ${LAST_CLAUDE_EXIT_CODE}, cap_hit: ${RATE_LIMIT_HIT:-false}" >&2
     if [ -n "${LAST_CLAUDE_ERROR:-}" ]; then
       echo "  [debug] stderr: ${LAST_CLAUDE_ERROR:0:500}" >&2
     fi
@@ -264,8 +264,8 @@ ${context_block}${audience_block}"
       echo "  [debug] partial response: ${CLAUDE_RESPONSE:0:300}" >&2
     fi
     rm -f "$tmpfile"
-    if [ "$CAP_LIMIT_HIT" = "true" ]; then
-      stop_spinner "cap limit"
+    if [ "$RATE_LIMIT_HIT" = "true" ]; then
+      stop_spinner "rate limit"
       PROVOCATIONS=()
       return 1
     fi

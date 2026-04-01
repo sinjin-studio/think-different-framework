@@ -60,8 +60,8 @@ SEED TOPIC: ${SEED_TOPIC}"
     LENS_CONTEXT="$CLAUDE_RESPONSE"
   else
     rm -f "$tmpfile"
-    if [ "$CAP_LIMIT_HIT" = "true" ]; then
-      stop_spinner "cap limit"
+    if [ "$RATE_LIMIT_HIT" = "true" ]; then
+      stop_spinner "rate limit"
       return 1
     fi
     LENS_CONTEXT="No lens context available. Lenses should follow their own instincts."
@@ -80,10 +80,25 @@ PROJECT CONTEXT (ground truth about the actual project, business, or situation t
 ${PROJECT_CONTEXT}"
   fi
 
+  if [ -n "${SEED_VERIFICATION:-}" ]; then
+    CONVERSATION="${CONVERSATION}
+
+PROVOCATION VERIFICATION (claims checked, framing flagged - use corrected provocation as ground truth):
+${SEED_VERIFICATION}"
+  fi
+
   CONVERSATION="${CONVERSATION}
 
 LENS CONTEXT (optional starting points for the lenses, not constraints):
 ${LENS_CONTEXT}"
+
+  if [ -n "${SEED_VERIFICATION:-}" ]; then
+    md_append_section 3 "Provocation Verification"
+    MD_BUFFER="${MD_BUFFER}
+${SEED_VERIFICATION}
+"
+    json_append_entry "verify" "Provocation Verification" "🔍" "Fact Check" "verify" 0 0 "$SEED_VERIFICATION"
+  fi
 
   if [ -n "$PROJECT_CONTEXT" ]; then
     md_append_section 3 "Project Context"

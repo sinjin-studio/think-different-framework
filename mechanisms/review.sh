@@ -37,7 +37,7 @@ ${ZEITGEIST_CONTEXT}
 These sources were captured during provocation generation. Use them as a head start - if the session is only reaching territory these articles already cover, the novelty score should reflect that.
 }
 CONVERSATION:
-${CONVERSATION}
+$(get_conversation_for "mechanism")
 
 Respond with a JSON object."
 
@@ -76,7 +76,7 @@ PROSECUTION'S CASE:
 ${prosecution_result}
 
 SESSION CONVERSATION:
-${CONVERSATION}
+$(get_conversation_for "mechanism")
 
 Respond with a JSON object."
 
@@ -149,8 +149,8 @@ review_session() {
 
   if [ -z "$prosecution_result" ]; then
     ALLOWED_TOOLS_FLAG="$saved_tools"
-    if [ "$CAP_LIMIT_HIT" = "true" ]; then
-      stop_spinner "cap limit"
+    if [ "$RATE_LIMIT_HIT" = "true" ]; then
+      stop_spinner "rate limit"
       return 1
     fi
     stop_spinner "failed (proceeding anyway)"
@@ -167,8 +167,8 @@ review_session() {
 
   if [ -z "$defense_result" ]; then
     ALLOWED_TOOLS_FLAG="$saved_tools"
-    if [ "$CAP_LIMIT_HIT" = "true" ]; then
-      stop_spinner "cap limit"
+    if [ "$RATE_LIMIT_HIT" = "true" ]; then
+      stop_spinner "rate limit"
       return 1
     fi
     stop_spinner "failed (proceeding anyway)"
@@ -186,8 +186,8 @@ review_session() {
   verdict_result=$(review_verdict "$prosecution_result" "$defense_result")
 
   if [ -z "$verdict_result" ]; then
-    if [ "$CAP_LIMIT_HIT" = "true" ]; then
-      stop_spinner "cap limit"
+    if [ "$RATE_LIMIT_HIT" = "true" ]; then
+      stop_spinner "rate limit"
       return 1
     fi
     stop_spinner "failed (proceeding anyway)"

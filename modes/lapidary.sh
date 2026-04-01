@@ -48,9 +48,9 @@ run_session() {
 
   # Gather context, then appraise (grounding is embedded in appraisal)
   gather_project_context || true
-  [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+  [ "$RATE_LIMIT_HIT" = "true" ] && return 0
   appraise_seed || true
-  [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+  [ "$RATE_LIMIT_HIT" = "true" ] && return 0
 
   # Determine pass count (default 3)
   local total_passes="${PASS_COUNT:-5}"
@@ -67,15 +67,15 @@ run_session() {
       "observer:observe:1:What is literally here? Not interpretations. What specific words were chosen? What was described but not named? What is actually happening that the framing might be obscuring?" \
       "editor:pare:1:First cut. Look at everything that has been said so far. What is already unnecessary? What word, assumption, or framing is clutter rather than structure? Make the first removal. Show what the material looks like with less." \
       "connoisseur:evaluate:1:First quality assessment. Is this material worth making well? Not every seed is. Be honest. What is the quality of the raw material after this first rough cut? Where do you sense potential for something that could sing?"
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
 
     # Polish + void between passes 1 and 2
     polish 1 || true
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
     map_negative_space 1 || true
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
     handle_negative_space_decision 1
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
   fi
 
   # ── PASS 2: Shape ──
@@ -90,15 +90,15 @@ run_session() {
       "logician:trace:2:The material has been cut and provoked. Now trace the structure. Which elements are genuinely load-bearing and which are ornamental? If you removed each piece, what would collapse and what would stand? Follow the causal chain: what is the first-principles reason this material matters?" \
       "editor:pare:2:Second cut, sharper. The rough cut removed the obvious clutter. Now remove the less obvious. The qualification that hedges. The second example that weakens the first. The structural element that is decorative. Cut until every remaining element is load-bearing." \
       "connoisseur:evaluate:2:Is this getting better? Not just different - better. Has the shaping improved the proportions or distorted them? Is the material finding its voice or losing it? Be precise about the quality trajectory."
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
 
     # Friction + polish between passes 2 and 3
     detect_prediction_errors 2 || true
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
     handle_friction_decision 2
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
     polish 2 || true
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
     # Transcendence moved to after pass 3 in extended passes loop
   fi
 
@@ -116,11 +116,11 @@ run_session() {
       "editor:pare:3:Final cut. Every word must be load-bearing. Every element structural. This is the pass where good becomes accomplished. Remove the last thing that is not the thing. Show the finished shape." \
       "mouth:register:3:Three passes of refinement. The editor has made the final cut. Now hear what remains. Is it more alive than the last draft, or just more polished? Polish that removes voice is damage, not improvement. If any phrase is dead on arrival, say what it should sound like." \
       "connoisseur:evaluate:3:Final verdict. Is this finished or merely stopped? Not perfect - finished. Does it have the quality of something made with care and attention? Would you want to live with it? Is it ready to leave the workshop?"
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
 
     # Bias check before ground
     detect_cognitive_bias 3 || true
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
   fi
 
   # ── Additional passes if --passes > 3 ──
@@ -133,26 +133,26 @@ run_session() {
       "historian:root:${p}:Pass ${p}. What deeper precedent is visible now?" \
       "editor:pare:${p}:Pass ${p}. Another cut. What can still be removed without losing meaning?" \
       "connoisseur:evaluate:${p}:Pass ${p}. Quality check. Is the material still improving or has it begun to lose life?"
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
 
     detect_prediction_errors "$p" || true
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
     handle_friction_decision "$p"
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
     polish "$p" || true
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
 
     # Transcendence + void checks from pass 3 onwards
     if [ "$p" -ge 3 ]; then
       if [ "$NEGATIVE_SPACE_ENABLED" = "true" ]; then
         map_negative_space "$p" || true
-        [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+        [ "$RATE_LIMIT_HIT" = "true" ] && return 0
         handle_negative_space_decision "$p"
-        [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+        [ "$RATE_LIMIT_HIT" = "true" ] && return 0
       fi
       if [ "$TRANSCENDENCE_ENABLED" = "true" ]; then
         transcendence_check "$p" || true
-        [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+        [ "$RATE_LIMIT_HIT" = "true" ] && return 0
         handle_transcendence_decision
         if [ "$MECHANISM_SKIP_TO_GROUND" = "true" ]; then
           p=$((p + 1))
@@ -174,14 +174,14 @@ run_session() {
   mark_phase "Ground" "Landing the Insight"
   if is_lens_active "empath"; then
     call_lens "empath" "ground" "$final_pass" "The session is ending. Three passes of refinement have shaped this material. Forget the craft for a moment. What does the person at the centre of this actually need? What would change their behaviour? Strip away everything and say what remains. Identify the 1-3 ideas that pass the simplicity test. For each: what is the smallest experiment someone could do tomorrow?" || true
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
   fi
   if is_lens_active "mouth"; then
     call_lens "mouth" "ground" "$final_pass" "Final register gate. The Empath has landed the insight. Before the editor gives it final form, hear it. Did the grounding kill the voice? Did making it actionable make it dead? If the register survived, leave it alone. If the grounding sanded off the edge that was the whole point, re-voice it with the edge intact." || true
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
   fi
   if is_lens_active "editor"; then
     call_lens "editor" "ground" "$final_pass" "Final word. The Empath has landed the insight in human terms. Now give it its final form. State the single most important insight from this session in the most precise, economical language you can. Then state it again even more simply. Both versions should be true. Make every word load-bearing." || true
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
   fi
 }

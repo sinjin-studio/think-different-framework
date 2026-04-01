@@ -44,7 +44,7 @@ run_conductor_session() {
   if [ "${RESUME_MODE:-}" != "true" ]; then
     # Gather context and prepare seed (using mode-appropriate preparation)
     gather_project_context || true
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
 
     # Run seed preparation based on mode
     case "$MODE" in
@@ -61,7 +61,7 @@ run_conductor_session() {
         appraise_seed || true
         ;;
     esac
-    [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+    [ "$RATE_LIMIT_HIT" = "true" ] && return 0
   fi
 
   # Build list of valid lens keys from sourced functions
@@ -78,6 +78,7 @@ run_conductor_session() {
   # Track which lenses have spoken for diversity check
   local lenses_spoken=""
   local turn_in_session=0
+  local user_questions_asked=0
 
   # ── Main conductor loop ──
   while [ "$turn_in_session" -lt "$CONDUCTOR_MAX_TURNS" ]; do
@@ -92,34 +93,40 @@ run_conductor_session() {
 - Budget remaining: $((CONDUCTOR_MAX_TURNS - turn_in_session)) turns
 ${mech_history}"
 
-    local conductor_prompt="SEED TOPIC: ${SEED_TOPIC}
+    local conductor_conversation
+    conductor_conversation=$(get_conversation_for "conductor")
+
+    # ── Phase 1: Pick lens + instruction ──
+    local phase1_prompt="SEED TOPIC: ${SEED_TOPIC}
 
 ${state_summary}
 
 CONVERSATION SO FAR:
-${CONVERSATION}
+${conductor_conversation}
 
 ---
-What should happen next? Decide which lens should speak and what instruction to give it. Or trigger a mechanism, review, or end the session.
+Phase 1: Decide which lens should speak next and what instruction to give it. Or set next_lens to 'user' to pause and ask the operator a question (max 2 per session).
+
+In your 'reasoning' field: name what territory the conversation has NOT explored and explain why you are choosing this lens now. This reasoning is logged for session review.
 
 Respond with a JSON object."
 
-    local decision_schema="{\"type\":\"object\",\"properties\":{\"next_lens\":{\"type\":\"string\",\"enum\":[${valid_lenses}]},\"phase\":{\"type\":\"string\"},\"instruction\":{\"type\":\"string\"},\"mechanism_after\":{\"type\":\"string\",\"enum\":[\"friction\",\"sensory\",\"bias\",\"transcendence\",\"negative_space\",\"\"]},\"review_now\":{\"type\":\"boolean\"},\"end_session\":{\"type\":\"boolean\"}},\"required\":[\"next_lens\",\"phase\",\"instruction\",\"end_session\"]}"
+    local phase1_schema="{\"type\":\"object\",\"properties\":{\"reasoning\":{\"type\":\"string\"},\"next_lens\":{\"type\":\"string\",\"enum\":[${valid_lenses},\"user\"]},\"phase\":{\"type\":\"string\"},\"instruction\":{\"type\":\"string\"}},\"required\":[\"reasoning\",\"next_lens\",\"phase\",\"instruction\"]}"
 
     local tmpfile
     tmpfile=$(mktemp)
-    echo "$conductor_prompt" > "$tmpfile"
+    echo "$phase1_prompt" > "$tmpfile"
 
-    start_spinner "🎼 Conductor deciding"
+    start_spinner "🎼 Conductor deciding (phase 1)"
 
-    local decision_json
-    VERBOSE_CALLER="conductor"
-    if claude_call_json "$tmpfile" "$decision_schema" "$conductor_system"; then
-      decision_json="$CLAUDE_RESPONSE"
+    local phase1_json
+    VERBOSE_CALLER="conductor:phase1"
+    if claude_call_json "$tmpfile" "$phase1_schema" "$conductor_system"; then
+      phase1_json="$CLAUDE_RESPONSE"
     else
       rm -f "$tmpfile"
-      if [ "$CAP_LIMIT_HIT" = "true" ]; then
-        stop_spinner "cap limit"
+      if [ "$RATE_LIMIT_HIT" = "true" ]; then
+        stop_spinner "rate limit"
         return 0
       fi
       stop_spinner "failed"
@@ -129,14 +136,156 @@ Respond with a JSON object."
     rm -f "$tmpfile"
     stop_spinner "done"
 
-    # Parse the decision
-    local next_lens phase instruction mechanism_after review_now end_session
-    next_lens=$(echo "$decision_json" | python3 -c "import sys,json; print(json.load(sys.stdin).get('next_lens',''))" 2>/dev/null || echo "")
-    phase=$(echo "$decision_json" | python3 -c "import sys,json; print(json.load(sys.stdin).get('phase',''))" 2>/dev/null || echo "")
-    instruction=$(echo "$decision_json" | python3 -c "import sys,json; print(json.load(sys.stdin).get('instruction',''))" 2>/dev/null || echo "")
-    mechanism_after=$(echo "$decision_json" | python3 -c "import sys,json; print(json.load(sys.stdin).get('mechanism_after',''))" 2>/dev/null || echo "")
-    review_now=$(echo "$decision_json" | python3 -c "import sys,json; print(json.load(sys.stdin).get('review_now',False))" 2>/dev/null || echo "False")
-    end_session=$(echo "$decision_json" | python3 -c "import sys,json; print(json.load(sys.stdin).get('end_session',False))" 2>/dev/null || echo "False")
+    # Parse Phase 1 decision
+    local next_lens phase instruction reasoning
+    next_lens=$(echo "$phase1_json" | python3 -c "import sys,json; print(json.load(sys.stdin).get('next_lens',''))" 2>/dev/null || echo "")
+    phase=$(echo "$phase1_json" | python3 -c "import sys,json; print(json.load(sys.stdin).get('phase',''))" 2>/dev/null || echo "")
+    instruction=$(echo "$phase1_json" | python3 -c "import sys,json; print(json.load(sys.stdin).get('instruction',''))" 2>/dev/null || echo "")
+    reasoning=$(echo "$phase1_json" | python3 -c "import sys,json; print(json.load(sys.stdin).get('reasoning',''))" 2>/dev/null || echo "")
+
+    # Log conductor reasoning
+    if [ -n "$reasoning" ]; then
+      echo "  💭 Conductor: ${reasoning}"
+    fi
+
+    # Handle user question
+    if [ "$next_lens" = "user" ]; then
+      if [ "$user_questions_asked" -ge 2 ]; then
+        echo "  ⚠ Conductor wants to ask user but already asked ${user_questions_asked} questions (max 2). Skipping."
+      else
+        echo ""
+        echo "  ━━━ CONDUCTOR QUESTION ━━━━━━━━━━━━━━━━━━━━━"
+        echo "  ${instruction}"
+        echo ""
+        echo -n "  Your answer: "
+        local user_answer
+        read -r user_answer
+        echo ""
+        CONVERSATION="${CONVERSATION}
+
+=== USER INPUT (${UNIT_LABEL} $((turn_in_session + 1))) ===
+Conductor asked: ${instruction}
+User answered: ${user_answer}"
+
+        md_append_section 3 "❓ Conductor Question (${UNIT_LABEL} $((turn_in_session + 1)))"
+        MD_BUFFER="${MD_BUFFER}
+**Q:** ${instruction}
+**A:** ${user_answer}
+"
+        json_append_entry "conductor" "User Question" "❓" "Clarification" "user_question" "$((turn_in_session + 1))" "$TURN_COUNT" "Q: ${instruction} | A: ${user_answer}"
+        TURN_COUNT=$((TURN_COUNT + 1))
+
+        json_flush
+        md_flush
+        save_state
+
+        user_questions_asked=$((user_questions_asked + 1))
+        turn_in_session=$((turn_in_session + 1))
+      fi
+      continue
+    fi
+
+    # Dispatch the chosen lens
+    local lens_actually_spoke="false"
+    if [ -n "$next_lens" ] && is_lens_active "$next_lens"; then
+      local conv_len_before=${#CONVERSATION}
+      call_lens "$next_lens" "$phase" "$((turn_in_session + 1))" "$instruction" || true
+      [ "$RATE_LIMIT_HIT" = "true" ] && return 0
+
+      # Check if the lens actually added to the conversation (not a skip)
+      if [ ${#CONVERSATION} -gt "$conv_len_before" ]; then
+        lens_actually_spoke="true"
+        # Track diversity only for lenses that actually contributed
+        if [ -z "$lenses_spoken" ]; then
+          lenses_spoken="$next_lens"
+        else
+          lenses_spoken="${lenses_spoken},${next_lens}"
+        fi
+      fi
+      turn_in_session=$((turn_in_session + 1))
+    else
+      echo "  ⚠ Conductor chose unavailable lens: '${next_lens}'. Skipping."
+      if [ -z "$next_lens" ]; then
+        echo "  DEBUG: Raw conductor response: $(echo "$phase1_json" | head -c 200)"
+      fi
+      continue
+    fi
+
+    # ── Phase 2: React to lens output - decide mechanism/review/end ──
+    # Skip Phase 2 if the lens self-skipped (nothing new to react to)
+    if [ "$lens_actually_spoke" != "true" ]; then
+      continue
+    fi
+
+    # Extract last lens response for the conductor to react to
+    local last_response=""
+    last_response=$(echo "$CONVERSATION" | python3 -c "
+import sys
+text = sys.stdin.read()
+parts = text.split('\n--- ')
+if len(parts) > 1:
+    # Last turn, truncated to 500 chars for the conductor prompt
+    print(parts[-1][:500])
+else:
+    print('')
+" 2>/dev/null || echo "")
+
+    local phase2_prompt="SEED TOPIC: ${SEED_TOPIC}
+
+Session state:
+- Turn: ${turn_in_session} of ${CONDUCTOR_MAX_TURNS} max
+- Lenses heard: ${lenses_spoken:-none yet}
+- Last lens was: ${next_lens}
+$(build_mechanism_history)
+
+LAST LENS RESPONSE:
+${last_response}
+
+---
+Phase 2: You have just heard ${next_lens} speak. Now decide:
+- Should a mechanism run to check the conversation? (friction, sensory, bias, transcendence, negative_space, or empty string for none)
+- Should the session be reviewed now?
+- Should the session end?
+
+React to what the lens actually said, not what you predicted. If the response opened unexpected territory, let it breathe. If it circled or collapsed, intervene.
+
+Respond with a JSON object."
+
+    local phase2_schema="{\"type\":\"object\",\"properties\":{\"reasoning\":{\"type\":\"string\"},\"mechanism\":{\"type\":\"string\",\"enum\":[\"friction\",\"sensory\",\"bias\",\"transcendence\",\"negative_space\",\"\"]},\"review_now\":{\"type\":\"boolean\"},\"end_session\":{\"type\":\"boolean\"}},\"required\":[\"reasoning\",\"end_session\"]}"
+
+    local tmpfile2
+    tmpfile2=$(mktemp)
+    echo "$phase2_prompt" > "$tmpfile2"
+
+    start_spinner "🎼 Conductor reacting (phase 2)"
+
+    local phase2_json
+    VERBOSE_CALLER="conductor:phase2"
+    if claude_call_json "$tmpfile2" "$phase2_schema" "$conductor_system"; then
+      phase2_json="$CLAUDE_RESPONSE"
+    else
+      rm -f "$tmpfile2"
+      if [ "$RATE_LIMIT_HIT" = "true" ]; then
+        stop_spinner "rate limit"
+        return 0
+      fi
+      stop_spinner "skipped"
+      # If phase 2 fails, continue without mechanism/review - not fatal
+      continue
+    fi
+    rm -f "$tmpfile2"
+    stop_spinner "done"
+
+    # Parse Phase 2 decision
+    local mechanism_after review_now end_session phase2_reasoning
+    mechanism_after=$(echo "$phase2_json" | python3 -c "import sys,json; print(json.load(sys.stdin).get('mechanism',''))" 2>/dev/null || echo "")
+    review_now=$(echo "$phase2_json" | python3 -c "import sys,json; print(json.load(sys.stdin).get('review_now',False))" 2>/dev/null || echo "False")
+    end_session=$(echo "$phase2_json" | python3 -c "import sys,json; print(json.load(sys.stdin).get('end_session',False))" 2>/dev/null || echo "False")
+    phase2_reasoning=$(echo "$phase2_json" | python3 -c "import sys,json; print(json.load(sys.stdin).get('reasoning',''))" 2>/dev/null || echo "")
+
+    if [ -n "$phase2_reasoning" ]; then
+      echo "  💭 Conductor (react): ${phase2_reasoning}"
+    fi
 
     # End session if conductor says so (check turn floor + diversity first)
     if [ "$end_session" = "True" ]; then
@@ -154,44 +303,25 @@ Respond with a JSON object."
       fi
     fi
 
-    # Dispatch the chosen lens
-    if [ -n "$next_lens" ] && is_lens_active "$next_lens"; then
-      call_lens "$next_lens" "$phase" "$((turn_in_session + 1))" "$instruction" || true
-      [ "$CAP_LIMIT_HIT" = "true" ] && return 0
-
-      # Track diversity
-      if [ -z "$lenses_spoken" ]; then
-        lenses_spoken="$next_lens"
-      else
-        lenses_spoken="${lenses_spoken},${next_lens}"
-      fi
-      turn_in_session=$((turn_in_session + 1))
-    else
-      echo "  ⚠ Conductor chose unavailable lens: '${next_lens}'. Skipping."
-      if [ -z "$next_lens" ]; then
-        echo "  DEBUG: Raw conductor response: $(echo "$decision_json" | head -c 200)"
-      fi
-    fi
-
     # Run mechanism if requested
     if [ -n "$mechanism_after" ]; then
       case "$mechanism_after" in
         friction)
           detect_prediction_errors "$((turn_in_session))" || true
-          [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+          [ "$RATE_LIMIT_HIT" = "true" ] && return 0
           handle_friction_decision "$((turn_in_session))"
-          [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+          [ "$RATE_LIMIT_HIT" = "true" ] && return 0
           ;;
         sensory)
           sensory_check || true
           ;;
         bias)
           detect_cognitive_bias "$((turn_in_session))" || true
-          [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+          [ "$RATE_LIMIT_HIT" = "true" ] && return 0
           ;;
         transcendence)
           transcendence_check "$((turn_in_session))" || true
-          [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+          [ "$RATE_LIMIT_HIT" = "true" ] && return 0
           handle_transcendence_decision
           if [ "$MECHANISM_SKIP_TO_GROUND" = "true" ]; then
             if [ "$turn_in_session" -lt "$CONDUCTOR_MIN_TURNS" ]; then
@@ -205,9 +335,9 @@ Respond with a JSON object."
           ;;
         negative_space)
           map_negative_space "$((turn_in_session))" || true
-          [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+          [ "$RATE_LIMIT_HIT" = "true" ] && return 0
           handle_negative_space_decision "$((turn_in_session))"
-          [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+          [ "$RATE_LIMIT_HIT" = "true" ] && return 0
           ;;
       esac
     fi
@@ -235,7 +365,7 @@ Respond with a JSON object."
     dyslexic)
       if is_lens_active "empath"; then
         call_lens "empath" "ground" "$((turn_in_session + 1))" "This is the end. Deliver the verdict. What is new here? What would actually change behaviour? Strip away the metaphors. Say what remains. Identify the 1-3 ideas that pass the simplicity test. For each one: what is the smallest experiment someone could take tomorrow?" || true
-        [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+        [ "$RATE_LIMIT_HIT" = "true" ] && return 0
       fi
       if is_lens_active "reifier"; then
         call_lens "reifier" "ground" "$((turn_in_session + 1))" "Final word. State the single most important insight. State it once with nuance. Then state it again in one sentence a child could understand. Both versions should be true." || true
@@ -244,7 +374,7 @@ Respond with a JSON object."
     spiral)
       if is_lens_active "empath"; then
         call_lens "empath" "ground" "$((turn_in_session + 1))" "What is new here? What would actually change behaviour? Strip away every metaphor and say what remains." || true
-        [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+        [ "$RATE_LIMIT_HIT" = "true" ] && return 0
       fi
       if is_lens_active "integrator"; then
         call_lens "integrator" "ground" "$((turn_in_session + 1))" "Final word. Name the single most important insight. State it simply. Then state it even more simply. Make it count." || true
@@ -253,7 +383,7 @@ Respond with a JSON object."
     lapidary)
       if is_lens_active "empath"; then
         call_lens "empath" "ground" "$((turn_in_session + 1))" "The session is ending. What does the person at the centre of this actually need? What would change their behaviour? Strip away everything and say what remains." || true
-        [ "$CAP_LIMIT_HIT" = "true" ] && return 0
+        [ "$RATE_LIMIT_HIT" = "true" ] && return 0
       fi
       if is_lens_active "editor"; then
         call_lens "editor" "ground" "$((turn_in_session + 1))" "Final word. State the single most important insight in the most precise, economical language you can. Make every word load-bearing." || true

@@ -835,6 +835,14 @@ input[type="range"] {
           <input type="number" id="turnsNum" min="5" max="100" step="5" value="35" style="width: 65px;">
         </div>
       </div>
+      <div class="field" id="min-turns-field">
+        <label>Min Turns <span class="flag">--min-turns</span></label>
+        <div class="field-row">
+          <input type="range" id="minTurnsRange" min="5" max="50" step="5" value="15">
+          <input type="number" id="minTurnsNum" min="5" max="50" step="5" value="15" style="width: 65px;">
+        </div>
+        <div class="help">Min turns before conductor can end session. Default: 15.</div>
+      </div>
 
       <div class="field hidden" id="rounds-field">
         <label>Rounds <span class="flag">--rounds</span></label>
@@ -997,6 +1005,11 @@ input[type="range"] {
             <span class="toggle-help flag">--compact</span>
           </div>
           <div class="toggle-wrap">
+            <label class="toggle"><input type="checkbox" id="noProgressive"><span class="slider"></span></label>
+            <span class="toggle-label">No Progressive</span>
+            <span class="toggle-help flag">--no-progressive</span>
+          </div>
+          <div class="toggle-wrap">
             <label class="toggle"><input type="checkbox" id="noGround"><span class="slider"></span></label>
             <span class="toggle-label">No Ground</span>
             <span class="toggle-help flag">--no-ground</span>
@@ -1005,6 +1018,11 @@ input[type="range"] {
             <label class="toggle"><input type="checkbox" id="groundOnly"><span class="slider"></span></label>
             <span class="toggle-label">Ground Only</span>
             <span class="toggle-help flag">--ground-only</span>
+          </div>
+          <div class="toggle-wrap">
+            <label class="toggle"><input type="checkbox" id="noContext"><span class="slider"></span></label>
+            <span class="toggle-label">No Context</span>
+            <span class="toggle-help flag">--no-context</span>
           </div>
           <div class="toggle-wrap">
             <label class="toggle"><input type="checkbox" id="noWait"><span class="slider"></span></label>
@@ -1203,11 +1221,11 @@ const DEFAULTS = {
   depth: 'deep', depthCustom: '',
   friction: true, bias: true, sensory: true, transcendence: true, negative_space: true,
   autonomous: true,
-  turns: 35,
+  turns: 35, minTurns: 15,
   rounds: 4, spirals: 3, passes: 3,
   include: [], exclude: [],
-  shuffle: false, skipStrict: false, compact: false,
-  noGround: false, groundOnly: false, noWait: false,
+  shuffle: false, skipStrict: false, compact: false, noProgressive: false,
+  noGround: false, groundOnly: false, noContext: false, noWait: false,
   allowedTools: 'WebSearch,WebFetch',
   cmdPrefix: './think.sh',
 };
@@ -1356,6 +1374,12 @@ function bindEvents() {
   turnsRange.addEventListener('input', () => { turnsNum.value = turnsRange.value; STATE.turns = +turnsRange.value; render(); });
   turnsNum.addEventListener('input', () => { turnsRange.value = turnsNum.value; STATE.turns = +turnsNum.value; render(); });
 
+  // Min turns sync
+  const minTurnsRange = document.getElementById('minTurnsRange');
+  const minTurnsNum = document.getElementById('minTurnsNum');
+  minTurnsRange.addEventListener('input', () => { minTurnsNum.value = minTurnsRange.value; STATE.minTurns = +minTurnsRange.value; render(); });
+  minTurnsNum.addEventListener('input', () => { minTurnsRange.value = minTurnsNum.value; STATE.minTurns = +minTurnsNum.value; render(); });
+
   // Rounds/spirals/passes
   document.getElementById('rounds').addEventListener('input', (e) => { STATE.rounds = +e.target.value; render(); });
   document.getElementById('spirals').addEventListener('input', (e) => { STATE.spirals = +e.target.value; render(); });
@@ -1364,8 +1388,8 @@ function bindEvents() {
   // Toggle checkboxes
   const toggleMap = {
     pick: 'pick', html: 'html', autonomous: 'autonomous',
-    shuffle: 'shuffle', skipStrict: 'skipStrict', compact: 'compact',
-    noGround: 'noGround', groundOnly: 'groundOnly', noWait: 'noWait',
+    shuffle: 'shuffle', skipStrict: 'skipStrict', compact: 'compact', noProgressive: 'noProgressive',
+    noGround: 'noGround', groundOnly: 'groundOnly', noContext: 'noContext', noWait: 'noWait',
   };
   for (const [elId, key] of Object.entries(toggleMap)) {
     document.getElementById(elId).addEventListener('change', (e) => {
@@ -1373,6 +1397,7 @@ function bindEvents() {
       // Mutual exclusion
       if (key === 'noGround' && e.target.checked) { STATE.groundOnly = false; document.getElementById('groundOnly').checked = false; }
       if (key === 'groundOnly' && e.target.checked) { STATE.noGround = false; document.getElementById('noGround').checked = false; }
+      if (key === 'noContext' && e.target.checked) { STATE.noGround = false; STATE.groundOnly = false; document.getElementById('noGround').checked = false; document.getElementById('groundOnly').checked = false; }
       render();
     });
   }
@@ -1590,6 +1615,7 @@ function updateVisibility() {
   // Autonomous vs non-autonomous
   const auto = STATE.autonomous;
   document.getElementById('turns-field').classList.toggle('hidden', !auto);
+  document.getElementById('min-turns-field').classList.toggle('hidden', !auto);
   document.getElementById('rounds-field').classList.toggle('hidden', auto || STATE.mode !== 'dyslexic');
   document.getElementById('spirals-field').classList.toggle('hidden', auto || STATE.mode !== 'spiral');
   document.getElementById('passes-field').classList.toggle('hidden', auto || STATE.mode !== 'lapidary');
@@ -1670,6 +1696,7 @@ function buildCommand() {
       if (STATE.mode === 'lapidary' && STATE.passes !== 3) parts.push('--passes', '' + STATE.passes);
     } else {
       if (STATE.turns !== 35) parts.push('--turns', '' + STATE.turns);
+      if (STATE.minTurns !== 15) parts.push('--min-turns', '' + STATE.minTurns);
     }
 
     // Advanced
@@ -1678,8 +1705,10 @@ function buildCommand() {
     if (STATE.shuffle) parts.push('--shuffle');
     if (STATE.skipStrict) parts.push('--skip-strict');
     if (STATE.compact) parts.push('--compact');
+    if (STATE.noProgressive) parts.push('--no-progressive');
     if (STATE.noGround) parts.push('--no-ground');
     if (STATE.groundOnly) parts.push('--ground-only');
+    if (STATE.noContext) parts.push('--no-context');
     if (STATE.noWait) parts.push('--no-wait');
     if (STATE.allowedTools !== 'WebSearch,WebFetch') {
       parts.push('--allowedTools', STATE.allowedTools ? q(STATE.allowedTools) : '""');
@@ -1772,14 +1801,17 @@ function getCommandOneLine() {
       if (STATE.mode === 'lapidary' && STATE.passes !== 3) parts.push('--passes', '' + STATE.passes);
     } else {
       if (STATE.turns !== 35) parts.push('--turns', '' + STATE.turns);
+      if (STATE.minTurns !== 15) parts.push('--min-turns', '' + STATE.minTurns);
     }
     if (STATE.include.length > 0) parts.push('--include', STATE.include.join(','));
     if (STATE.exclude.length > 0) parts.push('--exclude', STATE.exclude.join(','));
     if (STATE.shuffle) parts.push('--shuffle');
     if (STATE.skipStrict) parts.push('--skip-strict');
     if (STATE.compact) parts.push('--compact');
+    if (STATE.noProgressive) parts.push('--no-progressive');
     if (STATE.noGround) parts.push('--no-ground');
     if (STATE.groundOnly) parts.push('--ground-only');
+    if (STATE.noContext) parts.push('--no-context');
     if (STATE.noWait) parts.push('--no-wait');
     if (STATE.allowedTools !== 'WebSearch,WebFetch') {
       parts.push('--allowedTools', STATE.allowedTools ? q(STATE.allowedTools) : '""');
@@ -1900,6 +1932,8 @@ function applyStateToUI() {
   document.getElementById('linesNum').value = STATE.lines;
   document.getElementById('turnsRange').value = STATE.turns;
   document.getElementById('turnsNum').value = STATE.turns;
+  document.getElementById('minTurnsRange').value = STATE.minTurns;
+  document.getElementById('minTurnsNum').value = STATE.minTurns;
   document.getElementById('rounds').value = STATE.rounds;
   document.getElementById('spirals').value = STATE.spirals;
   document.getElementById('passes').value = STATE.passes;
@@ -1911,8 +1945,10 @@ function applyStateToUI() {
   document.getElementById('shuffle').checked = STATE.shuffle;
   document.getElementById('skipStrict').checked = STATE.skipStrict;
   document.getElementById('compact').checked = STATE.compact;
+  document.getElementById('noProgressive').checked = STATE.noProgressive;
   document.getElementById('noGround').checked = STATE.noGround;
   document.getElementById('groundOnly').checked = STATE.groundOnly;
+  document.getElementById('noContext').checked = STATE.noContext;
   document.getElementById('noWait').checked = STATE.noWait;
 
   // Mechanisms

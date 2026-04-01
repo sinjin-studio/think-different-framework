@@ -1,17 +1,15 @@
 #!/usr/bin/env bash
-# ── Cap detection, state management, and session resumability ──
+# ── Rate limit detection, state management, and session resumability ──
 # Centralised wrapper for all `claude -p` calls.
-# Detects usage cap hits, saves session state for resume.
+# Detects API rate limits, saves session state for resume.
 # Expects globals: $OUTPUT_DIR, $TIMESTAMP, $SEED_TOPIC, $MODE,
 #                  $WORD_COUNT, $CONVERSATION, $TURN_COUNT,
 #                  $TRANSCRIPT_MD, $TRANSCRIPT_JSON,
 #                  $FRICTION_ENABLED, $BIAS_ENABLED, $SENSORY_ENABLED,
 #                  $SHUFFLE_ENABLED, $CMD_NAME
 
-# ── Cap detection globals ──
-CAP_LIMIT_HIT=""
-CAP_FAIL_COUNT=0
-CAP_FAIL_THRESHOLD=2
+# ── Rate limit detection globals ──
+RATE_LIMIT_HIT=""
 CLAUDE_RESPONSE=""
 ALLOWED_TOOLS_FLAG=""
 LAST_CLAUDE_ERROR=""
@@ -22,14 +20,14 @@ VERBOSE_LOG=""       # Path to log.jsonl - set after session dir creation
 VERBOSE_CALLER=""    # Set by callers before invoking claude_call* (e.g. "lens:empath")
 
 # ── Append a JSONL entry to the verbose log ──
-# Captures: caller, call type, prompt excerpt, full response, exit code, cap hit
+# Captures: caller, call type, prompt excerpt, full response, exit code, rate limited
 verbose_log_entry() {
   [ -z "$VERBOSE_LOG" ] && return
   local call_type="$1"
   local prompt_file="$2"
   local response="$3"
   local exit_code="$4"
-  local cap_hit="$5"
+  local rate_limited="$5"
 
   local prompt_excerpt=""
   if [ -f "$prompt_file" ]; then
@@ -45,10 +43,10 @@ entry = {
     'prompt_excerpt': sys.argv[3],
     'response': sys.argv[4],
     'exit_code': int(sys.argv[5]),
-    'cap_hit': sys.argv[6] == 'true'
+    'rate_limited': sys.argv[6] == 'true'
 }
 print(json.dumps(entry))
-" "${VERBOSE_CALLER:-unknown}" "$call_type" "$prompt_excerpt" "$response" "$exit_code" "$cap_hit" >> "$VERBOSE_LOG" 2>/dev/null || true
+" "${VERBOSE_CALLER:-unknown}" "$call_type" "$prompt_excerpt" "$response" "$exit_code" "$rate_limited" >> "$VERBOSE_LOG" 2>/dev/null || true
 }
 
 # ── Build --allowedTools flag from ALLOWED_TOOLS global ──
@@ -64,13 +62,13 @@ RESUME_FROM_TURN=0
 RESUME_MODE=""
 STATE_FILE=""
 
-# ── Heuristic: does this response look like a cap/limit error? ──
-is_cap_hit() {
+# ── Heuristic: does this response look like an API rate limit? ──
+is_rate_limited() {
   local exit_code="$1"
   local response="$2"
   local stderr="$3"
 
-  # Check for cap/rate-limit strings in response or stderr (bash 3.2 compatible)
+  # Check for rate-limit strings in response or stderr (bash 3.2 compatible)
   local lower_response lower_stderr
   lower_response=$(echo "$response" | tr '[:upper:]' '[:lower:]')
   lower_stderr=$(echo "$stderr" | tr '[:upper:]' '[:lower:]')
@@ -81,48 +79,48 @@ is_cap_hit() {
     case "$lower_stderr" in *"$pattern"*) return 0 ;; esac
   done
 
-  # Non-zero exit code with empty response suggests cap hit
-  # But only if stderr also doesn't indicate a non-cap error
+  # Non-zero exit code with empty response suggests rate limit
+  # But only if stderr also doesn't indicate a non-rate-limit error
   if [ "$exit_code" -ne 0 ]; then
     local trimmed
     trimmed=$(echo "$response" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
     if [ -z "$trimmed" ]; then
-      # Empty response + non-zero exit = likely cap, unless stderr says otherwise
-      local has_non_cap_error="false"
+      # Empty response + non-zero exit = likely rate limited, unless stderr says otherwise
+      local has_non_rl_error="false"
       for pattern in "invalid" "parse error" "syntax" "unexpected" "permission" "not found" "timeout" "timed out" "connection"; do
-        case "$lower_stderr" in *"$pattern"*) has_non_cap_error="true" ;; esac
+        case "$lower_stderr" in *"$pattern"*) has_non_rl_error="true" ;; esac
       done
-      if [ "$has_non_cap_error" = "true" ]; then
-        return 1  # Non-cap error - don't treat as cap hit
+      if [ "$has_non_rl_error" = "true" ]; then
+        return 1  # Non-rate-limit error
       fi
-      return 0  # Empty response + exit code + no clear non-cap signal = assume cap
+      return 0  # Empty response + exit code + no clear non-rl signal = assume rate limited
     fi
-    # Non-zero exit but we got a response - not a cap hit
+    # Non-zero exit but we got a response - not rate limited
     return 1
   fi
 
-  # Empty or whitespace-only response with zero exit - only cap if stderr has content
+  # Empty or whitespace-only response with zero exit - only rate limited if stderr has content
   local trimmed
   trimmed=$(echo "$response" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
   if [ -z "$trimmed" ]; then
     local trimmed_stderr
     trimmed_stderr=$(echo "$stderr" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
     if [ -n "$trimmed_stderr" ]; then
-      return 0  # Empty response + stderr content = likely cap/error
+      return 0  # Empty response + stderr content = likely rate limited
     fi
-    return 1  # Empty response but no error signal - not a cap hit
+    return 1  # Empty response but no error signal - not rate limited
   fi
 
   return 1
 }
 
-# ── Wait for cap reset (polling with backoff) ──
-# Called when cap threshold reached and WAIT_FOR_CAP is enabled.
-# Polls with increasing intervals until Claude responds or 4h timeout.
-# Returns: 0 if cap reset (counters cleared), 1 if timed out (CAP_LIMIT_HIT set)
-wait_for_cap_reset() {
+# ── Wait for rate limit reset (polling with backoff) ──
+# Called when rate limit detected and WAIT_FOR_RATE_LIMIT is enabled.
+# Saves state, then polls with increasing intervals until Claude responds or 4h timeout.
+# Returns: 0 if rate limit cleared, 1 if timed out (RATE_LIMIT_HIT set)
+wait_for_rate_limit_reset() {
   local wait_interval=300   # Start at 5 minutes
-  local max_interval=600    # Cap at 10 minutes
+  local max_interval=600    # Max at 10 minutes
   local interval_step=120   # +2 minutes per attempt
   local max_total=14400     # 4 hours max
   local elapsed=0
@@ -134,7 +132,7 @@ wait_for_cap_reset() {
   save_state 2>/dev/null || true
 
   echo ""
-  echo "  [$(date '+%H:%M:%S')] Cap hit. Polling for reset (max 4h)..."
+  echo "  [$(date '+%H:%M:%S')] Rate limit hit. Polling for reset (max 4h)..."
   verbose_log_entry "wait_enter" "/dev/null" "entering wait loop" "0" "true"
 
   while [ "$elapsed" -lt "$max_total" ]; do
@@ -157,11 +155,10 @@ wait_for_cap_reset() {
     elapsed=$(( $(date +%s) - start_ts ))
     local elapsed_min=$((elapsed / 60))
 
-    if ! is_cap_hit "$probe_exit" "$probe_response" "$probe_stderr"; then
+    if ! is_rate_limited "$probe_exit" "$probe_response" "$probe_stderr"; then
       echo "  [$(date '+%H:%M:%S')] Probe succeeded! Resuming session. Total wait: ${elapsed_min}m, ${attempt} attempts."
       echo ""
-      verbose_log_entry "wait_success" "/dev/null" "cap reset after ${elapsed_min}m" "0" "false"
-      CAP_FAIL_COUNT=0
+      verbose_log_entry "wait_success" "/dev/null" "rate limit reset after ${elapsed_min}m" "0" "false"
       LAST_CLAUDE_ERROR=""
       LAST_CLAUDE_EXIT_CODE=0
       return 0
@@ -182,7 +179,7 @@ wait_for_cap_reset() {
   local total_min=$((max_total / 60))
   echo "  [$(date '+%H:%M:%S')] Waited ${total_min}m. Giving up."
   verbose_log_entry "wait_timeout" "/dev/null" "timed out after ${total_min}m" "1" "true"
-  CAP_LIMIT_HIT="true"
+  RATE_LIMIT_HIT="true"
   return 1
 }
 
@@ -218,20 +215,16 @@ claude_call_json() {
       CLAUDE_RESPONSE=$(echo "$raw_response" | python3 -c "import sys,json; so=json.load(sys.stdin).get('structured_output'); print(json.dumps(so) if so else '')" 2>/dev/null || echo "")
     fi
 
-    if is_cap_hit "$exit_code" "$CLAUDE_RESPONSE" "$stderr_content"; then
+    if is_rate_limited "$exit_code" "$CLAUDE_RESPONSE" "$stderr_content"; then
       LAST_CLAUDE_ERROR="$stderr_content"
       LAST_CLAUDE_EXIT_CODE="$exit_code"
-      CAP_FAIL_COUNT=$((CAP_FAIL_COUNT + 1))
-      if [ "$CAP_FAIL_COUNT" -ge "$CAP_FAIL_THRESHOLD" ]; then
-        if [ "${WAIT_FOR_CAP:-}" = "true" ] && [ "$_retried" -eq 0 ]; then
-          if wait_for_cap_reset; then
-            CAP_FAIL_COUNT=0
-            _retried=1
-            continue  # Retry the call
-          fi
-        else
-          CAP_LIMIT_HIT="true"
+      if [ "${WAIT_FOR_RATE_LIMIT:-}" = "true" ] && [ "$_retried" -eq 0 ]; then
+        if wait_for_rate_limit_reset; then
+          _retried=1
+          continue  # Retry the call
         fi
+      else
+        RATE_LIMIT_HIT="true"
       fi
       verbose_log_entry "claude_call_json" "$tmpfile" "" "$exit_code" "true"
       CLAUDE_RESPONSE=""
@@ -241,7 +234,6 @@ claude_call_json() {
     verbose_log_entry "claude_call_json" "$tmpfile" "$CLAUDE_RESPONSE" "0" "false"
     LAST_CLAUDE_ERROR=""
     LAST_CLAUDE_EXIT_CODE=0
-    CAP_FAIL_COUNT=0
     return 0
   done
 }
@@ -249,7 +241,7 @@ claude_call_json() {
 # ── Wrapper for claude -p calls ──
 # Usage: claude_call "$tmpfile" ["$system_prompt"]
 # Sets: CLAUDE_RESPONSE
-# Returns: 0 on success, 1 on failure (check CAP_LIMIT_HIT for cap vs transient)
+# Returns: 0 on success, 1 on failure (check RATE_LIMIT_HIT for rate limit vs transient)
 claude_call() {
   local tmpfile="$1"
   local system_prompt="${2:-}"
@@ -270,27 +262,23 @@ claude_call() {
     stderr_content=$(cat "$stderr_file")
     rm -f "$stderr_file"
 
-    if is_cap_hit "$exit_code" "$CLAUDE_RESPONSE" "$stderr_content"; then
+    if is_rate_limited "$exit_code" "$CLAUDE_RESPONSE" "$stderr_content"; then
       LAST_CLAUDE_ERROR="$stderr_content"
       LAST_CLAUDE_EXIT_CODE="$exit_code"
-      CAP_FAIL_COUNT=$((CAP_FAIL_COUNT + 1))
-      if [ "$CAP_FAIL_COUNT" -ge "$CAP_FAIL_THRESHOLD" ]; then
-        if [ "${WAIT_FOR_CAP:-}" = "true" ] && [ "$_retried" -eq 0 ]; then
-          if wait_for_cap_reset; then
-            CAP_FAIL_COUNT=0
-            _retried=1
-            continue  # Retry the call
-          fi
-        else
-          CAP_LIMIT_HIT="true"
+      if [ "${WAIT_FOR_RATE_LIMIT:-}" = "true" ] && [ "$_retried" -eq 0 ]; then
+        if wait_for_rate_limit_reset; then
+          _retried=1
+          continue  # Retry the call
         fi
+      else
+        RATE_LIMIT_HIT="true"
       fi
       verbose_log_entry "claude_call" "$tmpfile" "" "$exit_code" "true"
       CLAUDE_RESPONSE=""
       return 1
     fi
 
-    # Non-cap failure: exit code non-zero but not a cap hit
+    # Non-rate-limit failure: exit code non-zero but not rate limited
     if [ "$exit_code" -ne 0 ]; then
       LAST_CLAUDE_ERROR="$stderr_content"
       LAST_CLAUDE_EXIT_CODE="$exit_code"
@@ -299,7 +287,6 @@ claude_call() {
       local trimmed_resp
       trimmed_resp=$(echo "$CLAUDE_RESPONSE" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
       if [ -n "$trimmed_resp" ]; then
-        CAP_FAIL_COUNT=0
         return 0
       fi
       # No response and non-zero exit = real failure
@@ -307,61 +294,14 @@ claude_call() {
       return 1
     fi
 
-    # Success - reset counter and error state
+    # Success
     verbose_log_entry "claude_call" "$tmpfile" "$CLAUDE_RESPONSE" "0" "false"
     LAST_CLAUDE_ERROR=""
     LAST_CLAUDE_EXIT_CODE=0
-    CAP_FAIL_COUNT=0
     return 0
   done
 }
 
-# ── Cap-free wrapper for deterministic pipelines (e.g. report generation) ──
-# Calls claude -p without cap tracking. Failures do not cascade.
-# Usage: claude_call_no_cap "$tmpfile" ["$system_prompt"]
-# Sets: CLAUDE_RESPONSE, LAST_CLAUDE_ERROR, LAST_CLAUDE_EXIT_CODE
-# Returns: 0 on success, 1 on failure
-claude_call_no_cap() {
-  local tmpfile="$1"
-  local system_prompt="${2:-}"
-
-  local stderr_file
-  stderr_file=$(mktemp)
-
-  local exit_code=0
-  if [ -n "$system_prompt" ]; then
-    CLAUDE_RESPONSE=$(cat "$tmpfile" | claude -p --system-prompt "$system_prompt" $ALLOWED_TOOLS_FLAG 2>"$stderr_file") || exit_code=$?
-  else
-    CLAUDE_RESPONSE=$(cat "$tmpfile" | claude -p $ALLOWED_TOOLS_FLAG 2>"$stderr_file") || exit_code=$?
-  fi
-
-  local stderr_content
-  stderr_content=$(cat "$stderr_file")
-  rm -f "$stderr_file"
-
-  LAST_CLAUDE_EXIT_CODE="$exit_code"
-  LAST_CLAUDE_ERROR="$stderr_content"
-
-  # Check for empty/failed response (no cap tracking)
-  if [ "$exit_code" -ne 0 ]; then
-    verbose_log_entry "claude_call_no_cap" "$tmpfile" "" "$exit_code" "false"
-    CLAUDE_RESPONSE=""
-    return 1
-  fi
-
-  local trimmed
-  trimmed=$(echo "$CLAUDE_RESPONSE" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
-  if [ -z "$trimmed" ]; then
-    verbose_log_entry "claude_call_no_cap" "$tmpfile" "" "$exit_code" "false"
-    CLAUDE_RESPONSE=""
-    return 1
-  fi
-
-  verbose_log_entry "claude_call_no_cap" "$tmpfile" "$CLAUDE_RESPONSE" "0" "false"
-  LAST_CLAUDE_ERROR=""
-  LAST_CLAUDE_EXIT_CODE=0
-  return 0
-}
 
 # ── Normalize a variable to JSON boolean ──
 _json_bool() { [ "${1:-}" = "true" ] && echo "true" || echo "false"; }
@@ -374,10 +314,13 @@ save_state() {
   tmp_state=$(mktemp "$(dirname "$STATE_FILE")/.tmp_state.XXXXXX")
 
   local escaped_conversation escaped_seed escaped_context escaped_lens escaped_mechanism_memory
+  local escaped_conductor_view escaped_lens_view
   escaped_conversation=$(echo "$CONVERSATION" | python3 -c "import sys,json; print(json.dumps(sys.stdin.read()))")
   escaped_seed=$(echo "$SEED_TOPIC" | python3 -c "import sys,json; print(json.dumps(sys.stdin.read().strip()))")
   escaped_context=$(echo "${PROJECT_CONTEXT:-}" | python3 -c "import sys,json; print(json.dumps(sys.stdin.read()))")
   escaped_lens=$(echo "${LENS_CONTEXT:-}" | python3 -c "import sys,json; print(json.dumps(sys.stdin.read()))")
+  escaped_conductor_view=$(echo "${CONDUCTOR_VIEW:-}" | python3 -c "import sys,json; print(json.dumps(sys.stdin.read()))")
+  escaped_lens_view=$(echo "${LENS_VIEW:-}" | python3 -c "import sys,json; print(json.dumps(sys.stdin.read()))")
 
   # Serialize mechanism memory array as JSON
   escaped_mechanism_memory="[]"
@@ -387,7 +330,7 @@ save_state() {
 
   # Normalize all boolean flags to valid JSON true/false
   local f_friction f_bias f_sensory f_shuffle f_compact f_autonomous f_skip_strict
-  local f_negative_space f_transcendence f_wait_for_cap
+  local f_negative_space f_transcendence f_wait_for_rate_limit f_progressive
   f_friction=$(_json_bool "${FRICTION_ENABLED:-true}")
   f_bias=$(_json_bool "${BIAS_ENABLED:-true}")
   f_sensory=$(_json_bool "${SENSORY_ENABLED:-true}")
@@ -397,7 +340,8 @@ save_state() {
   f_skip_strict=$(_json_bool "${SKIP_STRICT:-}")
   f_negative_space=$(_json_bool "${NEGATIVE_SPACE_ENABLED:-true}")
   f_transcendence=$(_json_bool "${TRANSCENDENCE_ENABLED:-true}")
-  f_wait_for_cap=$(_json_bool "${WAIT_FOR_CAP:-true}")
+  f_wait_for_rate_limit=$(_json_bool "${WAIT_FOR_RATE_LIMIT:-true}")
+  f_progressive=$(_json_bool "${PROGRESSIVE_ENABLED:-true}")
 
   cat > "$tmp_state" << STATEEOF
 {
@@ -413,6 +357,13 @@ save_state() {
   "mechanism_memory": ${escaped_mechanism_memory},
   "status": "in_progress",
   "last_compact_turn": ${LAST_COMPACT_TURN:-0},
+  "progressive": {
+    "enabled": ${f_progressive},
+    "tier": "${PROGRESSIVE_TIER:-full}",
+    "last_turn": ${LAST_PROGRESSIVE_TURN:-0},
+    "conductor_view": ${escaped_conductor_view},
+    "lens_view": ${escaped_lens_view}
+  },
   "flags": {
     "friction_enabled": ${f_friction},
     "bias_enabled": ${f_bias},
@@ -424,7 +375,7 @@ save_state() {
     "skip_strict": ${f_skip_strict},
     "negative_space_enabled": ${f_negative_space},
     "transcendence_enabled": ${f_transcendence},
-    "wait_for_cap": ${f_wait_for_cap}
+    "wait_for_rate_limit": ${f_wait_for_rate_limit}
   }
 }
 STATEEOF
@@ -493,7 +444,11 @@ print('AUTONOMOUS_MODE=' + shlex.quote(str(state['flags'].get('autonomous_mode',
 print('SKIP_STRICT=' + shlex.quote(str(state['flags'].get('skip_strict', False)).lower()))
 print('NEGATIVE_SPACE_ENABLED=' + shlex.quote(str(state['flags'].get('negative_space_enabled', True)).lower()))
 print('TRANSCENDENCE_ENABLED=' + shlex.quote(str(state['flags'].get('transcendence_enabled', True)).lower()))
-print('WAIT_FOR_CAP=' + shlex.quote(str(state['flags'].get('wait_for_cap', True)).lower()))
+print('WAIT_FOR_RATE_LIMIT=' + shlex.quote(str(state['flags'].get('wait_for_rate_limit', state['flags'].get('wait_for_cap', True))).lower()))
+prog = state.get('progressive', {})
+print('PROGRESSIVE_ENABLED=' + shlex.quote(str(prog.get('enabled', True)).lower()))
+print('PROGRESSIVE_TIER=' + shlex.quote(prog.get('tier', 'full')))
+print('LAST_PROGRESSIVE_TURN=' + str(prog.get('last_turn', 0)))
 ")"
 
   # Rebuild tools flag from restored state
@@ -503,6 +458,8 @@ print('WAIT_FOR_CAP=' + shlex.quote(str(state['flags'].get('wait_for_cap', True)
   CONVERSATION=$(python3 -c "import json; print(json.load(open('${state_file}'))['conversation'], end='')")
   PROJECT_CONTEXT=$(python3 -c "import json; print(json.load(open('${state_file}'))['project_context'], end='')")
   LENS_CONTEXT=$(python3 -c "import json; print(json.load(open('${state_file}'))['lens_context'], end='')")
+  CONDUCTOR_VIEW=$(python3 -c "import json; print(json.load(open('${state_file}')).get('progressive', {}).get('conductor_view', ''), end='')" 2>/dev/null || true)
+  LENS_VIEW=$(python3 -c "import json; print(json.load(open('${state_file}')).get('progressive', {}).get('lens_view', ''), end='')" 2>/dev/null || true)
   TURN_COUNT="$RESUME_FROM_TURN"
 
   # Restore mechanism memory (v2+, empty for v1 state files)
@@ -526,9 +483,9 @@ for entry in state.get('mechanism_memory', []):
   echo "  Seed: ${SEED_TOPIC}"
 }
 
-# ── EXIT trap: clean shutdown on cap hit ──
-cap_limit_cleanup() {
-  if [ "$CAP_LIMIT_HIT" = "true" ]; then
+# ── EXIT trap: clean shutdown on rate limit ──
+rate_limit_cleanup() {
+  if [ "$RATE_LIMIT_HIT" = "true" ]; then
     # Flush files if functions are available
     if type json_flush &>/dev/null; then
       json_flush 2>/dev/null || true
@@ -539,7 +496,7 @@ cap_limit_cleanup() {
     save_state 2>/dev/null || true
 
     echo ""
-    echo "  ⛔ Claude CLI usage cap reached. Stopping session gracefully."
+    echo "  ⛔ Claude API rate limit reached. Stopping session gracefully."
     echo "     Turns completed: ${TURN_COUNT:-0}"
     echo ""
     if [ -n "${TRANSCRIPT_MD:-}" ] && [ -f "${TRANSCRIPT_MD:-}" ]; then
