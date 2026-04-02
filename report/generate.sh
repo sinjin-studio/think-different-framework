@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ── Presentation generation ──
 # Converts a single transcript into a structured presentation.
-# Supports multiple output types: insight, brief, manifesto.
+# Supports multiple presentation sections: insight, brief, manifesto.
 # Generates "The Line" - punchy rallying lines that work across strategy, creative, and branding.
-# Expects: claude CLI available, OUTPUT_TYPE set
+# Expects: claude CLI available, OUTPUT_SECTIONS set
 
 # ── Shared style rules applied to all prompts ──
 STYLE_RULES='Style rules:
@@ -79,10 +79,10 @@ pick_practitioners() {
 
 # ── Allocate word budget across sections ──
 # Sets BUDGET_BRIEF, BUDGET_MANIFESTO, BUDGET_INSIGHT globals
-# Also updates ACTIVE_TYPES to reflect which sections survive the budget
+# Also updates ACTIVE_SECTIONS to reflect which sections survive the budget
 allocate_budget() {
   local words="$1"
-  local output_type="$2"
+  local output_sections="$2"
 
   # Parse range format ("500-800" -> midpoint)
   local total=0
@@ -97,15 +97,14 @@ allocate_budget() {
       ;;
   esac
 
-  # Count which types are requested
-  local has_brief="" has_manifesto="" has_insight="" has_dialogue=""
+  # Count which sections are requested
+  local has_brief="" has_manifesto="" has_insight=""
   local IFS=','
-  for t in $output_type; do
+  for t in $output_sections; do
     case "$t" in
       brief) has_brief="true" ;;
       manifesto) has_manifesto="true" ;;
       insight) has_insight="true" ;;
-      dialogue) has_dialogue="true" ;;
     esac
   done
   IFS=$' \t\n'
@@ -114,50 +113,20 @@ allocate_budget() {
   BUDGET_MANIFESTO=0
   BUDGET_INSIGHT=0
   BUDGET_EXPERIMENT=0
-  BUDGET_DIALOGUE=0
-  ACTIVE_TYPES=""
+  ACTIVE_SECTIONS=""
 
-  # If user explicitly set --type, respect all their choices
-  if [ "${TYPE_EXPLICIT:-}" = "true" ]; then
-    # Count non-dialogue types
-    local type_count=0
-    [ -n "$has_brief" ] && type_count=$((type_count + 1))
-    [ -n "$has_manifesto" ] && type_count=$((type_count + 1))
-    [ -n "$has_insight" ] && type_count=$((type_count + 1))
+  # If user explicitly set --sections, respect all their choices
+  if [ "${SECTIONS_EXPLICIT:-}" = "true" ]; then
+    local section_count=0
+    [ -n "$has_brief" ] && section_count=$((section_count + 1))
+    [ -n "$has_manifesto" ] && section_count=$((section_count + 1))
+    [ -n "$has_insight" ] && section_count=$((section_count + 1))
 
-    if [ -n "$has_dialogue" ]; then
-      # Dialogue present - it gets the lion's share
-      if [ "$type_count" -eq 0 ]; then
-        # Dialogue only
-        BUDGET_DIALOGUE=$total
-      elif [ "$type_count" -eq 1 ]; then
-        # Dialogue + 1 other
-        BUDGET_DIALOGUE=$((total * 55 / 100))
-        local remainder=$((total - BUDGET_DIALOGUE))
-        [ -n "$has_brief" ] && BUDGET_BRIEF=$remainder
-        [ -n "$has_manifesto" ] && BUDGET_MANIFESTO=$remainder
-        [ -n "$has_insight" ] && BUDGET_INSIGHT=$remainder
-      elif [ "$type_count" -eq 2 ]; then
-        # Dialogue + 2 others
-        BUDGET_DIALOGUE=$((total * 45 / 100))
-        local remainder=$((total - BUDGET_DIALOGUE))
-        local per_other=$((remainder / 2))
-        [ -n "$has_brief" ] && BUDGET_BRIEF=$per_other
-        [ -n "$has_manifesto" ] && BUDGET_MANIFESTO=$per_other
-        [ -n "$has_insight" ] && BUDGET_INSIGHT=$per_other
-      else
-        # Dialogue + all 3 others
-        BUDGET_DIALOGUE=$((total * 40 / 100))
-        local remainder=$((total - BUDGET_DIALOGUE))
-        BUDGET_BRIEF=$((remainder * 40 / 100))
-        BUDGET_INSIGHT=$((remainder * 35 / 100))
-        BUDGET_MANIFESTO=$((remainder * 25 / 100))
-      fi
-    elif [ "$type_count" -eq 1 ]; then
+    if [ "$section_count" -eq 1 ]; then
       [ -n "$has_brief" ] && BUDGET_BRIEF=$total
       [ -n "$has_manifesto" ] && BUDGET_MANIFESTO=$total
       [ -n "$has_insight" ] && BUDGET_INSIGHT=$total
-    elif [ "$type_count" -eq 2 ]; then
+    elif [ "$section_count" -eq 2 ]; then
       if [ -n "$has_brief" ] && [ -n "$has_insight" ]; then
         BUDGET_BRIEF=$((total * 45 / 100))
         BUDGET_INSIGHT=$((total * 55 / 100))
@@ -187,14 +156,11 @@ allocate_budget() {
     local min_budget=150
     if { [ -n "$has_brief" ] && [ "$BUDGET_BRIEF" -lt "$min_budget" ]; } || \
        { [ -n "$has_manifesto" ] && [ "$BUDGET_MANIFESTO" -lt "$min_budget" ]; } || \
-       { [ -n "$has_insight" ] && [ "$BUDGET_INSIGHT" -lt "$min_budget" ]; } || \
-       { [ -n "$has_dialogue" ] && [ "$BUDGET_DIALOGUE" -lt "$min_budget" ]; }; then
-      local total_types=$type_count
-      [ -n "$has_dialogue" ] && total_types=$((total_types + 1))
-      echo "  Warning: ${total} words across ${total_types} types may produce thin output" >&2
+       { [ -n "$has_insight" ] && [ "$BUDGET_INSIGHT" -lt "$min_budget" ]; }; then
+      echo "  Warning: ${total} words across ${section_count} sections may produce thin output" >&2
     fi
 
-    ACTIVE_TYPES="$output_type"
+    ACTIVE_SECTIONS="$output_sections"
     return
   fi
 
@@ -202,13 +168,13 @@ allocate_budget() {
   if [ "$total" -lt 300 ]; then
     # Brief only
     BUDGET_BRIEF=$total
-    ACTIVE_TYPES="brief"
+    ACTIVE_SECTIONS="brief"
     echo "  Budget (${total}w): brief only" >&2
   elif [ "$total" -lt 600 ]; then
     # Brief + experiment
     BUDGET_EXPERIMENT=$((total * 20 / 100))
     BUDGET_BRIEF=$((total * 80 / 100))
-    ACTIVE_TYPES="brief"
+    ACTIVE_SECTIONS="brief"
     echo "  Budget (${total}w): experiment + brief (insight, manifesto dropped)" >&2
   elif [ "$total" -le 1000 ]; then
     # All sections, balanced for medium
@@ -216,14 +182,14 @@ allocate_budget() {
     BUDGET_BRIEF=$((total * 40 / 100))
     BUDGET_MANIFESTO=$((total * 25 / 100))
     BUDGET_INSIGHT=$((total * 25 / 100))
-    ACTIVE_TYPES="brief,manifesto,insight"
+    ACTIVE_SECTIONS="brief,manifesto,insight"
   else
     # All sections, insight gets more room for long form
     BUDGET_EXPERIMENT=$((total * 10 / 100))
     BUDGET_BRIEF=$((total * 35 / 100))
     BUDGET_MANIFESTO=$((total * 20 / 100))
     BUDGET_INSIGHT=$((total * 35 / 100))
-    ACTIVE_TYPES="brief,manifesto,insight"
+    ACTIVE_SECTIONS="brief,manifesto,insight"
   fi
 }
 
@@ -1134,22 +1100,21 @@ generate_presentation() {
   local words="$3"
   local output_file="$4"
   local turn_info="${5:-}"
-  local output_type="${OUTPUT_TYPE:-insight,brief,manifesto}"
+  local output_sections="${OUTPUT_SECTIONS:-insight,brief,manifesto}"
 
   # ── Step 0: Allocate word budget across sections ──
-  allocate_budget "$words" "$output_type"
-  output_type="$ACTIVE_TYPES"
+  allocate_budget "$words" "$output_sections"
+  output_sections="$ACTIVE_SECTIONS"
 
   echo ""
   echo "  ━━━ WRITING PRESENTATION ━━━━━━━━━━━━━━━━━━━━━━━"
   echo "  Target: ${words} words (total)"
-  echo "  Types: ${output_type}"
-  if [ "$BUDGET_BRIEF" -gt 0 ] || [ "$BUDGET_MANIFESTO" -gt 0 ] || [ "$BUDGET_INSIGHT" -gt 0 ] || [ "$BUDGET_DIALOGUE" -gt 0 ]; then
+  echo "  Sections: ${output_sections}"
+  if [ "$BUDGET_BRIEF" -gt 0 ] || [ "$BUDGET_MANIFESTO" -gt 0 ] || [ "$BUDGET_INSIGHT" -gt 0 ]; then
     local budget_display="experiment=${BUDGET_EXPERIMENT}w"
     [ "$BUDGET_BRIEF" -gt 0 ] && budget_display="${budget_display} brief=${BUDGET_BRIEF}w"
     [ "$BUDGET_INSIGHT" -gt 0 ] && budget_display="${budget_display} insight=${BUDGET_INSIGHT}w"
     [ "$BUDGET_MANIFESTO" -gt 0 ] && budget_display="${budget_display} manifesto=${BUDGET_MANIFESTO}w"
-    [ "$BUDGET_DIALOGUE" -gt 0 ] && budget_display="${budget_display} dialogue=${BUDGET_DIALOGUE}w"
     echo "  Budget: ${budget_display}"
   fi
   echo ""
@@ -1224,15 +1189,14 @@ EXPRESSION: ${new_expression}"
   local manifesto_content=""
   local prior_sections=""
 
-  # Check which types are active
-  local do_brief="" do_manifesto="" do_insight="" do_dialogue=""
+  # Check which sections are active
+  local do_brief="" do_manifesto="" do_insight=""
   local IFS=','
-  for t in $output_type; do
+  for t in $output_sections; do
     case "$t" in
       brief) do_brief="true" ;;
       manifesto) do_manifesto="true" ;;
       insight) do_insight="true" ;;
-      dialogue) do_dialogue="true" ;;
     esac
   done
   IFS=$' \t\n'
@@ -1279,11 +1243,13 @@ ${insight_content}"
     stop_spinner "done"
   fi
 
-  # Dialogue (internal monologue rewrite - opt-in only)
+  # Dialogue (separate file - opt-in via --dialogue)
   local dialogue_content=""
-  if [ -n "$do_dialogue" ] && [ "$BUDGET_DIALOGUE" -gt 0 ]; then
-    start_spinner "💭 Writing dialogue (~${BUDGET_DIALOGUE}w)"
-    dialogue_content=$(generate_dialogue "$conversation_text" "$seed" "$BUDGET_DIALOGUE" "$distillation")
+  if [ "${DIALOGUE_ENABLED:-false}" = "true" ]; then
+    local dialogue_budget=$((words * 40 / 100))
+    [ "$dialogue_budget" -lt 300 ] && dialogue_budget=300
+    start_spinner "💭 Writing dialogue (~${dialogue_budget}w)"
+    dialogue_content=$(generate_dialogue "$conversation_text" "$seed" "$dialogue_budget" "$distillation")
     stop_spinner "done"
   fi
 
@@ -1399,14 +1365,18 @@ PRESHEADER
     echo "" >> "$output_file"
   fi
 
-  # The Dialogue - internal monologue rewrite
+  # The Dialogue - written to separate file
   if [ -n "$dialogue_content" ]; then
-    echo "---" >> "$output_file"
-    echo "" >> "$output_file"
-    echo "## The Dialogue" >> "$output_file"
-    echo "" >> "$output_file"
-    echo "$dialogue_content" >> "$output_file"
-    echo "" >> "$output_file"
+    local dialogue_file="$(dirname "$output_file")/dialogue.md"
+    cat > "$dialogue_file" << DIALOGUEOF
+# The Dialogue
+
+${seed_label}
+> **Date:** $(date '+%Y-%m-%d %H:%M')
+
+${dialogue_content}
+DIALOGUEOF
+    echo "  💭 Dialogue:     $dialogue_file" >&2
   fi
 
   # Session Findings - distilled novel ideas for inspiration
@@ -1525,7 +1495,7 @@ ${asset_content}"
 
 ---
 
-THE DIALOGUE:
+THE DIALOGUE (see dialogue.md):
 
 ${dialogue_content}"
   fi

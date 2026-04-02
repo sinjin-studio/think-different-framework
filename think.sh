@@ -16,7 +16,7 @@
 #    ./think.sh --notes "luxury wellness, Gen Z"
 #    ./think.sh --brief ./brief.pdf --pick
 #    ./think.sh --synthesise ./run1/*.md ./run2/*.md
-#    ./think.sh --report-only ./transcript.md --words 2000
+#    ./think.sh --regenerate ./transcript.md --words 2000
 #
 #  Requires: claude CLI (Claude Code) installed and authenticated
 #  Works with: bash 3.2+ (macOS compatible)
@@ -78,8 +78,8 @@ PASS_COUNT=""
 ALLOWED_TOOLS="WebSearch,WebFetch"
 PROVOCATION_TONE="provocative"
 LENS_DEPTH="deep"
-OUTPUT_TYPE="insight,brief,manifesto"
-TYPE_EXPLICIT=""
+OUTPUT_SECTIONS="insight,brief,manifesto"
+SECTIONS_EXPLICIT=""
 DIALOGUE_ENABLED="false"
 LINE_COUNT=3
 LINE_PRACTITIONERS=""
@@ -107,8 +107,8 @@ show_help() {
   echo "  Manual synthesis of existing transcripts:"
   echo "    $CMD_NAME --synthesise ./run1/*.md ./run2/*.md --words 1500"
   echo ""
-  echo "  Re-run presentation from existing transcript:"
-  echo "    $CMD_NAME --report-only ./transcript.md --words 2000"
+  echo "  Regenerate presentation from existing transcript:"
+  echo "    $CMD_NAME --regenerate ./transcript.md --words 2000"
   echo ""
   echo "  Options:"
   echo "    --mode MODE      Composition: dyslexic (default), spiral, lapidary"
@@ -123,20 +123,18 @@ show_help() {
   echo "    --seeds N        Number of provocations to generate (default: 3, max: 12)"
   echo "    --tone TONE      Provocation tone: provocative (default), generous, personal,"
   echo "                     absurd, daydream, mixed. Comma-separated for custom mix"
-  echo "    --type TYPES     Output types: insight,brief,manifesto (default: all three)"
-  echo "                     Also: dialogue (first-person internal monologue)"
-  echo "                     Comma-separated list. Each type is a section in the output"
-  echo "    --dialogue       Add dialogue output alongside default types (shorthand for"
-  echo "                     --type insight,brief,manifesto,dialogue)"
+  echo "    --sections LIST  Presentation sections: insight,brief,manifesto (default: all three)"
+  echo "                     Comma-separated. Controls which sections appear in presentation.md"
+  echo "    --dialogue       Generate dialogue as separate file (dialogue.md)"
   echo "    --lines N        Number of rallying lines to generate (default: 3, max: 7)"
   echo "    --practitioners  Comma-separated list of creative practitioners as quality bar"
   echo "                     (default: random 3 from built-in pool)"
   echo "    --html           Enable HTML presentation generation (experimental, off by default)"
-  echo "    --formats LIST   Output formats for --report-only: all, md, doc, html"
+  echo "    --formats LIST   Output formats for --regenerate: all, md, doc, html"
   echo "                     (comma-separated. doc/html skip token usage if .md exists)"
   echo "    --pick           Interactively select which provocations to run"
   echo "    --synthesise     Synthesise existing transcript files into one presentation"
-  echo "    --report-only F  Regenerate presentation from existing transcript"
+  echo "    --regenerate F   Regenerate presentation from existing transcript"
   echo "    --resume FILE    Resume an interrupted session from state file"
   echo "    --help           Show this help"
   echo ""
@@ -334,7 +332,7 @@ while [ $# -gt 0 ]; do
       fi
       shift
       ;;
-    --report-only|-r)
+    --regenerate|-r)
       PRES_ONLY="true"
       shift
       PRES_SOURCE="$1"
@@ -364,10 +362,10 @@ while [ $# -gt 0 ]; do
       LENS_DEPTH="$1"
       shift
       ;;
-    --type)
+    --sections)
       shift
-      OUTPUT_TYPE="$1"
-      TYPE_EXPLICIT="true"
+      OUTPUT_SECTIONS="$1"
+      SECTIONS_EXPLICIT="true"
       shift
       ;;
     --dialogue)
@@ -422,18 +420,13 @@ case "$MODE" in
     ;;
 esac
 
-# Append dialogue to output type if --dialogue flag set
-if [ "$DIALOGUE_ENABLED" = "true" ]; then
-  OUTPUT_TYPE="${OUTPUT_TYPE},dialogue"
-fi
-
-# Validate output types
-IFS=',' read -ra _TYPE_CHECK <<< "$OUTPUT_TYPE"
-for _ot in "${_TYPE_CHECK[@]}"; do
-  case "$_ot" in
-    insight|brief|manifesto|dialogue) ;;
+# Validate presentation sections
+IFS=',' read -ra _SEC_CHECK <<< "$OUTPUT_SECTIONS"
+for _os in "${_SEC_CHECK[@]}"; do
+  case "$_os" in
+    insight|brief|manifesto) ;;
     *)
-      echo "Error: unknown output type '$_ot'. Use: insight, brief, manifesto, or dialogue (comma-separated)"
+      echo "Error: unknown section '$_os'. Use: insight, brief, manifesto (comma-separated)"
       exit 1
       ;;
   esac
@@ -512,7 +505,7 @@ if [ -z "$PRES_ONLY" ] && [ -z "$SYNTHESISE_MODE" ] && [ -z "$RESUME_FILE" ] && 
 fi
 
 if [ -n "$PRES_ONLY" ] && [ -z "$PRES_SOURCE" ]; then
-  echo "Error: --report-only requires a path to an existing transcript .md file"
+  echo "Error: --regenerate requires a path to an existing transcript .md file"
   exit 1
 fi
 
@@ -711,10 +704,10 @@ if [ -n "$PRES_ONLY" ]; then
     if [ -z "$SEED_TOPIC" ]; then
       SEED_TOPIC="[Seed not found in transcript]"
     fi
-    CONVERSATION=$(cat "$PRES_SOURCE")
+    THINKING_SESSION=$(cat "$PRES_SOURCE")
     PRES_FILE="$SESSION_DIR/presentation_${pres_suffix}.md"
     echo "  Words: $WORD_COUNT"
-    generate_presentation "$CONVERSATION" "$SEED_TOPIC" "$WORD_COUNT" "$PRES_FILE" > /dev/null
+    generate_presentation "$THINKING_SESSION" "$SEED_TOPIC" "$WORD_COUNT" "$PRES_FILE" > /dev/null
   else
     # Use existing presentation.md (no tokens)
     # Check if source IS a presentation.md or if we need to find one
@@ -793,10 +786,10 @@ for entry in data:
   if [ -f "$TRANSCRIPT_MD" ]; then
     md_content=$(cat "$TRANSCRIPT_MD")
     # Split on first --- to separate header from body
-    MD_HEADER=$(echo "$md_content" | sed '/^---$/q')
+    MD_HEADER=$(printf '%s\n' "$md_content" | sed -n '1,/^---$/p')
     MD_HEADER="${MD_HEADER}
 "
-    MD_BUFFER=$(echo "$md_content" | sed '1,/^---$/d')
+    MD_BUFFER=$(printf '%s\n' "$md_content" | sed '1,/^---$/d')
     echo "  Restored markdown transcript"
   else
     md_init_header "Think Different Session (Resumed)" "$SEED_TOPIC"
@@ -831,7 +824,7 @@ for entry in data:
   PRES_FILE="$SESSION_DIR/presentation.md"
   DOCX_FILE="$SESSION_DIR/presentation.docx"
   HTML_FILE="$SESSION_DIR/presentation.html"
-  PRES_CONTENT=$(generate_presentation "$CONVERSATION" "$SEED_TOPIC" "$WORD_COUNT" "$PRES_FILE" "${TURN_COUNT} turns, ${MODE} composition (resumed)")
+  PRES_CONTENT=$(generate_presentation "$THINKING_SESSION" "$SEED_TOPIC" "$WORD_COUNT" "$PRES_FILE" "${TURN_COUNT} turns, ${MODE} composition (resumed)")
 
   # Append presentation to transcript
   MD_BUFFER="${MD_BUFFER}
@@ -875,7 +868,7 @@ source "${SCRIPT_DIR}/context/provoke.sh"
 source "${SCRIPT_DIR}/context/gather.sh"
 source "${SCRIPT_DIR}/report/synthesise.sh"
 
-CONVERSATION=""
+THINKING_SESSION=""
 TURN_COUNT=0
 PROJECT_CONTEXT=""
 ZEITGEIST_CONTEXT=""
@@ -1004,8 +997,8 @@ fi
 if [ "$PROVOCATION_TONE" != "provocative" ]; then
   echo "  Tone: $PROVOCATION_TONE"
 fi
-if [ "$OUTPUT_TYPE" != "insight,brief,manifesto" ]; then
-  echo "  Output types: $OUTPUT_TYPE"
+if [ "$OUTPUT_SECTIONS" != "insight,brief,manifesto" ]; then
+  echo "  Sections: $OUTPUT_SECTIONS"
 fi
 echo "  Presentation: ~${WORD_COUNT} words"
 if [ -n "$CONTEXT_FILE" ]; then
@@ -1149,7 +1142,7 @@ for seed in "${SEEDS[@]}"; do
 
   # Set up session state
   SEED_TOPIC="$seed"
-  CONVERSATION=""
+  THINKING_SESSION=""
   TURN_COUNT=0
   MECHANISM_MEMORY=()
   SEED_VERIFICATION=""
@@ -1215,7 +1208,7 @@ for seed in "${SEEDS[@]}"; do
       echo ""
 
       # Set up fresh session for run 2
-      CONVERSATION=""
+      THINKING_SESSION=""
       TURN_COUNT=0
       MECHANISM_MEMORY=()
       if [ -n "$reframed_seed" ]; then
@@ -1277,7 +1270,7 @@ for seed in "${SEEDS[@]}"; do
 done
 
 # ── 6. Output ──
-# Skip presentation if cap was hit - transcript is saved, user can --report-only later
+# Skip presentation if cap was hit - transcript is saved, user can --regenerate later
 if [ "$RATE_LIMIT_HIT" = "true" ]; then
   exit 1
 fi
@@ -1288,7 +1281,7 @@ HTML_FILE="$SESSION_DIR/presentation.html"
 
 if [ ${#TRANSCRIPT_FILES[@]} -eq 1 ]; then
   # Single session - generate presentation directly from transcript
-  PRES_CONTENT=$(generate_presentation "$CONVERSATION" "$SEED_TOPIC" "$WORD_COUNT" "$PRES_FILE" "${TURN_COUNT} turns, ${MODE} composition")
+  PRES_CONTENT=$(generate_presentation "$THINKING_SESSION" "$SEED_TOPIC" "$WORD_COUNT" "$PRES_FILE" "${TURN_COUNT} turns, ${MODE} composition")
 
   MD_BUFFER="${MD_BUFFER}
 
@@ -1317,10 +1310,12 @@ ${PRES_CONTENT}
   fi
   echo "  📄 Transcript:   $TRANSCRIPT_MD"
   echo "  📊 JSON:         $TRANSCRIPT_JSON"
-  # Generate session diagram if log exists
+  # Generate session diagram and usage report if log exists
   diagram_file="$SESSION_DIR/diagram.html"
+  usage_file="$SESSION_DIR/usage.html"
   if [ -f "$SESSION_DIR/log.jsonl" ]; then
     python3 "${SCRIPT_DIR}/report/session-diagram.py" "$SESSION_DIR/log.jsonl" "$diagram_file" 2>/dev/null || true
+    python3 "${SCRIPT_DIR}/report/session-usage.py" "$SESSION_DIR/log.jsonl" "$usage_file" 2>/dev/null || true
   fi
   if [ -f "$SESSION_DIR/context.md" ]; then
     echo "  📍 Context:      $SESSION_DIR/context.md"
@@ -1328,9 +1323,12 @@ ${PRES_CONTENT}
   if [ -f "$diagram_file" ]; then
     echo "  🔀 Diagram:      $diagram_file"
   fi
+  if [ -f "$usage_file" ]; then
+    echo "  📈 Usage:        $usage_file"
+  fi
   echo ""
   echo "  Re-run presentation at different length:"
-  echo "    $CMD_NAME --report-only $TRANSCRIPT_MD --words 1500"
+  echo "    $CMD_NAME --regenerate $TRANSCRIPT_MD --words 1500"
   echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo ""
 else

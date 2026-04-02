@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ── Cross-transcript synthesis ──
 # Combines multiple transcript files into a single presentation.
-# Uses the same output types and Line generation as generate.sh.
+# Uses the same presentation sections and Line generation as generate.sh.
 # Includes cross-run negative space analysis when multiple transcripts are provided.
-# Expects: claude CLI available, generate.sh sourced first, OUTPUT_TYPE set
+# Expects: claude CLI available, generate.sh sourced first, OUTPUT_SECTIONS set
 
 # ── Cross-run negative space analysis ──
 # Maps the negative space between multiple provocation runs.
