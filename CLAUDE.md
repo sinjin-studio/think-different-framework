@@ -26,8 +26,8 @@ A multi-lens structured divergence framework for Claude Code CLI. It runs creati
 # Interactive provocation selection
 ./think.sh --brief ./brief.pdf --pick
 
-# Presentation-only (regenerate from existing transcript)
-./think.sh --report-only ./transcript.md --words 2000
+# Regenerate presentation from existing transcript
+./think.sh --regenerate ./transcript.md --words 2000
 
 # Synthesise multiple transcripts
 ./think.sh --synthesise ./run1/*.md ./run2/*.md --words 1500
@@ -39,7 +39,7 @@ A multi-lens structured divergence framework for Claude Code CLI. It runs creati
 ### Key Flags
 
 - `--mode {dyslexic|spiral|lapidary}` - Composition mode (default: dyslexic)
-- `--words N` - Total word budget across all presentation sections (default: 1500). Auto-drops sections at low budgets unless `--type` is explicit
+- `--words N` - Total word budget across all presentation sections (default: 1500). Auto-drops sections at low budgets unless `--sections` is explicit
 - `--output DIR` - Output directory (default: ./think-different-output)
 - `--context FILE` - Explicit context file
 - `--no-context` - Skip project context gathering entirely (run without project grounding)
@@ -50,12 +50,12 @@ A multi-lens structured divergence framework for Claude Code CLI. It runs creati
 - `--audience TEXT` - Target audience (auto-inferred from input if not set). Shapes provocations and all presentation output toward audience-facing content
 - `--tone TONE` - Provocation tone: `provocative` (default), `generous`, `personal`, `absurd`, `daydream`, `mixed`. Comma-separated for custom mix (e.g. `--tone provocative,generous`)
 - `--depth LEVEL` - Lens depth: `deep` (default), `deeper`, `deepest`. Per-lens: `mortal:deepest,achala:deeper`. Controls how deep into fundamental human drivers the lenses go. Affects Mortal, Achala, Empath, Child, Provocateur, Mouth
-- `--type TYPES` - Output types: `insight,brief,manifesto` (default: all three). Also: `dialogue` (first-person internal monologue). Comma-separated
-- `--dialogue` - Add dialogue output alongside default types (shorthand for `--type insight,brief,manifesto,dialogue`)
+- `--sections LIST` - Presentation sections: `insight,brief,manifesto` (default: all three). Controls which sections appear in presentation.md. Comma-separated
+- `--dialogue` - Generate dialogue as separate file (dialogue.md) - first-person internal monologue
 - `--lines N` - Number of angles to generate (default: 3, max: 7). Each angle outputs two altitudes: Platform (strategic truth) and Expression (audience-facing punch)
 - `--practitioners LIST` - Comma-separated creative practitioners as quality bar for The Line (default: random 3 from built-in pool)
 - `--html` - Enable HTML presentation generation (experimental, off by default)
-- `--formats LIST` - Output formats for `--report-only`: `all`, `md`, `doc`, `html` (comma-separated)
+- `--formats LIST` - Output formats for `--regenerate`: `all`, `md`, `doc`, `html` (comma-separated)
 - `--no-friction`, `--no-bias`, `--no-sensory`, `--no-transcendence`, `--no-negative-space` - Disable mechanisms
 - `--shuffle` - Randomize lens order within rounds
 - `--autonomous` - Enable agentic mode (default: on)
@@ -106,13 +106,13 @@ In autonomous mode, these become conductor presets rather than hardcoded sequenc
 
 **Per-lens tool access:** Observer, Empath, Skeptic, Mortal, and Logician have `WebSearch,WebFetch` enabled. Other lenses stay tool-free (thinking from feeling, not facts).
 
-**Multi-step lens calls (--multistep, experimental):** When enabled, tool-enabled lenses (Observer, Empath, Skeptic, Mortal, Logician) get a two-step internal deliberation: (1) explore with tools - search, react, find surprising connections; (2) respond without tools - write the final 150-200 word response building on what was found. Only the final response enters `$CONVERSATION`. The explore output stays internal but is logged to `log.jsonl`. This gives tool-enabled lenses autonomy-of-thought (they can make unexpected connections) without autonomy-of-action (they still produce a single response). Non-tool lenses remain single-shot.
+**Multi-step lens calls (--multistep, experimental):** When enabled, tool-enabled lenses (Observer, Empath, Skeptic, Mortal, Logician) get a two-step internal deliberation: (1) explore with tools - search, react, find surprising connections; (2) respond without tools - write the final 150-200 word response building on what was found. Only the final response enters `$THINKING_SESSION`. The explore output stays internal but is logged to `log.jsonl`. This gives tool-enabled lenses autonomy-of-thought (they can make unexpected connections) without autonomy-of-action (they still produce a single response). Non-tool lenses remain single-shot.
 
 **Inline skip-turn (--autonomous):** Each lens decides within its response whether it has something new to add. If it responds with `SKIP: reason`, the turn is logged and skipped without a separate pre-call. Use `--skip-strict` to restore the original two-call pattern.
 
-**Context compaction (off by default):** When enabled via `--compact`, every 8-10 turns or when the conversation exceeds ~15K characters, the full history is distilled into a 400-600 word digest plus the last 3-4 verbatim turns. Disabled by default because research shows breakthroughs often arrive at iteration 10+ and compaction destroys the raw phrasing that fuels them. Opus 4.6's 1M context window handles full conversations comfortably. Full transcript always preserved in output files.
+**Context compaction (off by default):** When enabled via `--compact`, every 8-10 turns or when the thinking session exceeds ~15K characters, the full history is distilled into a 400-600 word digest plus the last 3-4 verbatim turns. Disabled by default because research shows breakthroughs often arrive at iteration 10+ and compaction destroys the raw phrasing that fuels them. Opus 4.6's 1M context window handles full conversations comfortably. Full transcript always preserved in output files.
 
-**Progressive compression (on by default):** Generates compressed *views* of the conversation for different callers without modifying the raw `$CONVERSATION`. The conductor gets a territory-focused digest (~400w) optimized for gap detection and routing decisions. Lenses get a phrasing-focused digest (~600w) that preserves exact breakthrough quotes and live metaphors. Both views include recent verbatim turns. Three tiers: turns 1-10 (full, no compression), turns 11-20 (conductor compressed, lenses full), turns 21+ (both compressed). Views refresh at tier boundaries and when 5+ turns stale. Reduces conversation data sent by ~60% across a 35-turn session. Separate from `--compact` which replaces `$CONVERSATION` itself. Disable with `--no-progressive`. Implementation in `lib/progressive_compress.sh`.
+**Progressive compression (on by default):** Generates compressed *views* of the conversation for different callers without modifying the raw `$THINKING_SESSION`. The conductor gets a territory-focused digest (~400w) optimized for gap detection and routing decisions. Lenses get a phrasing-focused digest (~600w) that preserves exact breakthrough quotes and live metaphors. Both views include recent verbatim turns. Three tiers: turns 1-10 (full, no compression), turns 11-20 (conductor compressed, lenses full), turns 21+ (both compressed). Views refresh at tier boundaries and when 5+ turns stale. Reduces conversation data sent by ~60% across a 35-turn session. Separate from `--compact` which replaces `$THINKING_SESSION` itself. Disable with `--no-progressive`. Implementation in `lib/progressive_compress.sh`.
 
 COMMON_RULES (defined in `lib/call_lens.sh`) are applied to every lens call - 150-200 word constraint, first-person prose, no lists, no em-dashes.
 
@@ -124,7 +124,7 @@ COMMON_RULES (defined in `lib/call_lens.sh`) are applied to every lens call - 15
 
 This two-phase pattern lets the conductor respond to surprises rather than predict outcomes. The conductor can see a lens open unexpected territory and choose to let it breathe, or see a lens collapse and intervene with a mechanism.
 
-**Emergent gap detection:** Before each decision, the conductor reads the conversation and identifies what territory has NOT been explored - temporal frames, emotional registers, audiences, scales. This awareness steers lens instructions emergently rather than from prescriptive rules. The conductor reads the room, not a checklist.
+**Emergent gap detection:** Before each decision, the conductor reads the thinking so far and identifies what territory has NOT been explored - temporal frames, emotional registers, audiences, scales. This awareness steers lens instructions emergently rather than from prescriptive rules. The conductor reads the room, not a checklist.
 
 **Reasoning field:** Every conductor decision includes a `reasoning` field explaining what territory is unexplored and why the choice was made. This is captured in `log.jsonl` and visible in the session diagram. All decisions and their rationale are reviewable.
 
@@ -134,15 +134,15 @@ Guard rails: max 35 turns, minimum 15 turns before ending, minimum 7 distinct le
 
 ### Conversation Threading
 
-A global `$CONVERSATION` string accumulates all lens responses. Each lens reads the history and adds its perspective. Mechanisms inject meta-commentary and structured decisions between lens turns.
+A global `$THINKING_SESSION` string accumulates all lens responses. Each lens reads the thinking so far and adds its perspective. Mechanisms inject meta-commentary and structured decisions between lens turns.
 
-**Context compaction** (`compact_conversation()` in `lib/call_lens.sh`): Off by default. When enabled via `--compact`, every 8-10 turns or when the conversation exceeds ~15K characters, the history is distilled into a 400-600 word digest plus the last 3-4 verbatim turns. Disabled by default because late-arriving breakthroughs (iteration 10+) need access to raw phrasing from earlier turns. Full transcript is always preserved in MD/JSON output files.
+**Context compaction** (`compact_conversation()` in `lib/call_lens.sh`): Off by default. When enabled via `--compact`, every 8-10 turns or when the thinking session exceeds ~15K characters, the history is distilled into a 400-600 word digest plus the last 3-4 verbatim turns. Disabled by default because late-arriving breakthroughs (iteration 10+) need access to raw phrasing from earlier turns. Full transcript is always preserved in MD/JSON output files.
 
-**Progressive compression** (`lib/progressive_compress.sh`): On by default. Generates compressed views without modifying raw `$CONVERSATION`. The conductor receives a territory digest (what's explored, what hasn't, key tensions). Lenses receive a phrasing digest (exact breakthrough quotes, live metaphors, active contradictions). Both include recent verbatim turns appended since last compression. Three tiers based on turn count (full/mid/late). Disable with `--no-progressive`. State persisted in `session.state.json` for resume.
+**Progressive compression** (`lib/progressive_compress.sh`): On by default. Generates compressed views without modifying raw `$THINKING_SESSION`. The conductor receives a territory digest (what's explored, what hasn't, key tensions). Lenses receive a phrasing digest (exact breakthrough quotes, live metaphors, active contradictions). Both include recent verbatim turns appended since last compression. Three tiers based on turn count (full/mid/late). Disable with `--no-progressive`. State persisted in `session.state.json` for resume.
 
 ### Mechanism Flow Control
 
-Mechanisms return structured JSON decisions alongside their conversation append:
+Mechanisms return structured JSON decisions alongside their thinking session append:
 - **Friction** returns `{recommendation: "deepen|redirect|continue", inject_lens: "..."}` - can inject a specific lens to break stuck patterns
 - **Transcendence** returns `{has_breakthrough: bool, recommendation: "compress|continue|ground_early"}` - can skip to grounding
 - **Bias** returns `{biases_detected: [...], recommendation: "..."}` - identifies cognitive biases as creative fuel
@@ -169,7 +169,7 @@ Before each session starts, provocations pass through a fact-checking step (`ver
 2. **Corrects** fabricated stats by finding the closest real data (e.g. "61%" becomes "46%" if that's the verified figure)
 3. **Flags framing** - identifies rhetorical word choices (e.g. "admits" implying confession) as FRAMING NOTES so downstream lenses know which words are doing rhetorical work vs. reporting reality
 
-The corrected provocation replaces `$SEED_TOPIC`. The full verification report is stored in `$SEED_VERIFICATION` and injected into `$CONVERSATION` by the seed prep function. This prevents numerical contamination (fabricated stats echoing into creative fiction) and autophagic close-reading (the framework analyzing its own word choices as cultural evidence).
+The corrected provocation replaces `$SEED_TOPIC`. The full verification report is stored in `$SEED_VERIFICATION` and injected into `$THINKING_SESSION` by the seed prep function. This prevents numerical contamination (fabricated stats echoing into creative fiction) and autophagic close-reading (the framework analyzing its own word choices as cultural evidence).
 
 The original user input is preserved in `$ORIGINAL_INPUT` and shown separately from the generated provocation in session headers.
 
@@ -199,12 +199,12 @@ This ensures The Line, the most visible output, receives adversarial treatment c
 
 ### Verbose Session Log
 
-Every `claude_call*` invocation is logged to `$SESSION_DIR/log.jsonl` (JSONL format, one JSON object per line). Each entry captures: timestamp, caller identifier (e.g. `lens:empath`, `mechanism:negative_space`, `conductor`), call type, prompt excerpt (first 500 chars), full response, exit code, and rate limit status. Callers set `VERBOSE_CALLER` before invoking `claude_call*`. Excludes the growing conversation context - just individual prompts and responses.
+Every `claude_call*` invocation is logged to `$SESSION_DIR/log.jsonl` (JSONL format, one JSON object per line). Each entry captures: timestamp, caller identifier (e.g. `lens:empath`, `mechanism:negative_space`, `conductor`), call type, prompt excerpt (first 500 chars), full response, exit code, and rate limit status. Callers set `VERBOSE_CALLER` before invoking `claude_call*`. Excludes the growing thinking session context - just individual prompts and responses.
 
 ### Pipeline Flow
 
 1. **Provocation verification** - If the provocation contains quantitative claims and web search is available, verifies and corrects fabricated stats, flags rhetorical framing. Disables embedded grounding in seed prep (already done)
-2. **Seed prep** - Fracture (dyslexic), tune (spiral), or appraise (lapidary). Includes verification report in conversation context if available
+2. **Seed prep** - Fracture (dyslexic), tune (spiral), or appraise (lapidary). Includes verification report in thinking session context if available
 3. **Provocation review** (autonomous mode) - checks distinctness of generated provocations
 3. **Rounds/spirals/passes** (or conductor loop in autonomous mode) with interspersed mechanisms
 4. **Session review** (autonomous mode) - baseline test, novelty search, tension check. Can restart with mutations
@@ -224,13 +224,15 @@ Every `claude_call*` invocation is logged to `$SESSION_DIR/log.jsonl` (JSONL for
 ### Output
 
 Sessions produce files in `./think-different-output/<slug>_<timestamp>/`:
-- `presentation.md` - Combined output: The Line (winning platform + expression), the experiment, the asset (sensory description), creative brief, manifesto, insight article (controlled by `--type`), optional dialogue (first-person internal monologue, opt-in via `--type dialogue`), session findings (novel ideas for inspiration), runner-up lines (non-winning platform/expression pairs)
+- `presentation.md` - Combined output: The Line (winning platform + expression), the experiment, the asset (sensory description), creative brief, manifesto, insight article (controlled by `--sections`), session findings (novel ideas for inspiration), runner-up lines (non-winning platform/expression pairs)
+- `dialogue.md` - First-person internal monologue (opt-in via `--dialogue`). Written as a separate file, not embedded in presentation.md
 - `presentation.docx` - Branded Word document (if python-docx available)
 - `presentation.html` - Cinematic scroll presentation with GSAP ScrollTrigger (enable with `--html`, experimental)
 - `session.md` / `session.json` - Full transcript (markdown + machine-readable)
 - `session.state.json` - Session state for resume capability
-- `log.jsonl` - Verbose session log (every Claude call/response, JSONL format). Includes conductor `reasoning` field for decision review
+- `log.jsonl` - Verbose session log (every Claude call/response, JSONL format). Includes conductor `reasoning` field for decision review. Each API call entry includes a `usage` sub-object with `input_tokens`, `output_tokens`, `cache_creation_input_tokens`, `cache_read_input_tokens`, `cost_usd`, and `duration_ms`
 - `diagram.html` - D3 force-directed visualization of the session's thinking process (auto-generated from log.jsonl). Shows lens dispatch order, conductor reasoning, mechanism interventions, and user questions. Hover nodes for detail
+- `usage.html` - Chart.js token usage and cost report (auto-generated from log.jsonl). Shows cost per call timeline, token breakdown, cost by caller category, cumulative cost curve, top expensive calls, cache efficiency, and duration per call. Identifies bottlenecks and conductor overhead
 - `context.md` - Project context brief (if gathered)
 
 ## Dependencies

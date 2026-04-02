@@ -150,7 +150,7 @@ cd ~/projects/my-project && ~/think.sh "seed topic"
 
 ```bash
 # Re-run presentation at different length
-./think.sh --report-only ./think-different-output/my-session/session.md --words 2000
+./think.sh --regenerate ./think-different-output/my-session/session.md --words 2000
 
 # Manual synthesis of existing transcripts
 ./think.sh --synthesise ./run1/*.md ./run2/*.md --words 1500
@@ -177,13 +177,13 @@ Control provocation character with `--tone` (default: `provocative`). See [Tones
 | `--seeds N` | Number of provocations to generate (auto-detected from plan, max: 12) |
 | `--pick` | Interactively select which provocations to run |
 | **Output** | |
-| `--type TYPES` | Output types: `insight`, `brief`, `manifesto` (default: all three). Also: `dialogue` (first-person internal monologue). Comma-separated |
-| `--dialogue` | Add dialogue output alongside default types (shorthand for `--type insight,brief,manifesto,dialogue`) |
+| `--sections LIST` | Presentation sections: `insight`, `brief`, `manifesto` (default: all three). Controls which sections appear in presentation.md |
+| `--dialogue` | Generate dialogue as separate file (dialogue.md) - first-person internal monologue |
 | `--lines N` | Number of rallying lines to generate (default: 3, max: 7) |
 | `--practitioners LIST` | Comma-separated creative practitioners as quality bar for The Line |
 | `--html` | Enable HTML presentation generation (experimental, off by default) |
-| `--formats LIST` | Output formats for `--report-only`: `all`, `md`, `doc`, `html` (comma-separated) |
-| `--report-only FILE` | Regenerate presentation from existing transcript |
+| `--formats LIST` | Output formats for `--regenerate`: `all`, `md`, `doc`, `html` (comma-separated) |
+| `--regenerate FILE` | Regenerate presentation from existing transcript |
 | `--synthesise` | Synthesise existing transcript files into one presentation |
 | `--resume FILE` | Resume an interrupted session from state file |
 | **Tuning** | |
@@ -218,7 +218,8 @@ Control provocation character with `--tone` (default: `provocative`). See [Tones
 
 Each session produces:
 
-- **Presentation** (`presentation.md` / `.docx` / `.html`) - The Line (winning platform + expression), the experiment, the asset (sensory/tactile creative description), creative brief, manifesto, insight article, and session findings (novel ideas for inspiration). Controlled by `--type`. Opt-in `dialogue` type rewrites the session as continuous first-person internal monologue, stripping all lens attribution. The presentation pipeline distils session findings first, then all sections are anchored on the deepest material. HTML version features cinematic scroll effects with GSAP ScrollTrigger
+- **Presentation** (`presentation.md` / `.docx` / `.html`) - The Line (winning platform + expression), the experiment, the asset (sensory/tactile creative description), creative brief, manifesto, insight article, and session findings (novel ideas for inspiration). Sections controlled by `--sections`. The presentation pipeline distils session findings first, then all sections are anchored on the deepest material. HTML version features cinematic scroll effects with GSAP ScrollTrigger
+- **Dialogue** (`dialogue.md`) - Opt-in via `--dialogue`. Rewrites the session as continuous first-person internal monologue, stripping all lens attribution. Written as a separate file, not embedded in the presentation
 - **Transcript** (`session_*.md`) - Full markdown transcript of the thinking session
 - **JSON** (`session_*.json`) - Machine-readable transcript for analysis
 - **Session diagram** (`diagram.html`) - D3 force-directed visualization of the session's thinking process. Shows lens dispatch order, conductor reasoning at each decision point, mechanism interventions, skips, and user questions. Hover nodes for detail. Auto-generated from `log.jsonl`

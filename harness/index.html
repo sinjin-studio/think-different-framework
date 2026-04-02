@@ -119,7 +119,8 @@ label {
   font-size: 1.0rem;
   font-weight: 600;
   color: var(--text);
-  display: block;
+  display: flex;
+  align-items: center;
   margin-bottom: 0.3rem;
 }
 label .flag {
@@ -156,6 +157,7 @@ textarea { resize: vertical; min-height: 60px; }
 input[type="number"] { width: 80px; }
 input[type="range"] {
   flex: 1;
+  max-width: 200px;
   accent-color: var(--green);
   height: 4px;
 }
@@ -388,6 +390,17 @@ input[type="range"] {
   border-radius: var(--radius);
   padding: 0.7rem;
   transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.mechanism-card .mech-label-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.mechanism-card .mech-label-row .toggle-label {
+  font-size: 0.85rem;
 }
 .mechanism-card.disabled {
   opacity: 0.5;
@@ -584,6 +597,76 @@ input[type="range"] {
 .hidden { display: none !important; }
 .expand-indicator { display: none; }
 
+/* Info icon */
+.info-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid var(--green);
+  color: var(--green);
+  font-size: 12px;
+  font-family: var(--mono);
+  font-weight: 700;
+  cursor: pointer;
+  margin-left: 0.5rem;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+  line-height: 1;
+}
+.info-icon:hover {
+  background: var(--green);
+  color: #fff;
+}
+/* Popover on click */
+.info-popover {
+  position: fixed;
+  background: var(--bg-surface);
+  border: 1px solid var(--green-dim);
+  border-radius: var(--radius-lg);
+  padding: 0.9rem 1rem;
+  max-width: 360px;
+  font-size: 0.82rem;
+  color: var(--text);
+  z-index: 200;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+  font-family: var(--font);
+  line-height: 1.55;
+  animation: popoverIn 0.12s ease-out;
+}
+@keyframes popoverIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.info-popover .popover-flag {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--green);
+  background: var(--green-glow);
+  border-radius: 3px;
+  padding: 0.1rem 0.4rem;
+  margin-bottom: 0.5rem;
+}
+.info-popover .popover-body {
+  color: var(--text-muted);
+}
+/* Tag badges */
+.tag-badge {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: var(--orange);
+  border: 1px solid var(--orange-dim);
+  border-radius: 3px;
+  padding: 0rem 0.3rem;
+  margin-left: 0.4rem;
+  vertical-align: middle;
+}
+
 /* Responsive */
 @media (max-width: 900px) {
   .layout {
@@ -658,7 +741,7 @@ input[type="range"] {
 <div class="layout">
   <div class="form-col">
 
-    <!-- 1. Input -->
+    <!-- 1. Input (hand-coded: workflow chips control section visibility) -->
     <section id="sec-input">
       <h2>1. Input</h2>
       <div class="field">
@@ -669,303 +752,36 @@ input[type="range"] {
           <span class="chip" data-value="resume">Resume</span>
         </div>
       </div>
-
-      <div id="session-inputs">
-        <div class="field">
-          <label>Seed Topic <span class="flag">positional</span></label>
-          <input type="text" id="seedTopic" placeholder='How might luxury wellness appeal to Gen Z?'>
-        </div>
-        <div class="field">
-          <label>Brief <span class="flag">--brief</span></label>
-          <div class="file-input-row">
-            <input type="text" id="briefFile" placeholder="./client-brief.pdf">
-            <input type="file" id="briefFile-picker">
-            <button class="btn" data-browse="briefFile">Browse</button>
-          </div>
-        </div>
-        <div class="field">
-          <label>Brand <span class="flag">--brand</span></label>
-          <input type="text" id="brandName" placeholder="Nike">
-        </div>
-        <div class="field">
-          <label>Notes <span class="flag">--notes</span></label>
-          <textarea id="notesText" placeholder="luxury wellness, Gen Z, sustainability"></textarea>
-        </div>
-      </div>
-
+      <div id="session-inputs"></div>
       <div id="postprocess-inputs" class="hidden">
-        <div id="input-report-only" class="hidden">
-          <div class="field">
-            <label>Transcript file <span class="flag">--report-only</span></label>
-            <div class="file-input-row">
-              <input type="text" id="reportOnlyFile" placeholder="./session.md">
-              <input type="file" id="reportOnlyFile-picker">
-              <button class="btn" data-browse="reportOnlyFile">Browse</button>
-            </div>
-          </div>
-          <div class="field" id="formats-field">
-            <label>Report Formats <span class="flag">--formats</span></label>
-            <div class="checkbox-group" id="format-checks">
-              <label class="checkbox-item"><input type="checkbox" value="all" checked><span>All</span></label>
-              <label class="checkbox-item"><input type="checkbox" value="md"><span>MD</span></label>
-              <label class="checkbox-item"><input type="checkbox" value="doc"><span>DOCX</span></label>
-              <label class="checkbox-item"><input type="checkbox" value="html"><span>HTML</span></label>
-            </div>
-          </div>
-        </div>
-        <div id="input-synthesise" class="hidden">
-          <div class="field">
-            <label>Transcript files (one per line) <span class="flag">--synthesise</span></label>
-            <textarea id="synthesiseFiles" placeholder="./run1/session.md&#10;./run2/session.md"></textarea>
-          </div>
-        </div>
-        <div id="input-resume" class="hidden">
-          <div class="field">
-            <label>State file <span class="flag">--resume</span></label>
-            <div class="file-input-row">
-              <input type="text" id="resumeFile" placeholder="./session.state.json">
-              <input type="file" id="resumeFile-picker">
-              <button class="btn" data-browse="resumeFile">Browse</button>
-            </div>
-          </div>
-        </div>
+        <div id="input-report-only" class="hidden"></div>
+        <div id="input-synthesise" class="hidden"></div>
+        <div id="input-resume" class="hidden"></div>
       </div>
     </section>
 
     <!-- 2. Seed Preparation -->
     <section id="sec-seed-prep" class="session-section">
       <h2>2. Seed Preparation</h2>
-
-      <div class="field">
-        <label>Context File <span class="flag">--context</span></label>
-        <div class="file-input-row">
-          <input type="text" id="contextFile" placeholder="Auto-detected if not set">
-          <input type="file" id="contextFile-picker">
-          <button class="btn" data-browse="contextFile">Browse</button>
-        </div>
-      </div>
-
-      <div class="field">
-        <label>Seeds <span class="flag">--seeds</span></label>
-        <div class="field-row">
-          <div class="toggle-wrap">
-            <label class="toggle">
-              <input type="checkbox" id="seedsAuto" checked>
-              <span class="slider"></span>
-            </label>
-            <span class="toggle-label">Auto</span>
-            <span class="toggle-help">Pro=1, Max/Team=3</span>
-          </div>
-          <div id="seeds-num-wrap" class="hidden">
-            <input type="number" id="seeds" min="1" max="12" value="3" style="width: 65px;">
-          </div>
-          <div class="toggle-wrap" id="pick-wrap">
-            <label class="toggle">
-              <input type="checkbox" id="pick">
-              <span class="slider"></span>
-            </label>
-            <span class="toggle-label">Pick</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="field">
-        <label>Tone <span class="flag">--tone</span></label>
-        <div class="chips" id="tone-chips">
-          <span class="chip active" data-value="provocative">provocative</span>
-          <span class="chip" data-value="generous">generous</span>
-          <span class="chip" data-value="personal">personal</span>
-          <span class="chip" data-value="absurd">absurd</span>
-          <span class="chip" data-value="daydream">daydream</span>
-          <span class="chip" data-value="mixed">mixed</span>
-        </div>
-        <div class="help">Multiple allowed. "mixed" selects all five.</div>
-      </div>
-
-      <div class="field">
-        <label>Audience <span class="flag">--audience</span></label>
-        <input type="text" id="audience" placeholder="Auto-inferred from input if not set">
-      </div>
+      <div class="section-fields"></div>
     </section>
 
-    <!-- 3. Composition / Mode -->
+    <!-- 3. Composition -->
     <section id="sec-composition" class="session-section">
       <h2>3. Composition</h2>
-
-      <div class="field">
-        <label>Mode <span class="flag">--mode</span></label>
-        <div class="segmented" id="mode-control">
-          <button class="active" data-value="dyslexic">Dyslexic</button>
-          <button data-value="spiral">Spiral</button>
-          <button data-value="lapidary">Lapidary</button>
-        </div>
-        <div class="help">Dyslexic: collision-driven leaps. Spiral: widening cycles. Lapidary: iterative polish.</div>
-      </div>
-
-      <div class="field">
-        <label>Lens Depth <span class="flag">--depth</span></label>
-        <div class="segmented" id="depth-control">
-          <button class="active" data-value="deep">Deep</button>
-          <button data-value="deeper">Deeper</button>
-          <button data-value="deepest">Deepest</button>
-        </div>
-        <div class="help">How deep into fundamental human drivers the lenses go. Affects Mortal, Achala, Empath, Child, Provocateur, Mouth. Per-lens: mortal:deepest,achala:deeper</div>
-        <div class="field" id="depth-custom-field" style="margin-top: 0.5rem; display: none;">
-          <label>Per-lens overrides <span class="flag">lens:level</span></label>
-          <input type="text" id="depthCustom" placeholder="e.g. mortal:deepest,achala:deeper" style="font-family: monospace;">
-          <div class="help">Comma-separated lens:level pairs. Overrides the global depth for specific lenses.</div>
-        </div>
-      </div>
-
-      <div class="field-row">
-        <div class="toggle-wrap">
-          <label class="toggle">
-            <input type="checkbox" id="autonomous" checked>
-            <span class="slider"></span>
-          </label>
-          <span class="toggle-label">Autonomous Mode</span>
-        </div>
-      </div>
-      <div class="help" style="margin-bottom: 0.8rem;">Conductor orchestrates lenses with autonomous decision-making.</div>
-
-      <div class="field" id="turns-field">
-        <label>Max Turns <span class="flag">--turns</span></label>
-        <div class="field-row">
-          <input type="range" id="turnsRange" min="5" max="100" step="5" value="35">
-          <input type="number" id="turnsNum" min="5" max="100" step="5" value="35" style="width: 65px;">
-        </div>
-      </div>
-      <div class="field" id="min-turns-field">
-        <label>Min Turns <span class="flag">--min-turns</span></label>
-        <div class="field-row">
-          <input type="range" id="minTurnsRange" min="5" max="50" step="5" value="15">
-          <input type="number" id="minTurnsNum" min="5" max="50" step="5" value="15" style="width: 65px;">
-        </div>
-        <div class="help">Min turns before conductor can end session. Default: 15.</div>
-      </div>
-
-      <div class="field hidden" id="rounds-field">
-        <label>Rounds <span class="flag">--rounds</span></label>
-        <input type="number" id="rounds" min="1" max="20" value="4" style="width: 65px;">
-        <div class="help">Dyslexic mode: collision rounds. Default: 4.</div>
-      </div>
-
-      <div class="field hidden" id="spirals-field">
-        <label>Spirals <span class="flag">--spirals</span></label>
-        <input type="number" id="spirals" min="1" max="20" value="3" style="width: 65px;">
-        <div class="help">Spiral mode: widening cycles. Default: 3.</div>
-      </div>
-
-      <div class="field hidden" id="passes-field">
-        <label>Passes <span class="flag">--passes</span></label>
-        <input type="number" id="passes" min="1" max="20" value="3" style="width: 65px;">
-        <div class="help">Lapidary mode: refinement passes. Default: 3.</div>
-      </div>
+      <div class="section-fields"></div>
     </section>
 
     <!-- 4. Mechanisms -->
     <section id="sec-mechanisms" class="session-section">
       <h2>4. Mechanisms</h2>
-      <div class="mechanisms-grid" id="mechanisms">
-        <div class="mechanism-card" data-mechanism="friction">
-          <div class="toggle-wrap">
-            <label class="toggle"><input type="checkbox" checked data-key="friction"><span class="slider"></span></label>
-            <span class="toggle-label">Friction</span>
-          </div>
-          <div class="help" style="margin-top: 0.3rem;">Detects stuck patterns</div>
-        </div>
-        <div class="mechanism-card" data-mechanism="bias">
-          <div class="toggle-wrap">
-            <label class="toggle"><input type="checkbox" checked data-key="bias"><span class="slider"></span></label>
-            <span class="toggle-label">Bias</span>
-          </div>
-          <div class="help" style="margin-top: 0.3rem;">Cognitive bias as fuel</div>
-        </div>
-        <div class="mechanism-card" data-mechanism="sensory">
-          <div class="toggle-wrap">
-            <label class="toggle"><input type="checkbox" checked data-key="sensory"><span class="slider"></span></label>
-            <span class="toggle-label">Sensory</span>
-          </div>
-          <div class="help" style="margin-top: 0.3rem;">Re-grounds in source</div>
-        </div>
-        <div class="mechanism-card" data-mechanism="transcendence">
-          <div class="toggle-wrap">
-            <label class="toggle"><input type="checkbox" checked data-key="transcendence"><span class="slider"></span></label>
-            <span class="toggle-label">Transcendence</span>
-          </div>
-          <div class="help" style="margin-top: 0.3rem;">Detects breakthroughs</div>
-        </div>
-        <div class="mechanism-card" data-mechanism="negative_space">
-          <div class="toggle-wrap">
-            <label class="toggle"><input type="checkbox" checked data-key="negative_space"><span class="slider"></span></label>
-            <span class="toggle-label">Negative Space</span>
-          </div>
-          <div class="help" style="margin-top: 0.3rem;">Maps dark territory</div>
-        </div>
-      </div>
+      <div class="section-fields"></div>
     </section>
 
     <!-- 5. Output -->
     <section id="sec-output" class="session-section">
       <h2>5. Output</h2>
-
-      <div class="field">
-        <label>Output Types <span class="flag">--type</span></label>
-        <div class="checkbox-group" id="type-checks">
-          <label class="checkbox-item"><input type="checkbox" value="insight" checked><span>Insight</span></label>
-          <label class="checkbox-item"><input type="checkbox" value="brief" checked><span>Brief</span></label>
-          <label class="checkbox-item"><input type="checkbox" value="manifesto" checked><span>Manifesto</span></label>
-        </div>
-      </div>
-
-      <div class="field">
-        <label>Lines <span class="flag">--lines</span></label>
-        <div class="field-row">
-          <input type="range" id="linesRange" min="1" max="7" step="1" value="3">
-          <input type="number" id="linesNum" min="1" max="7" value="3" style="width: 55px;">
-        </div>
-        <div class="help">Number of angles to generate. Each outputs Platform + Expression altitudes. Default: 3.</div>
-      </div>
-
-      <div class="field">
-        <label>Practitioners <span class="flag">--practitioners</span></label>
-        <div class="chips" id="practitioner-chips"></div>
-        <div class="practitioner-add-row">
-          <input type="text" id="practitioner-input" placeholder="Add a practitioner...">
-          <button class="btn" id="practitioner-add">Add</button>
-          <button class="btn" id="practitioner-shuffle">Shuffle</button>
-          <button class="btn" id="practitioner-reset">Reset</button>
-        </div>
-        <div class="help">3 random from pool each run. Shuffle to re-roll, toggle to curate, or add custom names.</div>
-      </div>
-
-      <div class="field">
-        <label>Word Budget <span class="flag">--words</span></label>
-        <div class="field-row">
-          <input type="range" id="wordsRange" min="100" max="5000" step="100" value="1500">
-          <input type="number" id="wordsNum" min="100" max="5000" step="100" value="1500" style="width: 70px;">
-        </div>
-        <div class="help">Total words across all presentation sections. Default: 1500.</div>
-      </div>
-
-      <div class="field">
-        <label>Output Directory <span class="flag">--output</span></label>
-        <input type="text" id="outputDir" placeholder="./think-different-output" value="">
-        <div class="help">Default: ./think-different-output</div>
-      </div>
-
-      <div class="field-row">
-        <div class="toggle-wrap">
-          <label class="toggle">
-            <input type="checkbox" id="html">
-            <span class="slider"></span>
-          </label>
-          <span class="toggle-label">HTML output</span>
-          <span class="toggle-help flag">--html</span>
-          <span class="help" style="margin: 0;">(experimental)</span>
-        </div>
-      </div>
-
+      <div class="section-fields"></div>
     </section>
 
     <!-- Advanced -->
@@ -975,67 +791,7 @@ input[type="range"] {
         <span class="arrow">&#9654;</span>
       </div>
       <div class="collapsible-body" id="advanced-body">
-
-        <div class="field">
-          <label>Include Lenses <span class="flag">--include</span></label>
-          <div id="include-lenses"></div>
-          <div class="help" style="margin-top: 0.3rem;">Force specific lenses into the session.</div>
-        </div>
-
-        <div class="field">
-          <label>Exclude Lenses <span class="flag">--exclude</span></label>
-          <div id="exclude-lenses"></div>
-          <div class="help" style="margin-top: 0.3rem;">Remove specific lenses from the session.</div>
-        </div>
-
-        <div class="field" style="display: flex; flex-direction: column; gap: 0.6rem;">
-          <div class="toggle-wrap">
-            <label class="toggle"><input type="checkbox" id="shuffle"><span class="slider"></span></label>
-            <span class="toggle-label">Shuffle</span>
-            <span class="toggle-help flag">--shuffle</span>
-          </div>
-          <div class="toggle-wrap">
-            <label class="toggle"><input type="checkbox" id="skipStrict"><span class="slider"></span></label>
-            <span class="toggle-label">Skip Strict</span>
-            <span class="toggle-help flag">--skip-strict</span>
-          </div>
-          <div class="toggle-wrap">
-            <label class="toggle"><input type="checkbox" id="compact"><span class="slider"></span></label>
-            <span class="toggle-label">Compact</span>
-            <span class="toggle-help flag">--compact</span>
-          </div>
-          <div class="toggle-wrap">
-            <label class="toggle"><input type="checkbox" id="noProgressive"><span class="slider"></span></label>
-            <span class="toggle-label">No Progressive</span>
-            <span class="toggle-help flag">--no-progressive</span>
-          </div>
-          <div class="toggle-wrap">
-            <label class="toggle"><input type="checkbox" id="noGround"><span class="slider"></span></label>
-            <span class="toggle-label">No Ground</span>
-            <span class="toggle-help flag">--no-ground</span>
-          </div>
-          <div class="toggle-wrap">
-            <label class="toggle"><input type="checkbox" id="groundOnly"><span class="slider"></span></label>
-            <span class="toggle-label">Ground Only</span>
-            <span class="toggle-help flag">--ground-only</span>
-          </div>
-          <div class="toggle-wrap">
-            <label class="toggle"><input type="checkbox" id="noContext"><span class="slider"></span></label>
-            <span class="toggle-label">No Context</span>
-            <span class="toggle-help flag">--no-context</span>
-          </div>
-          <div class="toggle-wrap">
-            <label class="toggle"><input type="checkbox" id="noWait"><span class="slider"></span></label>
-            <span class="toggle-label">No Wait</span>
-            <span class="toggle-help flag">--no-wait</span>
-          </div>
-        </div>
-
-        <div class="field">
-          <label>Allowed Tools <span class="flag">--allowedTools</span></label>
-          <input type="text" id="allowedTools" value="WebSearch,WebFetch" placeholder="WebSearch,WebFetch">
-          <div class="help">Tools for Claude CLI. Empty string to disable.</div>
-        </div>
+        <div class="section-fields"></div>
       </div>
     </section>
 
@@ -1069,7 +825,356 @@ input[type="range"] {
 </div>
 
 <script>
-// ── Placeholder Pools ────────────────────────────────
+// ══════════════════════════════════════════════════════════
+// FIELDS SCHEMA - single source of truth for all controls
+// ══════════════════════════════════════════════════════════
+
+const FIELDS = [
+  // ── Section 1: Input ──────────────────────────────────
+  // Session inputs
+  {
+    key: 'seedTopic', type: 'text', flag: 'positional',
+    label: 'Seed Topic', section: 'session-inputs',
+    default: '', placeholderPool: 'seedTopic',
+    info: 'The starting provocation for the thinking session. Can be a question, a brief, a tension, or an observation. The framework will fracture, tune, or appraise this seed depending on the composition mode before the session begins.',
+  },
+  {
+    key: 'briefFile', type: 'file', flag: '--brief',
+    label: 'Brief', section: 'session-inputs',
+    default: '', placeholder: './client-brief.pdf',
+    info: 'Path to a brief file (PDF, markdown, or text). The framework reads the brief and generates multiple provocations from it, each opening different creative territory. Use with --pick to interactively select which provocations to run.',
+  },
+  {
+    key: 'brandName', type: 'text', flag: '--brand',
+    label: 'Brand', section: 'session-inputs',
+    default: '', placeholderPool: 'brandName',
+    info: 'A brand name to generate provocations from. The framework researches the brand (via web search if available) and generates provocations that probe the brand\'s tensions, contradictions, and unexplored territory.',
+  },
+  {
+    key: 'notesText', type: 'textarea', flag: '--notes',
+    label: 'Notes', section: 'session-inputs',
+    default: '', placeholderPool: 'notesText',
+    info: 'Working notes, themes, or raw thoughts. The framework distills these into provocations. Comma-separated topics work well, but freeform text is also fine.',
+  },
+  // Report-only inputs
+  {
+    key: 'reportOnlyFile', type: 'file', flag: '--regenerate',
+    label: 'Transcript file', section: 'report-only',
+    default: '', placeholder: './session.md',
+    info: 'Path to an existing session transcript (.md). Regenerates the presentation (The Line, brief, manifesto, insight article) from this transcript without re-running the thinking session. Useful for re-running presentation with different --words or --sections settings.',
+  },
+  {
+    key: 'formats', type: 'checkboxes', flag: '--formats',
+    label: 'Report Formats', section: 'report-only',
+    default: ['all'],
+    options: [
+      { value: 'all', label: 'All' },
+      { value: 'md', label: 'MD' },
+      { value: 'doc', label: 'DOCX' },
+      { value: 'html', label: 'HTML' },
+    ],
+    info: 'Output formats for report-only mode. "All" generates markdown, DOCX, and HTML. Individual formats can be selected to skip token usage if a .md already exists.',
+  },
+  // Synthesise inputs
+  {
+    key: 'synthesiseFiles', type: 'textarea', flag: '--synthesise',
+    label: 'Transcript files (one per line)', section: 'synthesise',
+    default: '', placeholder: './run1/session.md\n./run2/session.md',
+    info: 'Paths to multiple session transcripts (one per line). The framework synthesises findings across all transcripts into a single presentation, identifying patterns, tensions, and emergent themes across runs.',
+  },
+  // Resume input
+  {
+    key: 'resumeFile', type: 'file', flag: '--resume',
+    label: 'State file', section: 'resume',
+    default: '', placeholder: './session.state.json',
+    info: 'Path to a session.state.json file from an interrupted session. Resumes the session from where it left off, preserving conversation history, mechanism memory, and conductor state.',
+  },
+
+  // ── Section 2: Seed Preparation ───────────────────────
+  {
+    key: 'contextFile', type: 'file', flag: '--context',
+    label: 'Context File', section: 'seed-prep',
+    default: '', placeholder: 'Auto-detected if not set',
+    help: 'Explicit context file to ground the session.',
+    info: 'If set, this file is read and summarized as project context before the session starts. If not set, the framework auto-detects context from the current working directory (README, package.json, etc). Use --no-context to skip context entirely.',
+  },
+  {
+    key: '_seeds', type: 'compound-seeds', section: 'seed-prep',
+    flag: '--seeds',
+    label: 'Seeds',
+    info: 'Controls how many provocations are generated from the input. Each provocation runs a full thinking session, so more seeds = more sessions = more token usage. Pro plan defaults to 1, Max/Enterprise/Team defaults to 3. User --seeds flag always overrides.',
+    subFields: {
+      seedsAuto: { default: true, label: 'Auto', help: 'Pro=1, Max/Team=3' },
+      seeds: { default: 3, min: 1, max: 12 },
+      pick: {
+        flag: '--pick', label: 'Pick',
+        info: 'When multiple provocations are generated, this flag pauses after generation and lets you select which ones to run as full sessions. Useful for curating quality when using --brief or --brand inputs that generate many angles.',
+      },
+    },
+  },
+  {
+    key: 'tone', type: 'chips', flag: '--tone',
+    label: 'Tone', section: 'seed-prep',
+    default: ['provocative'],
+    options: ['provocative', 'generous', 'personal', 'absurd', 'daydream', 'mixed'],
+    help: 'Multiple allowed. "mixed" selects all five.',
+    info: 'Controls the emotional register of generated provocations. Provocative: confrontational, challenges assumptions. Generous: empathetic, finds hidden value. Personal: intimate, first-person. Absurd: surreal juxtaposition (use sparingly - LLMs drift toward comedy tropes). Daydream: wandering, associative. Comma-separated for custom mix.',
+  },
+  {
+    key: 'audience', type: 'text', flag: '--audience',
+    label: 'Audience', section: 'seed-prep',
+    default: '', placeholderPool: 'audience',
+    help: 'Auto-inferred from input if not set.',
+    info: 'Target audience for the session. Shapes provocations and all presentation output toward audience-facing content. If not set, the framework infers the audience from the input (brief, brand, or seed topic).',
+  },
+
+  // ── Section 3: Composition ────────────────────────────
+  {
+    key: 'mode', type: 'segmented', flag: '--mode',
+    label: 'Mode', section: 'composition',
+    default: 'dyslexic',
+    options: [
+      { value: 'dyslexic', label: 'Dyslexic' },
+      { value: 'spiral', label: 'Spiral' },
+      { value: 'lapidary', label: 'Lapidary' },
+    ],
+    help: 'Dyslexic: collision-driven leaps. Spiral: widening cycles. Lapidary: iterative polish.',
+    info: 'The composition mode determines how lenses are sequenced together. Dyslexic mode uses fragmentary cognitions (break, leap, shift, name) for collision-driven creative leaps. Spiral mode uses deepening cognitions (open, rhyme, integrate) in widening-then-crystallizing cycles. Lapidary mode uses evaluative cognitions (weigh, root, pare) for iterative refinement and polish. In autonomous mode, these become conductor presets rather than hardcoded sequences.',
+  },
+  {
+    key: 'depth', type: 'segmented-with-custom', flag: '--depth',
+    label: 'Lens Depth', section: 'composition',
+    default: 'deep',
+    options: [
+      { value: 'deep', label: 'Deep' },
+      { value: 'deeper', label: 'Deeper' },
+      { value: 'deepest', label: 'Deepest' },
+    ],
+    help: 'How deep into fundamental human drivers the lenses go. Affects Mortal, Achala, Empath, Child, Provocateur, Mouth.',
+    info: 'Controls how deeply lenses probe fundamental human drivers. "Deep" (default) stays at the level of the topic. "Deeper" pushes into underlying human needs and fears. "Deepest" reaches for existential and philosophical territory. Per-lens overrides allow fine control, e.g. mortal:deepest,achala:deeper. Only affects lenses with depth-sensitive system prompts: Mortal, Achala, Empath, Child, Provocateur, Mouth.',
+    customField: {
+      key: 'depthCustom', label: 'Per-lens overrides', flagLabel: 'lens:level',
+      placeholder: 'e.g. mortal:deepest,achala:deeper',
+      help: 'Comma-separated lens:level pairs. Overrides the global depth for specific lenses.',
+    },
+  },
+  {
+    key: 'autonomous', type: 'toggle-with-help', flag: null,
+    label: 'Autonomous Mode', section: 'composition',
+    default: true,
+    help: 'Conductor orchestrates lenses with autonomous decision-making.',
+    info: 'When enabled (default), a conductor agent orchestrates the session: choosing which lens speaks next, what instruction to give it, whether to trigger mechanisms, and when to end. The conductor reads the conversation and detects unexplored territory, making emergent routing decisions. When disabled, lenses follow a hardcoded composition sequence determined by the mode.',
+  },
+  {
+    key: 'turns', type: 'range', flag: '--turns',
+    label: 'Max Turns', section: 'composition',
+    default: 35, min: 5, max: 100, step: 5,
+    fieldId: 'turns-field',
+    info: 'Maximum number of turns the autonomous conductor will run before ending the session and moving to presentation. Higher values allow deeper exploration but cost more tokens. Each turn is one lens call plus conductor decision.',
+  },
+  {
+    key: 'minTurns', type: 'range', flag: '--min-turns',
+    label: 'Min Turns', section: 'composition',
+    default: 15, min: 5, max: 50, step: 5,
+    fieldId: 'min-turns-field',
+    help: 'Min turns before conductor can end session. Default: 15.',
+    info: 'The conductor cannot end the session before this many turns have elapsed, even if it detects transcendence. This ensures enough lenses contribute before grounding begins. Also requires at least 7 distinct lenses to have spoken.',
+  },
+  {
+    key: 'rounds', type: 'number', flag: '--rounds',
+    label: 'Rounds', section: 'composition',
+    default: 4, min: 1, max: 20,
+    fieldId: 'rounds-field',
+    help: 'Dyslexic mode: collision rounds. Default: 4.',
+    info: 'Number of rounds in dyslexic (non-autonomous) mode. Each round dispatches multiple lenses in sequence with mechanism checks between rounds. More rounds = more collision opportunities but longer sessions.',
+  },
+  {
+    key: 'spirals', type: 'number', flag: '--spirals',
+    label: 'Spirals', section: 'composition',
+    default: 3, min: 1, max: 20,
+    fieldId: 'spirals-field',
+    help: 'Spiral mode: widening cycles. Default: 3.',
+    info: 'Number of spirals in spiral (non-autonomous) mode. Each spiral widens the exploration before crystallizing findings. The first spiral is narrow, subsequent spirals widen progressively.',
+  },
+  {
+    key: 'passes', type: 'number', flag: '--passes',
+    label: 'Passes', section: 'composition',
+    default: 3, min: 1, max: 20,
+    fieldId: 'passes-field',
+    help: 'Lapidary mode: refinement passes. Default: 3.',
+    info: 'Number of refinement passes in lapidary (non-autonomous) mode. Each pass applies evaluative cognitions (weigh, root, pare) to progressively polish and sharpen the output.',
+  },
+
+  // ── Section 4: Mechanisms ─────────────────────────────
+  {
+    key: '_mechanisms', type: 'mechanisms', section: 'mechanisms',
+    mechanisms: [
+      {
+        key: 'friction', label: 'Friction', flag: '--no-friction', default: true,
+        help: 'Detects stuck patterns',
+        info: 'Fires between rounds/turns to detect when the session is stuck in repetitive territory. Returns a structured decision: deepen the current thread, redirect to a different lens, or continue. Can inject a specific lens to break stuck patterns. Receives mechanism memory to avoid re-discovering the same tensions.',
+      },
+      {
+        key: 'bias', label: 'Bias', flag: '--no-bias', default: true,
+        help: 'Cognitive bias as fuel',
+        info: 'Identifies cognitive biases appearing in the session - not to eliminate them, but to use them as creative fuel. Detects confirmation bias, anchoring, availability heuristic, and others. Returns identified biases with recommendations for how to lean into or counter them productively.',
+      },
+      {
+        key: 'sensory', label: 'Sensory', flag: '--no-sensory', default: true,
+        help: 'Re-grounds in source',
+        info: 'Re-injects the original seed material, zeitgeist context, and ground truth mid-session. Prevents drift from the original provocation by reminding lenses of the concrete starting point. Includes known territory (zeitgeist sources) so lenses can push beyond what already exists.',
+      },
+      {
+        key: 'transcendence', label: 'Transcendence', flag: '--no-transcendence', default: true,
+        help: 'Detects breakthroughs',
+        info: 'Scans the conversation for breakthrough moments - ideas that transcend the original framing. Returns whether a breakthrough has occurred and recommends: compress (distill findings), continue (more exploration needed), or ground early (skip to presentation). Uses two-strike rule: requires two consecutive transcendence signals before triggering early grounding.',
+      },
+      {
+        key: 'negative_space', label: 'Negative Space', flag: '--no-negative-space', default: true,
+        help: 'Maps dark territory',
+        info: 'Maps what the session has NOT explored - temporal frames, emotional registers, audiences, scales, and perspectives that have been avoided. Returns unexplored territories, the pattern of avoidance, and a recommendation: redirect a lens into the void, note and continue, or acknowledge the void is intentional. Receives zeitgeist context to contrast known discourse against session territory.',
+      },
+    ],
+  },
+
+  // ── Section 5: Output ─────────────────────────────────
+  {
+    key: 'sections', type: 'checkboxes', flag: '--sections',
+    label: 'Presentation Sections', section: 'output',
+    default: ['insight', 'brief', 'manifesto'],
+    options: [
+      { value: 'insight', label: 'Insight' },
+      { value: 'brief', label: 'Brief' },
+      { value: 'manifesto', label: 'Manifesto' },
+    ],
+    info: 'Sections to include in presentation.md. Insight: long-form article exploring the session\'s findings. Brief: creative brief for a team to execute against. Manifesto: rallying declaration of the core idea. Low word budgets auto-drop sections unless --sections is explicitly set.',
+  },
+  {
+    key: 'dialogue', type: 'toggle', flag: '--dialogue',
+    label: 'Dialogue', section: 'output',
+    default: false,
+    info: 'Generates a separate dialogue.md file - a first-person internal monologue exploring the idea\'s implications. A personal thinking artifact rather than a client deliverable. Gets its own word budget (40% of --words) independent of presentation sections.',
+  },
+  {
+    key: 'lines', type: 'range', flag: '--lines',
+    label: 'Lines', section: 'output',
+    default: 3, min: 1, max: 7, step: 1,
+    help: 'Number of angles to generate. Each outputs Platform + Expression altitudes. Default: 3.',
+    info: 'The Line is the session\'s most visible output - a rallying line at two altitudes. Platform: a strategic truth the brand/idea can own. Expression: the audience-facing punch. Multiple angles are generated, the strongest is picked, and the winner goes through adversarial prosecution (max 2 iterations) testing briefability, cold-readability, and specificity.',
+  },
+  {
+    key: '_practitioners', type: 'practitioners', flag: '--practitioners',
+    label: 'Practitioners', section: 'output',
+    help: '3 random from pool each run. Shuffle to re-roll, toggle to curate, or add custom names.',
+    info: 'Creative practitioners used as a quality bar when generating The Line. The framework asks: would this line make [practitioner] pause? The names ground the quality check in real creative standards rather than abstract criteria. Default: random 3 from a pool of 20 (Bernbach, Lois, Trott, Hara, Varda, etc).',
+  },
+  {
+    key: 'words', type: 'range', flag: '--words',
+    label: 'Word Budget', section: 'output',
+    default: 1500, min: 100, max: 5000, step: 100,
+    info: 'Total word budget distributed across all presentation sections. At low budgets (under ~800), sections are automatically dropped unless --sections is explicitly set. The budget shapes density and depth of each output section. Dialogue (if enabled) gets a separate allocation of 40% of this budget.',
+  },
+  {
+    key: 'outputDir', type: 'text', flag: '--output',
+    label: 'Output Directory', section: 'output',
+    default: '', placeholder: './think-different-output',
+    info: 'Directory where session output files are written. Default: ./think-different-output. Each session creates a subdirectory named <slug>_<timestamp> containing the presentation, transcript, session state, log, diagram, and usage report.',
+  },
+  {
+    key: 'html', type: 'toggle', flag: '--html',
+    label: 'HTML output', section: 'output',
+    default: false,
+    tags: ['experimental'],
+    info: 'Generates a cinematic scroll presentation using GSAP ScrollTrigger alongside the standard markdown output. The HTML presentation features animated section transitions and is self-contained (single file). Experimental - the template is still being refined.',
+  },
+
+  // ── Advanced ──────────────────────────────────────────
+  {
+    key: '_includeLenses', type: 'lens-selector', section: 'advanced',
+    stateKey: 'include', flag: '--include',
+    label: 'Include Lenses',
+    help: 'Force specific lenses into the session.',
+    info: 'Force-include specific lenses by key. In autonomous mode, the conductor will ensure these lenses speak at least once. In non-autonomous mode, they are added to each round/spiral/pass. Useful for ensuring a specific perspective is represented.',
+  },
+  {
+    key: '_excludeLenses', type: 'lens-selector', section: 'advanced',
+    stateKey: 'exclude', flag: '--exclude',
+    label: 'Exclude Lenses',
+    help: 'Remove specific lenses from the session.',
+    info: 'Force-exclude specific lenses by key. The conductor (or hardcoded sequence) will never dispatch these lenses. Useful for removing a perspective that isn\'t relevant to the topic.',
+  },
+  {
+    key: 'shuffle', type: 'toggle', flag: '--shuffle',
+    label: 'Shuffle', section: 'advanced',
+    default: false,
+    info: 'Randomizes lens order within each round, spiral, or pass (non-autonomous mode). In autonomous mode, the conductor already chooses lens order dynamically, so this flag has minimal effect. Useful for breaking ordering biases in non-autonomous sessions.',
+  },
+  {
+    key: 'skipStrict', type: 'toggle', flag: '--skip-strict',
+    label: 'Skip Strict', section: 'advanced',
+    default: false,
+    info: 'Changes how lens skip-turn detection works. Default (inline): each lens decides within its response whether it has something new to add - if it responds with "SKIP: reason", the turn is logged and skipped. Strict mode: uses a separate pre-call to ask the lens if it should speak, before giving it the full prompt. Strict mode costs an extra API call per lens but is more reliable.',
+  },
+  {
+    key: 'compact', type: 'toggle', flag: '--compact',
+    label: 'Compact', section: 'advanced',
+    default: false,
+    info: 'Enables conversation compaction. Every 8-10 turns or when the conversation exceeds ~15K characters, the full history is distilled into a 400-600 word digest plus the last 3-4 verbatim turns. Off by default because breakthroughs often arrive at iteration 10+ and compaction destroys the raw phrasing that fuels them. Opus 4.6\'s 1M context window handles full conversations comfortably. Full transcript is always preserved in output files regardless.',
+  },
+  {
+    key: 'noProgressive', type: 'toggle', flag: '--no-progressive',
+    label: 'No Progressive', section: 'advanced',
+    default: false,
+    info: 'Disables progressive compression (on by default). Progressive compression generates compressed views of the conversation for the conductor and lenses without modifying the raw conversation. The conductor gets a territory-focused digest (~400w) for gap detection. Lenses get a phrasing-focused digest (~600w) preserving exact breakthrough quotes. Reduces data sent by ~60% across a 35-turn session. Disabling sends the full raw conversation to every caller.',
+  },
+  {
+    key: 'noGround', type: 'toggle', flag: '--no-ground',
+    label: 'No Ground', section: 'advanced',
+    default: false,
+    excludes: ['groundOnly'],
+    info: 'Skips the assumption grounding step embedded in seed preparation. By default, the seed prep phase includes a grounding check that verifies factual claims and anchors the provocation in external reality. Disabling this lets the session start from ungrounded provocations, which can be useful for purely speculative or fictional explorations.',
+  },
+  {
+    key: 'groundOnly', type: 'toggle', flag: '--ground-only',
+    label: 'Ground Only', section: 'advanced',
+    default: false,
+    excludes: ['noGround'],
+    info: 'Runs only the assumption grounding step, then exits. Useful for testing how a provocation\'s factual claims are verified and corrected without running a full session. Outputs the verification report showing which claims were confirmed, corrected, or flagged as framing.',
+  },
+  {
+    key: 'noContext', type: 'toggle', flag: '--no-context',
+    label: 'No Context', section: 'advanced',
+    default: false,
+    excludes: ['noGround', 'groundOnly'],
+    info: 'Skips project context gathering entirely. By default, the framework reads the current working directory for README, package.json, and other project files to build a context brief. Disabling this runs the session without any project grounding, useful when the seed topic is unrelated to the current project.',
+  },
+  {
+    key: 'noWait', type: 'toggle', flag: '--no-wait',
+    label: 'No Wait', section: 'advanced',
+    default: false,
+    info: 'Disables auto-wait on rate limit. By default in autonomous mode, when a rate limit is hit, the framework polls with exponential backoff until credits reset (max 4 hours). This enables unattended overnight runs. Disabling this causes the session to fail immediately on rate limit, which is useful for quick testing.',
+  },
+  {
+    key: 'multistep', type: 'toggle', flag: '--multistep',
+    label: 'Multi-step', section: 'advanced',
+    default: false,
+    tags: ['experimental'],
+    info: 'Enables two-step deliberation for tool-enabled lenses (Observer, Empath, Skeptic, Mortal, Logician). Step 1: explore with web search - find surprising connections, react to what\'s found. Step 2: respond without tools - write the final 150-200 word response building on discoveries. Only the final response enters the conversation. The explore output stays internal but is logged to log.jsonl. Non-tool lenses remain single-shot. Gives tool lenses autonomy-of-thought without autonomy-of-action.',
+  },
+  {
+    key: 'allowedTools', type: 'text', flag: '--allowedTools',
+    label: 'Allowed Tools', section: 'advanced',
+    default: 'WebSearch,WebFetch',
+    placeholder: 'WebSearch,WebFetch',
+    help: 'Tools for Claude CLI. Empty string to disable.',
+    info: 'Comma-separated list of tools available to Claude CLI during lens calls. Default: WebSearch,WebFetch. Only tool-enabled lenses (Observer, Empath, Skeptic, Mortal, Logician) receive these tools. Set to empty string ("") to run all lenses without web access, which forces purely internal reasoning.',
+  },
+];
+
+// ══════════════════════════════════════════════════════════
+// STATIC DATA
+// ══════════════════════════════════════════════════════════
+
 const PLACEHOLDERS = {
   seedTopic: [
     'How might luxury wellness appeal to Gen Z?',
@@ -1145,7 +1250,6 @@ const PLACEHOLDERS = {
   ],
 };
 
-// ── Data ──────────────────────────────────────────────
 const LENSES = {
   perceivers: [
     { key: 'achala', name: 'The Achala', bias: 'Devotion, Interconnection & the Sacred' },
@@ -1183,7 +1287,7 @@ const LENSES = {
 const PRACTITIONERS = [
   'Bill Bernbach', 'George Lois', 'Dave Trott', 'Mary Wells Lawrence',
   'Rory Sutherland', 'Oliviero Toscani', 'Kenya Hara', 'Zaha Hadid',
-  'Agnès Varda', 'Pina Bausch', 'Ursula K. Le Guin', 'James Baldwin',
+  'Agn\u00e8s Varda', 'Pina Bausch', 'Ursula K. Le Guin', 'James Baldwin',
   'Yayoi Kusama', 'El Anatsui', 'Virgil Abloh', 'Muriel Cooper',
   'Emily Kame Kngwarreye', 'Pualani Kanakaole Kanahele',
   'Lygia Clark', 'Satyajit Ray'
@@ -1200,6 +1304,10 @@ function pickRandom(arr, n) {
   return result;
 }
 
+// ══════════════════════════════════════════════════════════
+// DEFAULTS & STATE
+// ══════════════════════════════════════════════════════════
+
 const DEFAULTS = {
   workflow: 'session',
   seedTopic: '', briefFile: '', brandName: '', notesText: '',
@@ -1213,7 +1321,8 @@ const DEFAULTS = {
   pick: false,
   tone: ['provocative'],
   audience: '',
-  type: ['insight', 'brief', 'manifesto'],
+  sections: ['insight', 'brief', 'manifesto'],
+  dialogue: false,
   lines: 3,
   practitioners: pickRandom(PRACTITIONERS, 3),
   html: false,
@@ -1225,35 +1334,341 @@ const DEFAULTS = {
   rounds: 4, spirals: 3, passes: 3,
   include: [], exclude: [],
   shuffle: false, skipStrict: false, compact: false, noProgressive: false,
-  noGround: false, groundOnly: false, noContext: false, noWait: false,
+  noGround: false, groundOnly: false, noContext: false, noWait: false, multistep: false,
   allowedTools: 'WebSearch,WebFetch',
   cmdPrefix: './think.sh',
 };
 
 let STATE = JSON.parse(JSON.stringify(DEFAULTS));
 
-// ── Placeholder Rotation ─────────────────────────────
-function rotatePlaceholders() {
-  for (const [fieldId, pool] of Object.entries(PLACEHOLDERS)) {
-    const el = document.getElementById(fieldId);
-    if (!el) continue;
-    const storageKey = 'td-ph-seen-' + fieldId;
-    let seen = [];
-    try { seen = JSON.parse(localStorage.getItem(storageKey)) || []; } catch(e) { seen = []; }
-    // Reset if all have been shown
-    if (seen.length >= pool.length) seen = [];
-    // Pick a random unseen index
-    const unseen = pool.map((_, i) => i).filter(i => !seen.includes(i));
-    const pick = unseen[Math.floor(Math.random() * unseen.length)];
-    el.setAttribute('placeholder', pool[pick]);
-    seen.push(pick);
-    localStorage.setItem(storageKey, JSON.stringify(seen));
+// ══════════════════════════════════════════════════════════
+// FIELD RENDERERS
+// ══════════════════════════════════════════════════════════
+
+function makeInfoIcon(field) {
+  if (!field.info) return '';
+  const tip = field.help || '';
+  return `<span class="info-icon" data-tip="${escAttr(tip)}" data-info="${escAttr(field.info)}" data-flag="${escAttr(field.flag || '')}">i</span>`;
+}
+
+function escAttr(s) {
+  if (!s) return '';
+  return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function makeTags(field) {
+  if (!field.tags || field.tags.length === 0) return '';
+  return field.tags.map(t => `<span class="tag-badge">${t}</span>`).join('');
+}
+
+function makeLabel(field) {
+  const flag = field.flag ? `<span class="flag">${field.flag}</span>` : '';
+  return `<label>${field.label} ${flag}${makeTags(field)}${makeInfoIcon(field)}</label>`;
+}
+
+function renderTextField(field) {
+  const ph = field.placeholderPool
+    ? getRotatedPlaceholder(field.placeholderPool)
+    : (field.placeholder || '');
+  const help = field.help ? `<div class="help">${field.help}</div>` : '';
+  return `<div class="field">${makeLabel(field)}<input type="text" id="${field.key}" placeholder="${escAttr(ph)}">${help}</div>`;
+}
+
+function renderTextareaField(field) {
+  const ph = field.placeholderPool
+    ? getRotatedPlaceholder(field.placeholderPool)
+    : (field.placeholder || '');
+  const help = field.help ? `<div class="help">${field.help}</div>` : '';
+  return `<div class="field">${makeLabel(field)}<textarea id="${field.key}" placeholder="${escAttr(ph)}"></textarea>${help}</div>`;
+}
+
+function renderFileField(field) {
+  const ph = field.placeholder || '';
+  const help = field.help ? `<div class="help">${field.help}</div>` : '';
+  return `<div class="field">${makeLabel(field)}<div class="file-input-row"><input type="text" id="${field.key}" placeholder="${escAttr(ph)}"><input type="file" id="${field.key}-picker"><button class="btn" data-browse="${field.key}">Browse</button></div>${help}</div>`;
+}
+
+function renderNumberField(field) {
+  const help = field.help ? `<div class="help">${field.help}</div>` : '';
+  const fid = field.fieldId ? ` id="${field.fieldId}"` : '';
+  return `<div class="field${field.hiddenClass || ''}"${fid}>${makeLabel(field)}<input type="number" id="${field.key}" min="${field.min}" max="${field.max}" value="${field.default}" style="width: 65px;">${help}</div>`;
+}
+
+function renderRangeField(field) {
+  const help = field.help ? `<div class="help">${field.help}</div>` : '';
+  const fid = field.fieldId ? ` id="${field.fieldId}"` : '';
+  return `<div class="field"${fid}>${makeLabel(field)}<div class="field-row"><input type="range" id="${field.key}Range" min="${field.min}" max="${field.max}" step="${field.step}" value="${field.default}"><input type="number" id="${field.key}Num" min="${field.min}" max="${field.max}" step="${field.step}" value="${field.default}" style="width: 75px;"></div>${help}</div>`;
+}
+
+function renderToggleField(field) {
+  const tags = makeTags(field);
+  const info = makeInfoIcon(field);
+  const help = field.help ? `<div class="help">${field.help}</div>` : '';
+  return `<div class="toggle-wrap"><label class="toggle"><input type="checkbox" id="${field.key}"><span class="slider"></span></label><span class="toggle-label">${field.label}</span><span class="toggle-help flag">${field.flag}</span>${tags}${info}</div>${help}`;
+}
+
+function renderToggleWithHelpField(field) {
+  const info = makeInfoIcon(field);
+  const help = field.help ? `<div class="help" style="margin-bottom: 0.8rem;">${field.help}</div>` : '';
+  return `<div class="field"><label>${field.label}${info}</label><label class="toggle" style="margin-top: 0.2rem;"><input type="checkbox" id="${field.key}" checked><span class="slider"></span></label>${help}</div>`;
+}
+
+function renderSegmentedField(field) {
+  const btns = field.options.map(o =>
+    `<button${o.value === field.default ? ' class="active"' : ''} data-value="${o.value}">${o.label}</button>`
+  ).join('');
+  const help = field.help ? `<div class="help">${field.help}</div>` : '';
+  return `<div class="field">${makeLabel(field)}<div class="segmented" id="${field.key}-control">${btns}</div>${help}</div>`;
+}
+
+function renderSegmentedWithCustomField(field) {
+  const btns = field.options.map(o =>
+    `<button${o.value === field.default ? ' class="active"' : ''} data-value="${o.value}">${o.label}</button>`
+  ).join('');
+  const help = field.help ? `<div class="help">${field.help}</div>` : '';
+  const cf = field.customField;
+  const customHtml = cf ? `<div class="field" id="${cf.key}-field" style="margin-top: 0.5rem; display: none;"><label>` +
+    `${cf.label} <span class="flag">${cf.flagLabel}</span></label>` +
+    `<input type="text" id="${cf.key}" placeholder="${escAttr(cf.placeholder)}" style="font-family: monospace;">` +
+    (cf.help ? `<div class="help">${cf.help}</div>` : '') + `</div>` : '';
+  return `<div class="field">${makeLabel(field)}<div class="segmented" id="${field.key}-control">${btns}</div>${help}${customHtml}</div>`;
+}
+
+function renderChipsField(field) {
+  const chips = field.options.map(val => {
+    const isActive = Array.isArray(field.default) && field.default.includes(val);
+    return `<span class="chip${isActive ? ' active' : ''}" data-value="${val}">${val}</span>`;
+  }).join('');
+  const help = field.help ? `<div class="help">${field.help}</div>` : '';
+  return `<div class="field">${makeLabel(field)}<div class="chips" id="${field.key}-chips">${chips}</div>${help}</div>`;
+}
+
+function renderCheckboxesField(field) {
+  const checks = field.options.map(o => {
+    const checked = Array.isArray(field.default) && field.default.includes(o.value) ? ' checked' : '';
+    return `<label class="checkbox-item"><input type="checkbox" value="${o.value}"${checked}><span>${o.label}</span></label>`;
+  }).join('');
+  const help = field.help ? `<div class="help">${field.help}</div>` : '';
+  return `<div class="field">${makeLabel(field)}<div class="checkbox-group" id="${field.key}-checks">${checks}</div>${help}</div>`;
+}
+
+function renderMechanismsField(field) {
+  const cards = field.mechanisms.map(m => {
+    const info = m.info ? `<span class="info-icon" data-info="${escAttr(m.info)}" data-flag="${escAttr(m.flag)}">i</span>` : '';
+    return `<div class="mechanism-card" data-mechanism="${m.key}"><div class="mech-label-row"><span class="toggle-label">${m.label}</span>${info}</div><label class="toggle"><input type="checkbox" checked data-key="${m.key}"><span class="slider"></span></label><div class="help">${m.help}</div></div>`;
+  }).join('');
+  return `<div class="mechanisms-grid" id="mechanisms">${cards}</div>`;
+}
+
+function renderSeedsField(field) {
+  const sf = field.subFields;
+  const seedsInfo = makeInfoIcon(field);
+  const pickInfo = sf.pick.info
+    ? `<span class="info-icon" data-info="${escAttr(sf.pick.info)}" data-flag="${escAttr(sf.pick.flag)}">i</span>`
+    : '';
+  return `<div class="field">
+    <label>${field.label} <span class="flag">${field.flag}</span>${seedsInfo}</label>
+    <div class="field-row">
+      <div class="toggle-wrap">
+        <label class="toggle"><input type="checkbox" id="seedsAuto" checked><span class="slider"></span></label>
+        <span class="toggle-label">${sf.seedsAuto.label}</span>
+        <span class="toggle-help">${sf.seedsAuto.help}</span>
+      </div>
+      <div id="seeds-num-wrap" class="hidden">
+        <input type="number" id="seeds" min="${sf.seeds.min}" max="${sf.seeds.max}" value="${sf.seeds.default}" style="width: 65px;">
+      </div>
+    </div>
+    <div class="field-row" style="margin-top: 0.4rem;">
+      <div class="toggle-wrap" id="pick-wrap">
+        <label class="toggle"><input type="checkbox" id="pick"><span class="slider"></span></label>
+        <span class="toggle-label">${sf.pick.label}</span>
+        <span class="toggle-help flag">${sf.pick.flag}</span>
+        ${pickInfo}
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderPractitionersField(field) {
+  const help = field.help ? `<div class="help">${field.help}</div>` : '';
+  return `<div class="field">${makeLabel(field)}<div class="chips" id="practitioner-chips"></div><div class="practitioner-add-row"><input type="text" id="practitioner-input" placeholder="Add a practitioner..."><button class="btn" id="practitioner-add">Add</button><button class="btn" id="practitioner-shuffle">Shuffle</button><button class="btn" id="practitioner-reset">Reset</button></div>${help}</div>`;
+}
+
+function renderLensSelectorField(field) {
+  const stateKey = field.stateKey;
+  const help = field.help ? `<div class="help" style="margin-top: 0.3rem;">${field.help}</div>` : '';
+  return `<div class="field">${makeLabel(field)}<div id="${stateKey}-lenses"></div>${help}</div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+// RENDERING PIPELINE
+// ══════════════════════════════════════════════════════════
+
+const RENDERERS = {
+  text: renderTextField,
+  textarea: renderTextareaField,
+  file: renderFileField,
+  number: renderNumberField,
+  range: renderRangeField,
+  toggle: renderToggleField,
+  'toggle-with-help': renderToggleWithHelpField,
+  segmented: renderSegmentedField,
+  'segmented-with-custom': renderSegmentedWithCustomField,
+  chips: renderChipsField,
+  checkboxes: renderCheckboxesField,
+  mechanisms: renderMechanismsField,
+  'compound-seeds': renderSeedsField,
+  practitioners: renderPractitionersField,
+  'lens-selector': renderLensSelectorField,
+};
+
+// Map section keys to container selectors
+const SECTION_CONTAINERS = {
+  'session-inputs': '#session-inputs',
+  'report-only': '#input-report-only',
+  'synthesise': '#input-synthesise',
+  'resume': '#input-resume',
+  'seed-prep': '#sec-seed-prep .section-fields',
+  'composition': '#sec-composition .section-fields',
+  'mechanisms': '#sec-mechanisms .section-fields',
+  'output': '#sec-output .section-fields',
+  'advanced': '#sec-advanced .section-fields',
+};
+
+function renderAllFields() {
+  // Group fields by section
+  const bySection = {};
+  for (const field of FIELDS) {
+    const sec = field.section;
+    if (!bySection[sec]) bySection[sec] = [];
+    bySection[sec].push(field);
+  }
+
+  for (const [section, fields] of Object.entries(bySection)) {
+    const selector = SECTION_CONTAINERS[section];
+    if (!selector) continue;
+    const container = document.querySelector(selector);
+    if (!container) continue;
+
+    let html = '';
+    // Advanced toggles: group consecutive toggles into one flex container
+    if (section === 'advanced') {
+      let toggleGroup = [];
+      const flushToggles = () => {
+        if (toggleGroup.length === 0) return;
+        html += '<div class="field" style="display: flex; flex-direction: column; gap: 0.6rem;">';
+        for (const tf of toggleGroup) {
+          html += RENDERERS[tf.type](tf);
+        }
+        html += '</div>';
+        toggleGroup = [];
+      };
+      for (const field of fields) {
+        if (field.type === 'toggle') {
+          toggleGroup.push(field);
+        } else {
+          flushToggles();
+          const renderer = RENDERERS[field.type];
+          if (renderer) html += renderer(field);
+        }
+      }
+      flushToggles();
+    } else {
+      for (const field of fields) {
+        const renderer = RENDERERS[field.type];
+        if (renderer) html += renderer(field);
+      }
+    }
+
+    container.innerHTML = html;
   }
 }
 
-// ── Init ──────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+// PLACEHOLDER ROTATION
+// ══════════════════════════════════════════════════════════
+
+const _placeholderCache = {};
+
+function getRotatedPlaceholder(poolKey) {
+  if (_placeholderCache[poolKey]) return _placeholderCache[poolKey];
+  const pool = PLACEHOLDERS[poolKey];
+  if (!pool) return '';
+  const storageKey = 'td-ph-seen-' + poolKey;
+  let seen = [];
+  try { seen = JSON.parse(localStorage.getItem(storageKey)) || []; } catch(e) { seen = []; }
+  if (seen.length >= pool.length) seen = [];
+  const unseen = pool.map((_, i) => i).filter(i => !seen.includes(i));
+  const pick = unseen[Math.floor(Math.random() * unseen.length)];
+  seen.push(pick);
+  localStorage.setItem(storageKey, JSON.stringify(seen));
+  _placeholderCache[poolKey] = pool[pick];
+  return pool[pick];
+}
+
+// ══════════════════════════════════════════════════════════
+// POPOVER
+// ══════════════════════════════════════════════════════════
+
+let _activePopover = null;
+
+function showPopover(iconEl) {
+  dismissPopover();
+  const info = iconEl.dataset.info;
+  const flag = iconEl.dataset.flag;
+  if (!info) return;
+
+  const pop = document.createElement('div');
+  pop.className = 'info-popover';
+  if (flag) pop.innerHTML = `<div class="popover-flag">${flag}</div>`;
+  pop.innerHTML += `<div class="popover-body">${info}</div>`;
+  document.body.appendChild(pop);
+
+  // Position near the icon
+  const rect = iconEl.getBoundingClientRect();
+  let top = rect.bottom + 8;
+  let left = rect.left - 60;
+  // Keep within viewport
+  if (left < 12) left = 12;
+  if (left + 360 > window.innerWidth) left = window.innerWidth - 372;
+  if (top + 200 > window.innerHeight) top = rect.top - 8 - pop.offsetHeight;
+  pop.style.top = top + 'px';
+  pop.style.left = left + 'px';
+
+  _activePopover = pop;
+
+  // Dismiss on click outside or Escape
+  setTimeout(() => {
+    document.addEventListener('click', _popoverClickOutside);
+    document.addEventListener('keydown', _popoverEsc);
+  }, 0);
+}
+
+function dismissPopover() {
+  if (_activePopover) {
+    _activePopover.remove();
+    _activePopover = null;
+    document.removeEventListener('click', _popoverClickOutside);
+    document.removeEventListener('keydown', _popoverEsc);
+  }
+}
+
+function _popoverClickOutside(e) {
+  if (_activePopover && !_activePopover.contains(e.target) && !e.target.classList.contains('info-icon')) {
+    dismissPopover();
+  }
+}
+
+function _popoverEsc(e) {
+  if (e.key === 'Escape') dismissPopover();
+}
+
+// ══════════════════════════════════════════════════════════
+// INIT & EVENTS
+// ══════════════════════════════════════════════════════════
+
 function init() {
-  rotatePlaceholders();
+  renderAllFields();
   buildPractitionerChips();
   buildLensSelectors();
   loadLastState();
@@ -1264,7 +1679,7 @@ function init() {
 
 function buildPractitionerChips() {
   const el = document.getElementById('practitioner-chips');
-  // Combine defaults + any custom names in state
+  if (!el) return;
   const allNames = [...new Set([...PRACTITIONERS, ...STATE.practitioners])];
   el.innerHTML = allNames.map(p => {
     const isActive = STATE.practitioners.includes(p);
@@ -1281,6 +1696,7 @@ function buildLensSelectors() {
 
 function buildLensGroup(containerId, stateKey) {
   const container = document.getElementById(containerId);
+  if (!container) return;
   let html = '';
   for (const [group, lenses] of Object.entries(LENSES)) {
     html += `<div class="lens-group"><div class="lens-group-label">${group}</div><div class="chips">`;
@@ -1292,9 +1708,18 @@ function buildLensGroup(containerId, stateKey) {
   container.innerHTML = html;
 }
 
-// ── Events ────────────────────────────────────────────
 function bindEvents() {
-  // Workflow chips (session / synthesise / resume)
+  // Info icon clicks (delegated)
+  document.addEventListener('click', (e) => {
+    const icon = e.target.closest('.info-icon');
+    if (icon) {
+      e.stopPropagation();
+      showPopover(icon);
+      return;
+    }
+  });
+
+  // Workflow chips
   document.querySelectorAll('#workflow-chips .chip').forEach(chip => {
     chip.addEventListener('click', () => {
       document.querySelectorAll('#workflow-chips .chip').forEach(c => c.classList.remove('active'));
@@ -1304,100 +1729,102 @@ function bindEvents() {
     });
   });
 
-  // Text/number inputs
-  const inputMap = {
-    seedTopic: 'seedTopic', briefFile: 'briefFile', brandName: 'brandName',
-    notesText: 'notesText', reportOnlyFile: 'reportOnlyFile',
-    synthesiseFiles: 'synthesiseFiles', resumeFile: 'resumeFile',
-    outputDir: 'outputDir', contextFile: 'contextFile', audience: 'audience',
-    allowedTools: 'allowedTools',
-  };
-  for (const [elId, key] of Object.entries(inputMap)) {
-    document.getElementById(elId).addEventListener('input', (e) => {
-      STATE[key] = e.target.value;
-      render();
-    });
+  // Text/textarea inputs - bind all text and textarea fields from FIELDS
+  const textFields = FIELDS.filter(f => f.type === 'text' || f.type === 'textarea');
+  for (const field of textFields) {
+    const el = document.getElementById(field.key);
+    if (el) {
+      el.addEventListener('input', (e) => { STATE[field.key] = e.target.value; render(); });
+    }
+  }
+
+  // File inputs (text part)
+  const fileFields = FIELDS.filter(f => f.type === 'file');
+  for (const field of fileFields) {
+    const el = document.getElementById(field.key);
+    if (el) {
+      el.addEventListener('input', (e) => { STATE[field.key] = e.target.value; render(); });
+    }
   }
 
   // Seeds auto toggle + number
-  document.getElementById('seedsAuto').addEventListener('change', (e) => {
-    STATE.seedsAuto = e.target.checked;
-    document.getElementById('seeds-num-wrap').classList.toggle('hidden', e.target.checked);
-    render();
-  });
-  document.getElementById('seeds').addEventListener('input', (e) => {
-    STATE.seeds = +e.target.value;
-    render();
-  });
-
-  // Mode segmented
-  document.querySelectorAll('#mode-control button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('#mode-control button').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      STATE.mode = btn.dataset.value;
+  const seedsAuto = document.getElementById('seedsAuto');
+  if (seedsAuto) {
+    seedsAuto.addEventListener('change', (e) => {
+      STATE.seedsAuto = e.target.checked;
+      document.getElementById('seeds-num-wrap').classList.toggle('hidden', e.target.checked);
       render();
     });
-  });
+  }
+  const seedsNum = document.getElementById('seeds');
+  if (seedsNum) {
+    seedsNum.addEventListener('input', (e) => { STATE.seeds = +e.target.value; render(); });
+  }
 
-  // Depth segmented
-  document.querySelectorAll('#depth-control button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('#depth-control button').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      STATE.depth = btn.dataset.value;
-      // Show per-lens override field when not at default
-      document.getElementById('depth-custom-field').style.display = STATE.depth !== 'deep' ? 'block' : 'none';
-      render();
+  // Segmented controls
+  const segmentedFields = FIELDS.filter(f => f.type === 'segmented' || f.type === 'segmented-with-custom');
+  for (const field of segmentedFields) {
+    const control = document.getElementById(field.key + '-control');
+    if (!control) continue;
+    control.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        control.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        STATE[field.key] = btn.dataset.value;
+        // Depth custom field visibility
+        if (field.customField) {
+          const cfEl = document.getElementById(field.customField.key + '-field');
+          if (cfEl) cfEl.style.display = STATE[field.key] !== field.default ? 'block' : 'none';
+        }
+        render();
+      });
     });
-  });
-  document.getElementById('depthCustom').addEventListener('input', (e) => {
-    STATE.depthCustom = e.target.value;
-    render();
-  });
+    // Custom field input
+    if (field.customField) {
+      const cfInput = document.getElementById(field.customField.key);
+      if (cfInput) {
+        cfInput.addEventListener('input', (e) => { STATE[field.customField.key] = e.target.value; render(); });
+      }
+    }
+  }
 
-  // Words sync
-  const wordsRange = document.getElementById('wordsRange');
-  const wordsNum = document.getElementById('wordsNum');
-  wordsRange.addEventListener('input', () => { wordsNum.value = wordsRange.value; STATE.words = +wordsRange.value; render(); });
-  wordsNum.addEventListener('input', () => { wordsRange.value = wordsNum.value; STATE.words = +wordsNum.value; render(); });
+  // Range inputs (synced slider + number)
+  const rangeFields = FIELDS.filter(f => f.type === 'range');
+  for (const field of rangeFields) {
+    const range = document.getElementById(field.key + 'Range');
+    const num = document.getElementById(field.key + 'Num');
+    if (range && num) {
+      range.addEventListener('input', () => { num.value = range.value; STATE[field.key] = +range.value; render(); });
+      num.addEventListener('input', () => { range.value = num.value; STATE[field.key] = +num.value; render(); });
+    }
+  }
 
-  // Lines sync
-  const linesRange = document.getElementById('linesRange');
-  const linesNum = document.getElementById('linesNum');
-  linesRange.addEventListener('input', () => { linesNum.value = linesRange.value; STATE.lines = +linesRange.value; render(); });
-  linesNum.addEventListener('input', () => { linesRange.value = linesNum.value; STATE.lines = +linesNum.value; render(); });
+  // Number inputs
+  const numberFields = FIELDS.filter(f => f.type === 'number');
+  for (const field of numberFields) {
+    const el = document.getElementById(field.key);
+    if (el) {
+      el.addEventListener('input', (e) => { STATE[field.key] = +e.target.value; render(); });
+    }
+  }
 
-  // Turns sync
-  const turnsRange = document.getElementById('turnsRange');
-  const turnsNum = document.getElementById('turnsNum');
-  turnsRange.addEventListener('input', () => { turnsNum.value = turnsRange.value; STATE.turns = +turnsRange.value; render(); });
-  turnsNum.addEventListener('input', () => { turnsRange.value = turnsNum.value; STATE.turns = +turnsNum.value; render(); });
-
-  // Min turns sync
-  const minTurnsRange = document.getElementById('minTurnsRange');
-  const minTurnsNum = document.getElementById('minTurnsNum');
-  minTurnsRange.addEventListener('input', () => { minTurnsNum.value = minTurnsRange.value; STATE.minTurns = +minTurnsRange.value; render(); });
-  minTurnsNum.addEventListener('input', () => { minTurnsRange.value = minTurnsNum.value; STATE.minTurns = +minTurnsNum.value; render(); });
-
-  // Rounds/spirals/passes
-  document.getElementById('rounds').addEventListener('input', (e) => { STATE.rounds = +e.target.value; render(); });
-  document.getElementById('spirals').addEventListener('input', (e) => { STATE.spirals = +e.target.value; render(); });
-  document.getElementById('passes').addEventListener('input', (e) => { STATE.passes = +e.target.value; render(); });
-
-  // Toggle checkboxes
-  const toggleMap = {
-    pick: 'pick', html: 'html', autonomous: 'autonomous',
-    shuffle: 'shuffle', skipStrict: 'skipStrict', compact: 'compact', noProgressive: 'noProgressive',
-    noGround: 'noGround', groundOnly: 'groundOnly', noContext: 'noContext', noWait: 'noWait',
-  };
-  for (const [elId, key] of Object.entries(toggleMap)) {
-    document.getElementById(elId).addEventListener('change', (e) => {
-      STATE[key] = e.target.checked;
+  // Toggle checkboxes - collect all toggle fields
+  const toggleFields = FIELDS.filter(f => f.type === 'toggle' || f.type === 'toggle-with-help');
+  for (const field of toggleFields) {
+    const el = document.getElementById(field.key);
+    if (!el) continue;
+    el.addEventListener('change', (e) => {
+      STATE[field.key] = e.target.checked;
       // Mutual exclusion
-      if (key === 'noGround' && e.target.checked) { STATE.groundOnly = false; document.getElementById('groundOnly').checked = false; }
-      if (key === 'groundOnly' && e.target.checked) { STATE.noGround = false; document.getElementById('noGround').checked = false; }
-      if (key === 'noContext' && e.target.checked) { STATE.noGround = false; STATE.groundOnly = false; document.getElementById('noGround').checked = false; document.getElementById('groundOnly').checked = false; }
+      if (field.excludes) {
+        for (const exKey of field.excludes) {
+          if (e.target.checked) {
+            STATE[exKey] = false;
+            const exEl = document.getElementById(exKey);
+            if (exEl) exEl.checked = false;
+          }
+        }
+      }
       render();
     });
   }
@@ -1411,12 +1838,11 @@ function bindEvents() {
     });
   });
 
-  // Tone chips (multi-select)
+  // Tone chips (multi-select with mixed logic)
   document.querySelectorAll('#tone-chips .chip').forEach(chip => {
     chip.addEventListener('click', () => {
       const val = chip.dataset.value;
       if (val === 'mixed') {
-        // Toggle mixed: select all or clear all
         if (chip.classList.contains('active')) {
           STATE.tone = ['provocative'];
         } else {
@@ -1437,24 +1863,26 @@ function bindEvents() {
   });
 
   // Practitioner chips - toggle or delete
-  document.getElementById('practitioner-chips').addEventListener('click', (e) => {
-    // Handle delete button
-    const del = e.target.closest('[data-delete]');
-    if (del) {
-      const name = del.dataset.delete;
-      STATE.practitioners = STATE.practitioners.filter(p => p !== name);
-      buildPractitionerChips();
+  const practChips = document.getElementById('practitioner-chips');
+  if (practChips) {
+    practChips.addEventListener('click', (e) => {
+      const del = e.target.closest('[data-delete]');
+      if (del) {
+        const name = del.dataset.delete;
+        STATE.practitioners = STATE.practitioners.filter(p => p !== name);
+        buildPractitionerChips();
+        render();
+        return;
+      }
+      const chip = e.target.closest('.chip');
+      if (!chip) return;
+      const val = chip.dataset.value;
+      const idx = STATE.practitioners.indexOf(val);
+      if (idx >= 0) { STATE.practitioners.splice(idx, 1); chip.classList.remove('active'); }
+      else { STATE.practitioners.push(val); chip.classList.add('active'); }
       render();
-      return;
-    }
-    const chip = e.target.closest('.chip');
-    if (!chip) return;
-    const val = chip.dataset.value;
-    const idx = STATE.practitioners.indexOf(val);
-    if (idx >= 0) { STATE.practitioners.splice(idx, 1); chip.classList.remove('active'); }
-    else { STATE.practitioners.push(val); chip.classList.add('active'); }
-    render();
-  });
+    });
+  }
 
   // Add custom practitioner
   function addPractitioner() {
@@ -1466,42 +1894,38 @@ function bindEvents() {
     buildPractitionerChips();
     render();
   }
-  document.getElementById('practitioner-add').addEventListener('click', addPractitioner);
-  document.getElementById('practitioner-input').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') addPractitioner();
-  });
+  const practAdd = document.getElementById('practitioner-add');
+  if (practAdd) practAdd.addEventListener('click', addPractitioner);
+  const practInput = document.getElementById('practitioner-input');
+  if (practInput) practInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addPractitioner(); });
 
-  // Shuffle practitioners - pick 3 new random
-  document.getElementById('practitioner-shuffle').addEventListener('click', () => {
+  // Shuffle / reset practitioners
+  const practShuffle = document.getElementById('practitioner-shuffle');
+  if (practShuffle) practShuffle.addEventListener('click', () => {
+    STATE.practitioners = pickRandom(PRACTITIONERS, 3);
+    buildPractitionerChips();
+    render();
+  });
+  const practReset = document.getElementById('practitioner-reset');
+  if (practReset) practReset.addEventListener('click', () => {
     STATE.practitioners = pickRandom(PRACTITIONERS, 3);
     buildPractitionerChips();
     render();
   });
 
-  // Reset practitioners to a fresh random 3
-  document.getElementById('practitioner-reset').addEventListener('click', () => {
-    STATE.practitioners = pickRandom(PRACTITIONERS, 3);
-    buildPractitionerChips();
-    render();
-  });
-
-  // Output type checkboxes
-  document.querySelectorAll('#type-checks input').forEach(cb => {
-    cb.addEventListener('change', () => {
-      STATE.type = [...document.querySelectorAll('#type-checks input:checked')].map(c => c.value);
-      if (STATE.type.length === 0) STATE.type = ['insight', 'brief', 'manifesto'];
-      render();
+  // Checkbox groups (output types, formats)
+  const checkboxFields = FIELDS.filter(f => f.type === 'checkboxes');
+  for (const field of checkboxFields) {
+    const container = document.getElementById(field.key + '-checks');
+    if (!container) continue;
+    container.querySelectorAll('input').forEach(cb => {
+      cb.addEventListener('change', () => {
+        STATE[field.key] = [...container.querySelectorAll('input:checked')].map(c => c.value);
+        if (STATE[field.key].length === 0) STATE[field.key] = [...field.default];
+        render();
+      });
     });
-  });
-
-  // Format checkboxes
-  document.querySelectorAll('#format-checks input').forEach(cb => {
-    cb.addEventListener('change', () => {
-      STATE.formats = [...document.querySelectorAll('#format-checks input:checked')].map(c => c.value);
-      if (STATE.formats.length === 0) STATE.formats = ['all'];
-      render();
-    });
-  });
+  }
 
   // Mobile: default to expanded, toggle on tap
   if (window.innerWidth <= 900) {
@@ -1520,7 +1944,7 @@ function bindEvents() {
   document.addEventListener('click', (e) => {
     const chip = e.target.closest('.chip[data-lens-group]');
     if (!chip) return;
-    const group = chip.dataset.lensGroup; // 'include' or 'exclude'
+    const group = chip.dataset.lensGroup;
     const val = chip.dataset.value;
     const idx = STATE[group].indexOf(val);
     if (idx >= 0) { STATE[group].splice(idx, 1); chip.classList.remove('active'); }
@@ -1580,7 +2004,10 @@ function syncToneChips() {
   });
 }
 
-// ── Render ────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════════════════════
+
 function render() {
   updateVisibility();
   updateCommandPreview();
@@ -1589,7 +2016,6 @@ function render() {
 function updateVisibility() {
   const wf = STATE.workflow;
   const isSession = wf === 'session';
-  const isPostProcess = !isSession;
 
   // Session vs post-process inputs
   document.getElementById('session-inputs').classList.toggle('hidden', !isSession);
@@ -1600,25 +2026,31 @@ function updateVisibility() {
     document.getElementById('input-resume').classList.toggle('hidden', wf !== 'resume');
   }
 
-  // Session-only sections (seed prep, composition, mechanisms, advanced)
+  // Session-only sections
   document.querySelectorAll('.session-section').forEach(sec => {
     if (sec.id === 'sec-output') {
       sec.classList.toggle('hidden', wf === 'resume');
     } else {
-      sec.classList.toggle('hidden', isPostProcess);
+      sec.classList.toggle('hidden', !isSession);
     }
   });
 
   // Seeds auto/manual
-  document.getElementById('seeds-num-wrap').classList.toggle('hidden', STATE.seedsAuto);
+  const seedsWrap = document.getElementById('seeds-num-wrap');
+  if (seedsWrap) seedsWrap.classList.toggle('hidden', STATE.seedsAuto);
 
   // Autonomous vs non-autonomous
   const auto = STATE.autonomous;
-  document.getElementById('turns-field').classList.toggle('hidden', !auto);
-  document.getElementById('min-turns-field').classList.toggle('hidden', !auto);
-  document.getElementById('rounds-field').classList.toggle('hidden', auto || STATE.mode !== 'dyslexic');
-  document.getElementById('spirals-field').classList.toggle('hidden', auto || STATE.mode !== 'spiral');
-  document.getElementById('passes-field').classList.toggle('hidden', auto || STATE.mode !== 'lapidary');
+  const turnsField = document.getElementById('turns-field');
+  const minTurnsField = document.getElementById('min-turns-field');
+  const roundsField = document.getElementById('rounds-field');
+  const spiralsField = document.getElementById('spirals-field');
+  const passesField = document.getElementById('passes-field');
+  if (turnsField) turnsField.classList.toggle('hidden', !auto);
+  if (minTurnsField) minTurnsField.classList.toggle('hidden', !auto);
+  if (roundsField) roundsField.classList.toggle('hidden', auto || STATE.mode !== 'dyslexic');
+  if (spiralsField) spiralsField.classList.toggle('hidden', auto || STATE.mode !== 'spiral');
+  if (passesField) passesField.classList.toggle('hidden', auto || STATE.mode !== 'lapidary');
 }
 
 function updateCommandPreview() {
@@ -1626,19 +2058,26 @@ function updateCommandPreview() {
   document.getElementById('command-output').textContent = cmd;
 }
 
-// ── Build Command ─────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+// COMMAND BUILDER
+// ══════════════════════════════════════════════════════════
+
+function q(s) {
+  if (/^[a-zA-Z0-9_.\/,-]+$/.test(s)) return s;
+  return '"' + s.replace(/"/g, '\\"') + '"';
+}
+
 function buildCommand() {
   const parts = [STATE.cmdPrefix];
-
-  // Input
   const wf = STATE.workflow;
+
   if (wf === 'session') {
     if (STATE.seedTopic) parts.push(q(STATE.seedTopic));
     if (STATE.briefFile) parts.push('--brief', q(STATE.briefFile));
     if (STATE.brandName) parts.push('--brand', q(STATE.brandName));
     if (STATE.notesText) parts.push('--notes', q(STATE.notesText));
   } else if (wf === 'report-only') {
-    if (STATE.reportOnlyFile) parts.push('--report-only', q(STATE.reportOnlyFile));
+    if (STATE.reportOnlyFile) parts.push('--regenerate', q(STATE.reportOnlyFile));
   } else if (wf === 'synthesise') {
     if (STATE.synthesiseFiles) {
       parts.push('--synthesise');
@@ -1659,13 +2098,12 @@ function buildCommand() {
     if (STATE.pick) parts.push('--pick');
     if (STATE.audience) parts.push('--audience', q(STATE.audience));
 
-    // Tone
     const defaultTone = STATE.tone.length === 1 && STATE.tone[0] === 'provocative';
     if (!defaultTone) parts.push('--tone', STATE.tone.join(','));
 
-    // Type
-    const allTypes = STATE.type.length === 3 && ['insight', 'brief', 'manifesto'].every(t => STATE.type.includes(t));
-    if (!allTypes) parts.push('--type', STATE.type.join(','));
+    const allSections = STATE.sections.length === 3 && ['insight', 'brief', 'manifesto'].every(t => STATE.sections.includes(t));
+    if (!allSections) parts.push('--sections', STATE.sections.join(','));
+    if (STATE.dialogue) parts.push('--dialogue');
 
     if (STATE.lines !== 3) parts.push('--lines', '' + STATE.lines);
     const practIsDefault = STATE.practitioners.length === PRACTITIONERS.length &&
@@ -1674,21 +2112,18 @@ function buildCommand() {
     if (!practIsDefault && STATE.practitioners.length > 0) parts.push('--practitioners', q(STATE.practitioners.join(',')));
     if (STATE.html) parts.push('--html');
 
-    // Depth
     if (STATE.depth !== 'deep' || STATE.depthCustom) {
       let depthVal = STATE.depthCustom ? STATE.depthCustom : STATE.depth;
       if (STATE.depthCustom && STATE.depth !== 'deep') depthVal = STATE.depth + ',' + STATE.depthCustom;
       parts.push('--depth', depthVal);
     }
 
-    // Mechanisms
     if (!STATE.friction) parts.push('--no-friction');
     if (!STATE.bias) parts.push('--no-bias');
     if (!STATE.sensory) parts.push('--no-sensory');
     if (!STATE.transcendence) parts.push('--no-transcendence');
     if (!STATE.negative_space) parts.push('--no-negative-space');
 
-    // Autonomous
     if (!STATE.autonomous) {
       parts.push('--no-autonomous');
       if (STATE.mode === 'dyslexic' && STATE.rounds !== 4) parts.push('--rounds', '' + STATE.rounds);
@@ -1699,7 +2134,6 @@ function buildCommand() {
       if (STATE.minTurns !== 15) parts.push('--min-turns', '' + STATE.minTurns);
     }
 
-    // Advanced
     if (STATE.include.length > 0) parts.push('--include', STATE.include.join(','));
     if (STATE.exclude.length > 0) parts.push('--exclude', STATE.exclude.join(','));
     if (STATE.shuffle) parts.push('--shuffle');
@@ -1710,11 +2144,12 @@ function buildCommand() {
     if (STATE.groundOnly) parts.push('--ground-only');
     if (STATE.noContext) parts.push('--no-context');
     if (STATE.noWait) parts.push('--no-wait');
+    if (STATE.multistep) parts.push('--multistep');
     if (STATE.allowedTools !== 'WebSearch,WebFetch') {
       parts.push('--allowedTools', STATE.allowedTools ? q(STATE.allowedTools) : '""');
     }
   } else {
-    // Non-session modes (report-only, synthesise, resume)
+    // Non-session modes
     if (STATE.words !== 1500) parts.push('--words', '' + STATE.words);
     if (STATE.outputDir) parts.push('--output', q(STATE.outputDir));
     if (wf === 'report-only') {
@@ -1727,8 +2162,7 @@ function buildCommand() {
   // Format for display: wrap long commands
   if (parts.length > 4) {
     return parts[0] + ' ' + parts.slice(1).reduce((acc, part, i) => {
-      // Group flag + value pairs on the same line
-      const prev = parts[i]; // parts[i+1-1] = previous in slice(1)
+      const prev = parts[i];
       if (i > 0 && !part.startsWith('-') && parts[i].startsWith('-')) {
         return acc + ' ' + part;
       }
@@ -1737,11 +2171,6 @@ function buildCommand() {
     }, '');
   }
   return parts.join(' ');
-}
-
-function q(s) {
-  if (/^[a-zA-Z0-9_.\/,-]+$/.test(s)) return s;
-  return '"' + s.replace(/"/g, '\\"') + '"';
 }
 
 function getCommandOneLine() {
@@ -1754,7 +2183,7 @@ function getCommandOneLine() {
     if (STATE.brandName) parts.push('--brand', q(STATE.brandName));
     if (STATE.notesText) parts.push('--notes', q(STATE.notesText));
   } else if (wf === 'report-only') {
-    if (STATE.reportOnlyFile) parts.push('--report-only', q(STATE.reportOnlyFile));
+    if (STATE.reportOnlyFile) parts.push('--regenerate', q(STATE.reportOnlyFile));
   } else if (wf === 'synthesise') {
     if (STATE.synthesiseFiles) {
       parts.push('--synthesise');
@@ -1776,8 +2205,9 @@ function getCommandOneLine() {
     if (STATE.audience) parts.push('--audience', q(STATE.audience));
     const defaultTone = STATE.tone.length === 1 && STATE.tone[0] === 'provocative';
     if (!defaultTone) parts.push('--tone', STATE.tone.join(','));
-    const allTypes = STATE.type.length === 3 && ['insight', 'brief', 'manifesto'].every(t => STATE.type.includes(t));
-    if (!allTypes) parts.push('--type', STATE.type.join(','));
+    const allSections = STATE.sections.length === 3 && ['insight', 'brief', 'manifesto'].every(t => STATE.sections.includes(t));
+    if (!allSections) parts.push('--sections', STATE.sections.join(','));
+    if (STATE.dialogue) parts.push('--dialogue');
     if (STATE.lines !== 3) parts.push('--lines', '' + STATE.lines);
     const practIsDefault = STATE.practitioners.length === PRACTITIONERS.length &&
       PRACTITIONERS.every(p => STATE.practitioners.includes(p)) &&
@@ -1813,6 +2243,7 @@ function getCommandOneLine() {
     if (STATE.groundOnly) parts.push('--ground-only');
     if (STATE.noContext) parts.push('--no-context');
     if (STATE.noWait) parts.push('--no-wait');
+    if (STATE.multistep) parts.push('--multistep');
     if (STATE.allowedTools !== 'WebSearch,WebFetch') {
       parts.push('--allowedTools', STATE.allowedTools ? q(STATE.allowedTools) : '""');
     }
@@ -1829,7 +2260,10 @@ function getCommandOneLine() {
   return parts.join(' ');
 }
 
-// ── Copy ──────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+// COPY
+// ══════════════════════════════════════════════════════════
+
 function copyCommand() {
   const text = getCommandOneLine();
   navigator.clipboard.writeText(text).then(() => {
@@ -1840,7 +2274,10 @@ function copyCommand() {
   });
 }
 
-// ── Config Management ─────────────────────────────────
+// ══════════════════════════════════════════════════════════
+// CONFIG MANAGEMENT
+// ══════════════════════════════════════════════════════════
+
 function getConfigs() {
   try { return JSON.parse(localStorage.getItem('tdf-configs') || '{}'); } catch { return {}; }
 }
@@ -1890,91 +2327,98 @@ function renderConfigList() {
   `).join('');
 }
 
-// ── State <-> UI Sync ─────────────────────────────────
+// ══════════════════════════════════════════════════════════
+// STATE <-> UI SYNC
+// ══════════════════════════════════════════════════════════
+
 function applyStateToUI() {
   // Workflow chips
   document.querySelectorAll('#workflow-chips .chip').forEach(chip => {
     chip.classList.toggle('active', chip.dataset.value === STATE.workflow);
   });
 
-  // Text inputs
-  document.getElementById('seedTopic').value = STATE.seedTopic;
-  document.getElementById('briefFile').value = STATE.briefFile;
-  document.getElementById('brandName').value = STATE.brandName;
-  document.getElementById('notesText').value = STATE.notesText;
-  document.getElementById('reportOnlyFile').value = STATE.reportOnlyFile;
-  document.getElementById('synthesiseFiles').value = STATE.synthesiseFiles;
-  document.getElementById('resumeFile').value = STATE.resumeFile;
-  document.getElementById('outputDir').value = STATE.outputDir;
-  document.getElementById('contextFile').value = STATE.contextFile;
-  document.getElementById('audience').value = STATE.audience;
-  document.getElementById('allowedTools').value = STATE.allowedTools;
-  document.getElementById('seedsAuto').checked = STATE.seedsAuto;
-  document.getElementById('seeds-num-wrap').classList.toggle('hidden', STATE.seedsAuto);
-  document.getElementById('seeds').value = STATE.seeds;
+  // Text/textarea/file inputs
+  const inputFields = FIELDS.filter(f => f.type === 'text' || f.type === 'textarea' || f.type === 'file');
+  for (const field of inputFields) {
+    const el = document.getElementById(field.key);
+    if (el) el.value = STATE[field.key] || '';
+  }
 
-  // Mode
-  document.querySelectorAll('#mode-control button').forEach(b => {
-    b.classList.toggle('active', b.dataset.value === STATE.mode);
-  });
+  // Seeds
+  const seedsAuto = document.getElementById('seedsAuto');
+  if (seedsAuto) {
+    seedsAuto.checked = STATE.seedsAuto;
+    document.getElementById('seeds-num-wrap').classList.toggle('hidden', STATE.seedsAuto);
+  }
+  const seedsNum = document.getElementById('seeds');
+  if (seedsNum) seedsNum.value = STATE.seeds;
 
-  // Depth
-  document.querySelectorAll('#depth-control button').forEach(b => {
-    b.classList.toggle('active', b.dataset.value === STATE.depth);
-  });
-  document.getElementById('depthCustom').value = STATE.depthCustom || '';
-  document.getElementById('depth-custom-field').style.display = STATE.depth !== 'deep' ? 'block' : 'none';
+  // Segmented controls
+  const segmentedFields = FIELDS.filter(f => f.type === 'segmented' || f.type === 'segmented-with-custom');
+  for (const field of segmentedFields) {
+    const control = document.getElementById(field.key + '-control');
+    if (!control) continue;
+    control.querySelectorAll('button').forEach(b => {
+      b.classList.toggle('active', b.dataset.value === STATE[field.key]);
+    });
+    if (field.customField) {
+      const cfInput = document.getElementById(field.customField.key);
+      if (cfInput) cfInput.value = STATE[field.customField.key] || '';
+      const cfField = document.getElementById(field.customField.key + '-field');
+      if (cfField) cfField.style.display = STATE[field.key] !== field.default ? 'block' : 'none';
+    }
+  }
 
-  // Sliders
-  document.getElementById('wordsRange').value = STATE.words;
-  document.getElementById('wordsNum').value = STATE.words;
-  document.getElementById('linesRange').value = STATE.lines;
-  document.getElementById('linesNum').value = STATE.lines;
-  document.getElementById('turnsRange').value = STATE.turns;
-  document.getElementById('turnsNum').value = STATE.turns;
-  document.getElementById('minTurnsRange').value = STATE.minTurns;
-  document.getElementById('minTurnsNum').value = STATE.minTurns;
-  document.getElementById('rounds').value = STATE.rounds;
-  document.getElementById('spirals').value = STATE.spirals;
-  document.getElementById('passes').value = STATE.passes;
+  // Range sliders
+  const rangeFields = FIELDS.filter(f => f.type === 'range');
+  for (const field of rangeFields) {
+    const range = document.getElementById(field.key + 'Range');
+    const num = document.getElementById(field.key + 'Num');
+    if (range) range.value = STATE[field.key];
+    if (num) num.value = STATE[field.key];
+  }
+
+  // Number inputs
+  const numberFields = FIELDS.filter(f => f.type === 'number');
+  for (const field of numberFields) {
+    const el = document.getElementById(field.key);
+    if (el) el.value = STATE[field.key];
+  }
 
   // Toggles
-  document.getElementById('pick').checked = STATE.pick;
-  document.getElementById('html').checked = STATE.html;
-  document.getElementById('autonomous').checked = STATE.autonomous;
-  document.getElementById('shuffle').checked = STATE.shuffle;
-  document.getElementById('skipStrict').checked = STATE.skipStrict;
-  document.getElementById('compact').checked = STATE.compact;
-  document.getElementById('noProgressive').checked = STATE.noProgressive;
-  document.getElementById('noGround').checked = STATE.noGround;
-  document.getElementById('groundOnly').checked = STATE.groundOnly;
-  document.getElementById('noContext').checked = STATE.noContext;
-  document.getElementById('noWait').checked = STATE.noWait;
+  const toggleFields = FIELDS.filter(f => f.type === 'toggle' || f.type === 'toggle-with-help');
+  for (const field of toggleFields) {
+    const el = document.getElementById(field.key);
+    if (el) el.checked = STATE[field.key];
+  }
 
   // Mechanisms
-  ['friction', 'bias', 'sensory', 'transcendence', 'negative_space'].forEach(m => {
-    const input = document.querySelector(`input[data-key="${m}"]`);
-    if (input) {
-      input.checked = STATE[m];
-      input.closest('.mechanism-card').classList.toggle('disabled', !STATE[m]);
+  const mechField = FIELDS.find(f => f.type === 'mechanisms');
+  if (mechField) {
+    for (const m of mechField.mechanisms) {
+      const input = document.querySelector(`input[data-key="${m.key}"]`);
+      if (input) {
+        input.checked = STATE[m.key];
+        input.closest('.mechanism-card').classList.toggle('disabled', !STATE[m.key]);
+      }
     }
-  });
+  }
 
   // Tone chips
   syncToneChips();
 
-  // Practitioner chips (rebuild to include custom names)
+  // Practitioner chips
   buildPractitionerChips();
 
-  // Type checkboxes
-  document.querySelectorAll('#type-checks input').forEach(cb => {
-    cb.checked = STATE.type.includes(cb.value);
-  });
-
-  // Format checkboxes
-  document.querySelectorAll('#format-checks input').forEach(cb => {
-    cb.checked = STATE.formats.includes(cb.value);
-  });
+  // Checkbox groups
+  const checkboxFields = FIELDS.filter(f => f.type === 'checkboxes');
+  for (const field of checkboxFields) {
+    const container = document.getElementById(field.key + '-checks');
+    if (!container) continue;
+    container.querySelectorAll('input').forEach(cb => {
+      cb.checked = STATE[field.key].includes(cb.value);
+    });
+  }
 
   // Lens chips
   document.querySelectorAll('.chip[data-lens-group="include"]').forEach(chip => {
@@ -1994,7 +2438,6 @@ function loadLastState() {
   try {
     const saved = JSON.parse(localStorage.getItem('tdf-last-state'));
     if (saved) {
-      // Merge with defaults so new keys are present
       STATE = { ...JSON.parse(JSON.stringify(DEFAULTS)), ...saved };
       // Migrate legacy inputMode to workflow
       if (STATE.inputMode) {
@@ -2007,13 +2450,22 @@ function loadLastState() {
         }
         delete STATE.inputMode;
       }
+      // Migrate legacy type to sections
+      if (STATE.type && !STATE.sections) {
+        STATE.sections = STATE.type.filter(t => t !== 'dialogue');
+        if (STATE.type.includes('dialogue')) STATE.dialogue = true;
+        delete STATE.type;
+      }
       applyStateToUI();
     }
   } catch {}
   renderConfigList();
 }
 
-// ── File Picker (native) ─────────────────────────────
+// ══════════════════════════════════════════════════════════
+// FILE PICKER
+// ══════════════════════════════════════════════════════════
+
 function initFilePicker() {
   document.querySelectorAll('[data-browse]').forEach(btn => {
     const targetId = btn.dataset.browse;
@@ -2033,7 +2485,9 @@ function initFilePicker() {
   });
 }
 
-// ── Boot ──────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', init);
 </script>
 
