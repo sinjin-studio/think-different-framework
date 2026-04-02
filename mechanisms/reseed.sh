@@ -2,7 +2,7 @@
 # ── Spiral re-seeding ──
 # Extracts the most surprising insight from the previous spiral's
 # integration and uses it to re-seed the next spiral.
-# Expects globals: $CONVERSATION, $TRANSCRIPT_MD, $TRANSCRIPT_JSON
+# Expects globals: $THINKING_SESSION, $TRANSCRIPT_MD, $TRANSCRIPT_JSON
 # Depends on: lib/json.sh
 
 reseed() {
@@ -10,11 +10,11 @@ reseed() {
   local reseed_text="$2"
 
   echo "  ↻ Re-seeding spiral ${spiral_num}..."
-  CONVERSATION="${CONVERSATION}
+  THINKING_SESSION="${THINKING_SESSION}
 
 === SPIRAL ${spiral_num} RE-SEED ===
 The session pivots. The most surprising insight from the previous spiral: ${reseed_text}
-Let this pull the conversation somewhere unexpected."
+Let this pull the thinking somewhere unexpected."
   MD_BUFFER="${MD_BUFFER}
 > **Re-seed:** ${reseed_text:0:300}
 "

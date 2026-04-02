@@ -3,7 +3,7 @@
 # Reads conversation and identifies which cognitive biases are alive,
 # then asks how each could be channelled into something authentic.
 # Returns structured decision in $BIAS_DECISION (JSON).
-# Expects globals: $CONVERSATION, $TRANSCRIPT_MD, $TRANSCRIPT_JSON,
+# Expects globals: $THINKING_SESSION, $TRANSCRIPT_MD, $TRANSCRIPT_JSON,
 #                  $TURN_COUNT, $UNIT_LABEL
 # Depends on: lib/json.sh, lib/cap_check.sh
 
@@ -18,16 +18,16 @@ detect_cognitive_bias() {
   local mechanism_history
   mechanism_history=$(build_mechanism_history)
 
-  local bias_prompt="You are a metacognitive observer reading a conversation between several thinkers. Your job is not to flag biases as problems. It is to notice which cognitive biases are already alive in the conversation and ask how each could be channelled into something authentic and resonant.
+  local bias_prompt="You are a metacognitive observer reading a thinking session across multiple cognitive lenses. Your job is not to flag biases as problems. It is to notice which cognitive biases are already alive in the thinking and ask how each could be channelled into something authentic and resonant.
 
-Humans do not decide rationally. The best communication has always worked with how people actually think, not against it. Your job is to name the bias, show how the conversation is already channelling it, and ask whether it could be channelled more honestly.
+Humans do not decide rationally. The best communication has always worked with how people actually think, not against it. Your job is to name the bias, show how the thinking is already channelling it, and ask whether it could be channelled more honestly.
 
 Look for:
-- Loss aversion: is the conversation tapping into what people fear losing? Could it create genuine urgency rather than manufactured panic?
-- Identity/in-group bias: is the conversation building belonging? Could it invite people in rather than define them from outside?
-- Self-serving bias: is the conversation empowering people's self-image? Could it make the audience the hero honestly?
-- Scarcity: is the conversation creating desire through limits? Is the scarcity real or fabricated?
-- Social proof: is the conversation leveraging what others do? Could it build trust rather than manufacture conformity?
+- Loss aversion: is the thinking tapping into what people fear losing? Could it create genuine urgency rather than manufactured panic?
+- Identity/in-group bias: is the thinking building belonging? Could it invite people in rather than define them from outside?
+- Self-serving bias: is the thinking empowering people's self-image? Could it make the audience the hero honestly?
+- Scarcity: is the thinking creating desire through limits? Is the scarcity real or fabricated?
+- Social proof: is the thinking leveraging what others do? Could it build trust rather than manufacture conformity?
 - Availability heuristic: is one vivid image dominating? Could that vividness serve truth rather than distort it?
 - Anchoring: has the first idea set the frame? Could that anchor be chosen deliberately rather than accidentally?
 
@@ -35,11 +35,11 @@ The line to draw: understanding how humans actually decide versus exploiting the
 
 Respond with a JSON object containing:
 - observations: an array of 2-3 short observation strings (name the bias, show how it is operating, ask how it could be channelled generatively)
-- biases_detected: an array of bias names found in the conversation
-- recommendation: a short string describing how the conversation could channel these biases more honestly
+- biases_detected: an array of bias names found in the thinking
+- recommendation: a short string describing how the thinking could channel these biases more honestly
 
 ${mechanism_history}
-CONVERSATION:
+THINKING SESSION:
 $(get_conversation_for "mechanism")"
 
   local tmpfile
@@ -84,10 +84,10 @@ for obs in d.get('observations', []):
 
   stop_spinner "done"
 
-  CONVERSATION="${CONVERSATION}
+  THINKING_SESSION="${THINKING_SESSION}
 
 === COGNITIVE BIAS CHECK (${UNIT_LABEL} ${unit_num}) ===
-These biases are alive in the conversation. They are creative fuel, not warnings. The question is whether they are being channelled honestly or accidentally.
+These biases are alive in the thinking. They are creative fuel, not warnings. The question is whether they are being channelled honestly or accidentally.
 ${biases}"
 
   md_append_section 3 "🧲 Bias Check (${UNIT_LABEL} ${unit_num})"

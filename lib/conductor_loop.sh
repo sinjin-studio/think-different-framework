@@ -4,7 +4,7 @@
 # about which lens speaks next, creating an evaluate-decide-act loop.
 # Replaces hardcoded composition sequences when --autonomous is enabled.
 #
-# Expects globals: $SEED_TOPIC, $CONVERSATION, $MODE, $TURN_COUNT,
+# Expects globals: $SEED_TOPIC, $THINKING_SESSION, $MODE, $TURN_COUNT,
 #                  $UNIT_LABEL, $TRANSCRIPT_MD, $TRANSCRIPT_JSON
 # Depends on: lib/call_lens.sh, lib/cap_check.sh, lenses/conductor.sh,
 #             mechanisms/*.sh
@@ -77,7 +77,7 @@ run_conductor_session() {
 
   # Track which lenses have spoken for diversity check
   local lenses_spoken=""
-  local turn_in_session=0
+  local turn_in_session="${RESUME_FROM_TURN:-0}"
   local user_questions_asked=0
 
   # ── Main conductor loop ──
@@ -93,21 +93,21 @@ run_conductor_session() {
 - Budget remaining: $((CONDUCTOR_MAX_TURNS - turn_in_session)) turns
 ${mech_history}"
 
-    local conductor_conversation
-    conductor_conversation=$(get_conversation_for "conductor")
+    local conductor_thinking
+    conductor_thinking=$(get_conversation_for "conductor")
 
     # ── Phase 1: Pick lens + instruction ──
     local phase1_prompt="SEED TOPIC: ${SEED_TOPIC}
 
 ${state_summary}
 
-CONVERSATION SO FAR:
-${conductor_conversation}
+THINKING SO FAR:
+${conductor_thinking}
 
 ---
 Phase 1: Decide which lens should speak next and what instruction to give it. Or set next_lens to 'user' to pause and ask the operator a question (max 2 per session).
 
-In your 'reasoning' field: name what territory the conversation has NOT explored and explain why you are choosing this lens now. This reasoning is logged for session review.
+In your 'reasoning' field: name what territory the thinking has NOT explored and explain why you are choosing this lens now. This reasoning is logged for session review.
 
 Respond with a JSON object."
 
@@ -161,7 +161,7 @@ Respond with a JSON object."
         local user_answer
         read -r user_answer
         echo ""
-        CONVERSATION="${CONVERSATION}
+        THINKING_SESSION="${THINKING_SESSION}
 
 === USER INPUT (${UNIT_LABEL} $((turn_in_session + 1))) ===
 Conductor asked: ${instruction}
@@ -188,12 +188,12 @@ User answered: ${user_answer}"
     # Dispatch the chosen lens
     local lens_actually_spoke="false"
     if [ -n "$next_lens" ] && is_lens_active "$next_lens"; then
-      local conv_len_before=${#CONVERSATION}
+      local conv_len_before=${#THINKING_SESSION}
       call_lens "$next_lens" "$phase" "$((turn_in_session + 1))" "$instruction" || true
       [ "$RATE_LIMIT_HIT" = "true" ] && return 0
 
-      # Check if the lens actually added to the conversation (not a skip)
-      if [ ${#CONVERSATION} -gt "$conv_len_before" ]; then
+      # Check if the lens actually added to the thinking session (not a skip)
+      if [ ${#THINKING_SESSION} -gt "$conv_len_before" ]; then
         lens_actually_spoke="true"
         # Track diversity only for lenses that actually contributed
         if [ -z "$lenses_spoken" ]; then
@@ -219,7 +219,7 @@ User answered: ${user_answer}"
 
     # Extract last lens response for the conductor to react to
     local last_response=""
-    last_response=$(echo "$CONVERSATION" | python3 -c "
+    last_response=$(echo "$THINKING_SESSION" | python3 -c "
 import sys
 text = sys.stdin.read()
 parts = text.split('\n--- ')
@@ -243,7 +243,7 @@ ${last_response}
 
 ---
 Phase 2: You have just heard ${next_lens} speak. Now decide:
-- Should a mechanism run to check the conversation? (friction, sensory, bias, transcendence, negative_space, or empty string for none)
+- Should a mechanism run to check the thinking? (friction, sensory, bias, transcendence, negative_space, or empty string for none)
 - Should the session be reviewed now?
 - Should the session end?
 

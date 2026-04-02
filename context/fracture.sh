@@ -2,7 +2,7 @@
 # ── Seed fracturing (dyslexic composition) ──
 # Breaks the seed into fragments, adjacencies, and entry points.
 # Grounding is embedded: surfaces and verifies assumptions before fracturing.
-# Expects globals: $SEED_TOPIC, $PROJECT_CONTEXT, $CONVERSATION,
+# Expects globals: $SEED_TOPIC, $PROJECT_CONTEXT, $THINKING_SESSION,
 #                  $TRANSCRIPT_MD, $TRANSCRIPT_JSON, $TURN_COUNT, $OUTPUT_DIR,
 #                  $TIMESTAMP, $GROUND_ENABLED, $ALLOWED_TOOLS
 # Depends on: lib/json.sh, context/ground.sh (for build_ground_preamble)
@@ -75,23 +75,23 @@ SEED TOPIC: ${SEED_TOPIC}"
   stop_spinner "done"
   echo ""
 
-  CONVERSATION="The session begins with the seed topic: ${SEED_TOPIC}"
+  THINKING_SESSION="The session begins with the seed topic: ${SEED_TOPIC}"
 
   if [ -n "$PROJECT_CONTEXT" ]; then
-    CONVERSATION="${CONVERSATION}
+    THINKING_SESSION="${THINKING_SESSION}
 
 PROJECT CONTEXT (ground truth about the actual project, business, or situation):
 ${PROJECT_CONTEXT}"
   fi
 
   if [ -n "${SEED_VERIFICATION:-}" ]; then
-    CONVERSATION="${CONVERSATION}
+    THINKING_SESSION="${THINKING_SESSION}
 
 PROVOCATION VERIFICATION (claims checked, framing flagged - use corrected provocation as ground truth):
 ${SEED_VERIFICATION}"
   fi
 
-  CONVERSATION="${CONVERSATION}
+  THINKING_SESSION="${THINKING_SESSION}
 
 SEED FRACTURE (fragments, adjacencies, and entry points - use what pulls you, ignore what doesn't):
 ${FRACTURE_CONTEXT}"

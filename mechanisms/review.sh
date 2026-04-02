@@ -7,7 +7,7 @@
 # The verdict decides restart/proceed from the adversarial exchange.
 # Can trigger a restart with mutations (different mode, shuffled order, reframed seed).
 # 2-run ceiling per provocation to prevent infinite loops.
-# Expects globals: $CONVERSATION, $SEED_TOPIC, $MODE, $ALLOWED_TOOLS_FLAG
+# Expects globals: $THINKING_SESSION, $SEED_TOPIC, $MODE, $ALLOWED_TOOLS_FLAG
 # Depends on: lib/cap_check.sh
 
 SESSION_REVIEW_DECISION=""
@@ -18,7 +18,7 @@ SESSION_REVIEW_RUN_COUNT=0
 review_prosecute() {
   local prosecution_prompt="You are a cynical strategy director who has seen every framework produce the same platitudes dressed in creative language. Your job is to find what is CONVENTIONAL in this session's output.
 
-For each major idea or insight in the conversation:
+For each major idea or insight in the session:
 1. Name the closest existing article, strategy deck, book chapter, or TED talk that says essentially the same thing
 2. Explain why this is not genuinely new thinking, just repackaged wisdom
 3. Search the web for similar ideas to confirm they already exist
@@ -36,7 +36,7 @@ ${ZEITGEIST_CONTEXT:+
 ${ZEITGEIST_CONTEXT}
 These sources were captured during provocation generation. Use them as a head start - if the session is only reaching territory these articles already cover, the novelty score should reflect that.
 }
-CONVERSATION:
+THINKING SESSION:
 $(get_conversation_for "mechanism")
 
 Respond with a JSON object."
@@ -75,7 +75,7 @@ SEED TOPIC: ${SEED_TOPIC}
 PROSECUTION'S CASE:
 ${prosecution_result}
 
-SESSION CONVERSATION:
+THINKING SESSION:
 $(get_conversation_for "mechanism")
 
 Respond with a JSON object."

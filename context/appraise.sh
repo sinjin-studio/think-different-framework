@@ -3,7 +3,7 @@
 # Assesses the raw material: what is it? What traditions does it sit within?
 # What is the initial quality assessment?
 # Grounding is embedded: surfaces and verifies assumptions before appraising.
-# Expects globals: $SEED_TOPIC, $PROJECT_CONTEXT, $CONVERSATION,
+# Expects globals: $SEED_TOPIC, $PROJECT_CONTEXT, $THINKING_SESSION,
 #                  $TRANSCRIPT_MD, $TRANSCRIPT_JSON, $TURN_COUNT, $OUTPUT_DIR,
 #                  $TIMESTAMP, $GROUND_ENABLED, $ALLOWED_TOOLS
 # Depends on: lib/json.sh, context/ground.sh (for build_ground_preamble)
@@ -76,23 +76,23 @@ SEED TOPIC: ${SEED_TOPIC}"
   stop_spinner "done"
   echo ""
 
-  CONVERSATION="The session begins with the seed topic: ${SEED_TOPIC}"
+  THINKING_SESSION="The session begins with the seed topic: ${SEED_TOPIC}"
 
   if [ -n "$PROJECT_CONTEXT" ]; then
-    CONVERSATION="${CONVERSATION}
+    THINKING_SESSION="${THINKING_SESSION}
 
 PROJECT CONTEXT (ground truth about the actual project, business, or situation):
 ${PROJECT_CONTEXT}"
   fi
 
   if [ -n "${SEED_VERIFICATION:-}" ]; then
-    CONVERSATION="${CONVERSATION}
+    THINKING_SESSION="${THINKING_SESSION}
 
 PROVOCATION VERIFICATION (claims checked, framing flagged - use corrected provocation as ground truth):
 ${SEED_VERIFICATION}"
   fi
 
-  CONVERSATION="${CONVERSATION}
+  THINKING_SESSION="${THINKING_SESSION}
 
 SEED APPRAISAL (raw material assessment, traditions, initial quality judgement - work with what resonates):
 ${APPRAISE_CONTEXT}"

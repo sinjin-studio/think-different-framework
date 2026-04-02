@@ -3,7 +3,7 @@
 # Dynamic dispatch: calls lens_emoji_${key}, lens_name_${key},
 # lens_bias_${key}, lens_system_${key} for the given lens key.
 # Appends COMMON_RULES + PHASE INSTRUCTION to the system prompt.
-# Expects globals: $SEED_TOPIC, $CONVERSATION, $UNIT_LABEL, $TURN_COUNT,
+# Expects globals: $SEED_TOPIC, $THINKING_SESSION, $UNIT_LABEL, $TURN_COUNT,
 #                  $TRANSCRIPT_MD, $TRANSCRIPT_JSON, $RESUME_FROM_TURN
 # Depends on: lib/json.sh, lib/md.sh, lib/cap_check.sh
 
@@ -114,7 +114,7 @@ COMMON_RULES="Rules:
 - If a statistic in the provocation or fracture is marked UNVERIFIED, do not treat it as fact or build emotional weight on its specific number"
 
 # ── Context compaction ──
-# Distills the growing CONVERSATION into a high-signal digest when it exceeds
+# Distills the growing THINKING_SESSION into a high-signal digest when it exceeds
 # a character threshold or a turn interval. Preserves the last few verbatim turns
 # so the next lens has both strategic memory and immediate context.
 # Full transcript is always preserved in MD/JSON files (written incrementally).
@@ -126,14 +126,14 @@ compact_conversation() {
   [ "${COMPACT_ENABLED:-true}" != "true" ] && return
   # Only compact if we've done enough turns since last compaction
   local turns_since=$((TURN_COUNT - LAST_COMPACT_TURN))
-  local conv_len=${#CONVERSATION}
+  local conv_len=${#THINKING_SESSION}
   if [ "$turns_since" -lt "$COMPACT_INTERVAL" ] && [ "$conv_len" -lt "$COMPACT_CHAR_THRESHOLD" ]; then
     return
   fi
 
-  start_spinner "📦 Compacting conversation"
+  start_spinner "📦 Compacting thinking session"
 
-  local compact_prompt="Distill this creative thinking conversation into its essential moves. Preserve:
+  local compact_prompt="Distill this creative thinking session into its essential moves. Preserve:
 - Key insights discovered (use exact phrasing for breakthrough moments)
 - Active tensions and unresolved contradictions
 - Positions taken and territory opened by each lens
@@ -146,8 +146,8 @@ Output a DIGEST of 400-600 words. Write it as a flowing summary, not a list. Thi
 
   local compact_message="SEED TOPIC: ${SEED_TOPIC}
 
-FULL CONVERSATION (${TURN_COUNT} turns):
-${CONVERSATION}"
+FULL THINKING SESSION (${TURN_COUNT} turns):
+${THINKING_SESSION}"
 
   local tmpfile
   tmpfile=$(mktemp)
@@ -158,7 +158,7 @@ ${CONVERSATION}"
     local digest="$CLAUDE_RESPONSE"
     # Extract the last 3-4 lens turns (everything after the last 3 "--- " markers)
     local recent_turns=""
-    recent_turns=$(echo "$CONVERSATION" | python3 -c "
+    recent_turns=$(echo "$THINKING_SESSION" | python3 -c "
 import sys
 text = sys.stdin.read()
 parts = text.split('\n--- ')
@@ -168,9 +168,9 @@ if len(parts) > 3:
     print('--- ' + recent)
 else:
     print(text)
-" 2>/dev/null || echo "$CONVERSATION")
+" 2>/dev/null || echo "$THINKING_SESSION")
 
-    CONVERSATION="=== COMPACTED AT TURN ${TURN_COUNT} ===
+    THINKING_SESSION="=== COMPACTED AT TURN ${TURN_COUNT} ===
 ${digest}
 
 === RECENT TURNS ===
@@ -181,7 +181,7 @@ ${recent_turns}"
     # Log compaction to transcript
     md_append_section "3" "📦 Context compacted at turn ${TURN_COUNT}"
     MD_BUFFER="${MD_BUFFER}
-Conversation distilled to digest + last 3 turns.
+Thinking session distilled to digest + last 3 turns.
 "
     md_flush
 
@@ -198,7 +198,7 @@ Conversation distilled to digest + last 3 turns.
 # Tool-enabled lenses get a two-step internal deliberation:
 #   Step 1 (explore): lens uses tools to ground its thinking, outputs raw findings
 #   Step 2 (respond): lens reads its own findings and writes final 150-200 word response
-# Only the final response enters $CONVERSATION. Explore output stays internal.
+# Only the final response enters $THINKING_SESSION. Explore output stays internal.
 call_lens_multistep() {
   local lens_key="$1"
   local phase="$2"
@@ -218,8 +218,8 @@ call_lens_multistep() {
   local lens_tools
   lens_tools=$(lens_tools_${lens_key})
 
-  local lens_conversation
-  lens_conversation=$(get_conversation_for "lens")
+  local lens_thinking
+  lens_thinking=$(get_conversation_for "lens")
 
   # ── Step 1: Explore (with tools) ──
   local explore_system="${system_prompt}
@@ -231,7 +231,7 @@ PHASE INSTRUCTION: ${instruction}"
   local explore_message="SEED TOPIC: ${SEED_TOPIC}
 
 CONVERSATION SO FAR:
-${lens_conversation}
+${lens_thinking}
 
 ---
 Explore. Search. React. What do you find that changes how you see this?"
@@ -279,7 +279,7 @@ PHASE INSTRUCTION: ${instruction}"
   local respond_message="SEED TOPIC: ${SEED_TOPIC}
 
 CONVERSATION SO FAR:
-${lens_conversation}
+${lens_thinking}
 
 YOUR EXPLORATION FINDINGS:
 ${explore_response}
@@ -333,7 +333,7 @@ _~ ${name} (passed)_
     esac
   fi
 
-  CONVERSATION="${CONVERSATION}
+  THINKING_SESSION="${THINKING_SESSION}
 
 --- ${emoji} ${name} (${phase}, ${UNIT_LABEL} ${unit_num}) ---
 ${response}"
@@ -416,12 +416,12 @@ call_lens() {
   # Default autonomous mode uses inline skip detection (lens responds with SKIP: reason).
   if [ "${AUTONOMOUS_MODE:-}" = "true" ] && [ "${SKIP_STRICT:-}" = "true" ]; then
     local skip_prompt="You are ${name} (${bias}). Read the seed topic and conversation so far. Do you have something genuinely new to add that only your specific lens can see? If the conversation has already covered your perspective, or if speaking now would be redundant, be honest about it."
-    local skip_conversation
-    skip_conversation=$(get_conversation_for "lens")
+    local skip_thinking
+    skip_thinking=$(get_conversation_for "lens")
     local skip_message="SEED TOPIC: ${SEED_TOPIC}
 
 CONVERSATION SO FAR:
-${skip_conversation}
+${skip_thinking}
 
 Should you speak? Answer with JSON."
     local skip_schema='{"type":"object","properties":{"should_speak":{"type":"boolean"},"reason":{"type":"string"}},"required":["should_speak","reason"]}'
@@ -464,12 +464,12 @@ ${COMMON_RULES}${skip_rule}
 
 PHASE INSTRUCTION: ${instruction}"
 
-  local lens_conversation
-  lens_conversation=$(get_conversation_for "lens")
+  local lens_thinking
+  lens_thinking=$(get_conversation_for "lens")
   local user_message="SEED TOPIC: ${SEED_TOPIC}
 
 CONVERSATION SO FAR:
-${lens_conversation}
+${lens_thinking}
 
 ---
 It is now your turn. See differently. Add something new."
@@ -521,7 +521,7 @@ _~ ${name} (passed)_
   # Restore global tools flag
   ALLOWED_TOOLS_FLAG="$saved_tools_flag"
 
-  CONVERSATION="${CONVERSATION}
+  THINKING_SESSION="${THINKING_SESSION}
 
 --- ${emoji} ${name} (${phase}, ${UNIT_LABEL} ${unit_num}) ---
 ${response}"
@@ -588,7 +588,7 @@ handle_friction_decision() {
     inject_key=$(echo "$FRICTION_DECISION" | python3 -c "import sys,json; print(json.load(sys.stdin).get('inject_lens',''))" 2>/dev/null || echo "")
     if [ -n "$inject_key" ] && is_lens_active "$inject_key"; then
       echo "  ↪ Friction redirect: injecting ${inject_key}"
-      call_lens "$inject_key" "friction_redirect" "$unit_num" "The friction detector found the conversation is stuck. You are being brought in to break the pattern. Look at the friction points and bring your specific perspective to the contradictions." || true
+      call_lens "$inject_key" "friction_redirect" "$unit_num" "The friction detector found the thinking is stuck. You are being brought in to break the pattern. Look at the friction points and bring your specific perspective to the contradictions." || true
     fi
   fi
 }

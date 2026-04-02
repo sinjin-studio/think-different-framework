@@ -3,7 +3,7 @@
 # Reads conversation and flags when the entire session has stayed
 # within a transactional/utilitarian frame without anyone noticing.
 # Returns structured decision in $TRANSCENDENCE_DECISION (JSON).
-# Expects globals: $CONVERSATION, $TRANSCRIPT_MD, $TRANSCRIPT_JSON,
+# Expects globals: $THINKING_SESSION, $TRANSCRIPT_MD, $TRANSCRIPT_JSON,
 #                  $TURN_COUNT, $UNIT_LABEL
 # Depends on: lib/json.sh, lib/cap_check.sh
 
@@ -18,20 +18,20 @@ transcendence_check() {
   local mechanism_history
   mechanism_history=$(build_mechanism_history)
 
-  local transcendence_prompt="You are reading a conversation between several thinkers working on a problem. Do not analyse it. Feel it.
+  local transcendence_prompt="You are reading a thinking session across multiple cognitive lenses. Do not analyse it. Feel it.
 
-Read the entire conversation and notice one thing: has anyone named what this is actually in service of? Not the business objective. Not the user need. The thing underneath - the devotion, the love, the care, the sacred ordinary thing that makes this worth someone's life hours.
+Read the entire thinking session and notice one thing: has any lens named what this is actually in service of? Not the business objective. Not the user need. The thing underneath - the devotion, the love, the care, the sacred ordinary thing that makes this worth someone's life hours.
 
 Respond with a JSON object containing:
 - observations: an array of 3 short observation strings:
-  1. What the conversation treats as the ultimate justification for its ideas (the frame it has not questioned).
-  2. What it might look like if the conversation took seriously the possibility that the people involved are driven by love, devotion, or care rather than by incentive, convenience, or fear.
-  3. What urgency the conversation is avoiding. If the people at the centre had one year to act, not a career, which ideas survive?
-- has_breakthrough: boolean - has the conversation touched something genuinely transcendent, beyond the transactional?
-- recommendation: one of 'compress' (a breakthrough was found, compress and move to grounding), 'continue' (keep exploring), or 'ground_early' (the conversation is circling, ground what exists)
+  1. What the thinking treats as the ultimate justification for its ideas (the frame it has not questioned).
+  2. What it might look like if the thinking took seriously the possibility that the people involved are driven by love, devotion, or care rather than by incentive, convenience, or fear.
+  3. What urgency the thinking is avoiding. If the people at the centre had one year to act, not a career, which ideas survive?
+- has_breakthrough: boolean - has the thinking touched something genuinely transcendent, beyond the transactional?
+- recommendation: one of 'compress' (a breakthrough was found, compress and move to grounding), 'continue' (keep exploring), or 'ground_early' (the thinking is circling, ground what exists)
 
 ${mechanism_history}
-CONVERSATION:
+THINKING SESSION:
 $(get_conversation_for "mechanism")"
 
   local tmpfile
@@ -76,10 +76,10 @@ for obs in d.get('observations', []):
 
   stop_spinner "done"
 
-  CONVERSATION="${CONVERSATION}
+  THINKING_SESSION="${THINKING_SESSION}
 
 === TRANSCENDENCE CHECK (${UNIT_LABEL} ${unit_num}) ===
-A check on what this conversation is in service of. Not to correct the thinking but to ask whether it has touched the thing that actually matters.
+A check on what this thinking is in service of. Not to correct it but to ask whether it has touched the thing that actually matters.
 ${observations}"
 
   md_append_section 3 "🕯️ Transcendence Check (${UNIT_LABEL} ${unit_num})"

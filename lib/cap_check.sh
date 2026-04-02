@@ -3,7 +3,7 @@
 # Centralised wrapper for all `claude -p` calls.
 # Detects API rate limits, saves session state for resume.
 # Expects globals: $OUTPUT_DIR, $TIMESTAMP, $SEED_TOPIC, $MODE,
-#                  $WORD_COUNT, $CONVERSATION, $TURN_COUNT,
+#                  $WORD_COUNT, $THINKING_SESSION, $TURN_COUNT,
 #                  $TRANSCRIPT_MD, $TRANSCRIPT_JSON,
 #                  $FRICTION_ENABLED, $BIAS_ENABLED, $SENSORY_ENABLED,
 #                  $SHUFFLE_ENABLED, $CMD_NAME
@@ -20,7 +20,8 @@ VERBOSE_LOG=""       # Path to log.jsonl - set after session dir creation
 VERBOSE_CALLER=""    # Set by callers before invoking claude_call* (e.g. "lens:empath")
 
 # ── Append a JSONL entry to the verbose log ──
-# Captures: caller, call type, prompt excerpt, full response, exit code, rate limited
+# Captures: caller, call type, prompt excerpt, full response, exit code, rate limited,
+#           and optional usage data (input_tokens, output_tokens, cache_creation, cache_read, cost_usd, duration_ms)
 verbose_log_entry() {
   [ -z "$VERBOSE_LOG" ] && return
   local call_type="$1"
@@ -28,6 +29,12 @@ verbose_log_entry() {
   local response="$3"
   local exit_code="$4"
   local rate_limited="$5"
+  local input_tokens="${6:-}"
+  local output_tokens="${7:-}"
+  local cache_creation_tokens="${8:-}"
+  local cache_read_tokens="${9:-}"
+  local cost_usd="${10:-}"
+  local duration_ms="${11:-}"
 
   local prompt_excerpt=""
   if [ -f "$prompt_file" ]; then
@@ -45,8 +52,20 @@ entry = {
     'exit_code': int(sys.argv[5]),
     'rate_limited': sys.argv[6] == 'true'
 }
+# Include usage data when available
+if sys.argv[7]:
+    entry['usage'] = {
+        'input_tokens': int(sys.argv[7]) if sys.argv[7] else 0,
+        'output_tokens': int(sys.argv[8]) if sys.argv[8] else 0,
+        'cache_creation_input_tokens': int(sys.argv[9]) if sys.argv[9] else 0,
+        'cache_read_input_tokens': int(sys.argv[10]) if sys.argv[10] else 0,
+        'cost_usd': float(sys.argv[11]) if sys.argv[11] else 0,
+        'duration_ms': int(float(sys.argv[12])) if sys.argv[12] else 0
+    }
 print(json.dumps(entry))
-" "${VERBOSE_CALLER:-unknown}" "$call_type" "$prompt_excerpt" "$response" "$exit_code" "$rate_limited" >> "$VERBOSE_LOG" 2>/dev/null || true
+" "${VERBOSE_CALLER:-unknown}" "$call_type" "$prompt_excerpt" "$response" "$exit_code" "$rate_limited" \
+  "$input_tokens" "$output_tokens" "$cache_creation_tokens" "$cache_read_tokens" "$cost_usd" "$duration_ms" \
+  >> "$VERBOSE_LOG" 2>/dev/null || true
 }
 
 # ── Build --allowedTools flag from ALLOWED_TOOLS global ──
@@ -191,7 +210,6 @@ claude_call_json() {
   local tmpfile="$1"
   local json_schema="$2"
   local system_prompt="${3:-}"
-  local _retried=0
 
   while true; do
     local stderr_file
@@ -209,29 +227,50 @@ claude_call_json() {
     stderr_content=$(cat "$stderr_file")
     rm -f "$stderr_file"
 
-    # Extract structured_output from the wrapper JSON envelope
+    # Extract structured_output and usage from the wrapper JSON envelope
     CLAUDE_RESPONSE=""
+    local _input_tokens="" _output_tokens="" _cache_creation="" _cache_read="" _cost_usd="" _duration_ms=""
     if [ "$exit_code" -eq 0 ] && [ -n "$raw_response" ]; then
-      CLAUDE_RESPONSE=$(echo "$raw_response" | python3 -c "import sys,json; so=json.load(sys.stdin).get('structured_output'); print(json.dumps(so) if so else '')" 2>/dev/null || echo "")
+      eval "$(echo "$raw_response" | python3 -c "
+import sys, json, shlex
+try:
+    envelope = json.load(sys.stdin)
+    so = envelope.get('structured_output')
+    print('CLAUDE_RESPONSE=' + shlex.quote(json.dumps(so) if so else ''))
+    u = envelope.get('usage', {})
+    print('_input_tokens=' + str(u.get('input_tokens', 0)))
+    print('_output_tokens=' + str(u.get('output_tokens', 0)))
+    print('_cache_creation=' + str(u.get('cache_creation_input_tokens', 0)))
+    print('_cache_read=' + str(u.get('cache_read_input_tokens', 0)))
+    print('_cost_usd=' + str(envelope.get('total_cost_usd', 0)))
+    print('_duration_ms=' + str(envelope.get('duration_ms', 0)))
+except Exception:
+    print('CLAUDE_RESPONSE=')
+    print('_input_tokens=0')
+    print('_output_tokens=0')
+    print('_cache_creation=0')
+    print('_cache_read=0')
+    print('_cost_usd=0')
+    print('_duration_ms=0')
+" 2>/dev/null)"
     fi
 
     if is_rate_limited "$exit_code" "$CLAUDE_RESPONSE" "$stderr_content"; then
       LAST_CLAUDE_ERROR="$stderr_content"
       LAST_CLAUDE_EXIT_CODE="$exit_code"
-      if [ "${WAIT_FOR_RATE_LIMIT:-}" = "true" ] && [ "$_retried" -eq 0 ]; then
+      if [ "${WAIT_FOR_RATE_LIMIT:-}" = "true" ]; then
         if wait_for_rate_limit_reset; then
-          _retried=1
           continue  # Retry the call
         fi
-      else
-        RATE_LIMIT_HIT="true"
       fi
+      RATE_LIMIT_HIT="true"
       verbose_log_entry "claude_call_json" "$tmpfile" "" "$exit_code" "true"
       CLAUDE_RESPONSE=""
       return 1
     fi
 
-    verbose_log_entry "claude_call_json" "$tmpfile" "$CLAUDE_RESPONSE" "0" "false"
+    verbose_log_entry "claude_call_json" "$tmpfile" "$CLAUDE_RESPONSE" "0" "false" \
+      "$_input_tokens" "$_output_tokens" "$_cache_creation" "$_cache_read" "$_cost_usd" "$_duration_ms"
     LAST_CLAUDE_ERROR=""
     LAST_CLAUDE_EXIT_CODE=0
     return 0
@@ -245,34 +284,61 @@ claude_call_json() {
 claude_call() {
   local tmpfile="$1"
   local system_prompt="${2:-}"
-  local _retried=0
 
   while true; do
     local stderr_file
     stderr_file=$(mktemp)
 
     local exit_code=0
+    local raw_response=""
     if [ -n "$system_prompt" ]; then
-      CLAUDE_RESPONSE=$(cat "$tmpfile" | claude -p --system-prompt "$system_prompt" $ALLOWED_TOOLS_FLAG 2>"$stderr_file") || exit_code=$?
+      raw_response=$(cat "$tmpfile" | claude -p --system-prompt "$system_prompt" --output-format json $ALLOWED_TOOLS_FLAG 2>"$stderr_file") || exit_code=$?
     else
-      CLAUDE_RESPONSE=$(cat "$tmpfile" | claude -p $ALLOWED_TOOLS_FLAG 2>"$stderr_file") || exit_code=$?
+      raw_response=$(cat "$tmpfile" | claude -p --output-format json $ALLOWED_TOOLS_FLAG 2>"$stderr_file") || exit_code=$?
     fi
 
     local stderr_content
     stderr_content=$(cat "$stderr_file")
     rm -f "$stderr_file"
 
+    # Extract result text and usage from JSON envelope
+    CLAUDE_RESPONSE=""
+    local _input_tokens="" _output_tokens="" _cache_creation="" _cache_read="" _cost_usd="" _duration_ms=""
+    if [ -n "$raw_response" ]; then
+      eval "$(echo "$raw_response" | python3 -c "
+import sys, json, shlex
+raw = sys.stdin.read()
+try:
+    envelope = json.loads(raw)
+    print('CLAUDE_RESPONSE=' + shlex.quote(str(envelope.get('result', ''))))
+    u = envelope.get('usage', {})
+    print('_input_tokens=' + str(u.get('input_tokens', 0)))
+    print('_output_tokens=' + str(u.get('output_tokens', 0)))
+    print('_cache_creation=' + str(u.get('cache_creation_input_tokens', 0)))
+    print('_cache_read=' + str(u.get('cache_read_input_tokens', 0)))
+    print('_cost_usd=' + str(envelope.get('total_cost_usd', 0)))
+    print('_duration_ms=' + str(envelope.get('duration_ms', 0)))
+except Exception:
+    # Not valid JSON - pass raw output as response (e.g. error messages)
+    print('CLAUDE_RESPONSE=' + shlex.quote(raw))
+    print('_input_tokens=0')
+    print('_output_tokens=0')
+    print('_cache_creation=0')
+    print('_cache_read=0')
+    print('_cost_usd=0')
+    print('_duration_ms=0')
+" 2>/dev/null)" || CLAUDE_RESPONSE="$raw_response"
+    fi
+
     if is_rate_limited "$exit_code" "$CLAUDE_RESPONSE" "$stderr_content"; then
       LAST_CLAUDE_ERROR="$stderr_content"
       LAST_CLAUDE_EXIT_CODE="$exit_code"
-      if [ "${WAIT_FOR_RATE_LIMIT:-}" = "true" ] && [ "$_retried" -eq 0 ]; then
+      if [ "${WAIT_FOR_RATE_LIMIT:-}" = "true" ]; then
         if wait_for_rate_limit_reset; then
-          _retried=1
           continue  # Retry the call
         fi
-      else
-        RATE_LIMIT_HIT="true"
       fi
+      RATE_LIMIT_HIT="true"
       verbose_log_entry "claude_call" "$tmpfile" "" "$exit_code" "true"
       CLAUDE_RESPONSE=""
       return 1
@@ -282,7 +348,8 @@ claude_call() {
     if [ "$exit_code" -ne 0 ]; then
       LAST_CLAUDE_ERROR="$stderr_content"
       LAST_CLAUDE_EXIT_CODE="$exit_code"
-      verbose_log_entry "claude_call" "$tmpfile" "$CLAUDE_RESPONSE" "$exit_code" "false"
+      verbose_log_entry "claude_call" "$tmpfile" "$CLAUDE_RESPONSE" "$exit_code" "false" \
+        "$_input_tokens" "$_output_tokens" "$_cache_creation" "$_cache_read" "$_cost_usd" "$_duration_ms"
       # If we got a response despite the error, treat it as success
       local trimmed_resp
       trimmed_resp=$(echo "$CLAUDE_RESPONSE" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
@@ -295,7 +362,8 @@ claude_call() {
     fi
 
     # Success
-    verbose_log_entry "claude_call" "$tmpfile" "$CLAUDE_RESPONSE" "0" "false"
+    verbose_log_entry "claude_call" "$tmpfile" "$CLAUDE_RESPONSE" "0" "false" \
+      "$_input_tokens" "$_output_tokens" "$_cache_creation" "$_cache_read" "$_cost_usd" "$_duration_ms"
     LAST_CLAUDE_ERROR=""
     LAST_CLAUDE_EXIT_CODE=0
     return 0
@@ -315,7 +383,7 @@ save_state() {
 
   local escaped_conversation escaped_seed escaped_context escaped_lens escaped_mechanism_memory
   local escaped_conductor_view escaped_lens_view
-  escaped_conversation=$(echo "$CONVERSATION" | python3 -c "import sys,json; print(json.dumps(sys.stdin.read()))")
+  escaped_conversation=$(echo "$THINKING_SESSION" | python3 -c "import sys,json; print(json.dumps(sys.stdin.read()))")
   escaped_seed=$(echo "$SEED_TOPIC" | python3 -c "import sys,json; print(json.dumps(sys.stdin.read().strip()))")
   escaped_context=$(echo "${PROJECT_CONTEXT:-}" | python3 -c "import sys,json; print(json.dumps(sys.stdin.read()))")
   escaped_lens=$(echo "${LENS_CONTEXT:-}" | python3 -c "import sys,json; print(json.dumps(sys.stdin.read()))")
@@ -455,7 +523,7 @@ print('LAST_PROGRESSIVE_TURN=' + str(prog.get('last_turn', 0)))
   build_tools_flag
 
   # Load large text fields separately to avoid shell quoting issues
-  CONVERSATION=$(python3 -c "import json; print(json.load(open('${state_file}'))['conversation'], end='')")
+  THINKING_SESSION=$(python3 -c "import json; print(json.load(open('${state_file}'))['conversation'], end='')")
   PROJECT_CONTEXT=$(python3 -c "import json; print(json.load(open('${state_file}'))['project_context'], end='')")
   LENS_CONTEXT=$(python3 -c "import json; print(json.load(open('${state_file}'))['lens_context'], end='')")
   CONDUCTOR_VIEW=$(python3 -c "import json; print(json.load(open('${state_file}')).get('progressive', {}).get('conductor_view', ''), end='')" 2>/dev/null || true)
@@ -512,7 +580,7 @@ rate_limit_cleanup() {
     fi
     echo ""
     echo "     Or generate a presentation from what was captured:"
-    echo "       ${CMD_NAME:-./think.sh} --report-only ${TRANSCRIPT_MD:-transcript.md} --words ${WORD_COUNT:-500-800}"
+    echo "       ${CMD_NAME:-./think.sh} --regenerate ${TRANSCRIPT_MD:-transcript.md} --words ${WORD_COUNT:-500-800}"
     echo ""
   fi
 }

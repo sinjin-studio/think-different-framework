@@ -3,7 +3,7 @@
 # Between-pass assessment: what survived? What was revealed?
 # Like friction (snags) and reseed (surprising insight), but oriented
 # toward quality - asking what is worth keeping and what the cutting revealed.
-# Expects globals: $CONVERSATION, $TRANSCRIPT_MD, $TRANSCRIPT_JSON,
+# Expects globals: $THINKING_SESSION, $TRANSCRIPT_MD, $TRANSCRIPT_JSON,
 #                  $TURN_COUNT, $UNIT_LABEL
 # Depends on: lib/json.sh
 
@@ -11,9 +11,9 @@ polish() {
   local pass_num="$1"
   start_spinner "💎 Polishing between passes"
 
-  local polish_prompt="You are reading a conversation between several thinkers who are working material through iterative refinement. A pass of cutting and shaping has just been completed.
+  local polish_prompt="You are reading a thinking session across multiple cognitive lenses, working material through iterative refinement. A pass of cutting and shaping has just been completed.
 
-Read the conversation and assess what this pass revealed. Not what was said - what survived and what was exposed by the cutting.
+Read the thinking and assess what this pass revealed. Not what was said - what survived and what was exposed by the cutting.
 
 Output three short observations:
 1. What survived this pass that deserves to be worked harder? The idea or angle that proved load-bearing under pressure.
@@ -22,7 +22,7 @@ Output three short observations:
 
 One sentence each. No labels, no numbering. Write as a craftsperson assessing their own work between passes.
 
-CONVERSATION:
+THINKING SESSION:
 $(get_conversation_for "mechanism")"
 
   local tmpfile
@@ -53,7 +53,7 @@ $(get_conversation_for "mechanism")"
 
   stop_spinner "done"
 
-  CONVERSATION="${CONVERSATION}
+  THINKING_SESSION="${THINKING_SESSION}
 
 === POLISH (${UNIT_LABEL} ${pass_num}) ===
 Assessment between passes. What survived, what was revealed, what is the quality trajectory. Work with these signals - they tell you where the density is.

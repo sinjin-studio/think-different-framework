@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # ── Progressive conversation compression ──
-# Generates compressed views of the conversation for different callers.
+# Generates compressed views of the thinking session for different callers.
 # The conductor needs territory mapping; lenses need creative texture.
-# Raw $CONVERSATION is never modified - views are derived from it.
+# Raw $THINKING_SESSION is never modified - views are derived from it.
 #
 # Tiers:
 #   full  (turns 1-10)  - everyone gets raw conversation
 #   mid   (turns 11-20) - conductor gets territory digest + recent turns
 #   late  (turns 21+)   - both get compressed views
 #
-# Separate from --compact (which replaces $CONVERSATION itself).
+# Separate from --compact (which replaces $THINKING_SESSION itself).
 # Always on by default. Disable with --no-progressive.
 
 PROGRESSIVE_ENABLED="${PROGRESSIVE_ENABLED:-true}"
@@ -69,8 +69,8 @@ Respond with a JSON object containing conductor_digest and lens_digest."
 
   local compress_message="SEED TOPIC: ${SEED_TOPIC}
 
-FULL CONVERSATION (${TURN_COUNT} turns):
-${CONVERSATION}"
+FULL THINKING SESSION (${TURN_COUNT} turns):
+${THINKING_SESSION}"
 
   local tmpfile
   tmpfile=$(mktemp)
@@ -88,7 +88,7 @@ ${CONVERSATION}"
 
     if [ -n "$conductor_digest" ]; then
       local recent_3
-      recent_3=$(extract_recent_turns "$CONVERSATION" 3)
+      recent_3=$(extract_recent_turns "$THINKING_SESSION" 3)
       CONDUCTOR_VIEW="=== TERRITORY DIGEST (compressed at turn ${TURN_COUNT}) ===
 ${conductor_digest}
 
@@ -98,7 +98,7 @@ ${recent_3}"
 
     if [ -n "$lens_digest" ]; then
       local recent_5
-      recent_5=$(extract_recent_turns "$CONVERSATION" 5)
+      recent_5=$(extract_recent_turns "$THINKING_SESSION" 5)
       LENS_VIEW="=== SESSION DIGEST (compressed at turn ${TURN_COUNT}) ===
 ${lens_digest}
 
@@ -114,7 +114,7 @@ ${recent_5}"
     if type md_append_section &>/dev/null; then
       md_append_section "3" "📐 Progressive compression at turn ${TURN_COUNT} (${tier} tier)"
       MD_BUFFER="${MD_BUFFER}
-Conductor view: ${#CONDUCTOR_VIEW} chars, Lens view: ${#LENS_VIEW} chars (full: ${#CONVERSATION} chars)
+Conductor view: ${#CONDUCTOR_VIEW} chars, Lens view: ${#LENS_VIEW} chars (full: ${#THINKING_SESSION} chars)
 "
       md_flush
     fi
@@ -162,7 +162,7 @@ get_conversation_for() {
 
   # If progressive compression is off, always return full conversation
   if [ "${PROGRESSIVE_ENABLED:-true}" != "true" ]; then
-    echo "$CONVERSATION"
+    echo "$THINKING_SESSION"
     return
   fi
 
@@ -174,7 +174,7 @@ get_conversation_for() {
       # Full tier: raw conversation
       # Mid/Late tier: conductor view (territory digest)
       if [ "$current_tier" = "full" ] || [ -z "$CONDUCTOR_VIEW" ]; then
-        echo "$CONVERSATION"
+        echo "$THINKING_SESSION"
       else
         # Append any turns that happened since last compression
         if [ "$TURN_COUNT" -gt "$LAST_PROGRESSIVE_TURN" ]; then
@@ -196,7 +196,7 @@ ${new_turns}"
       # Full/Mid tier: raw conversation (lenses get full until late tier)
       # Late tier: lens view (phrasing digest)
       if [ "$current_tier" != "late" ] || [ -z "$LENS_VIEW" ]; then
-        echo "$CONVERSATION"
+        echo "$THINKING_SESSION"
       else
         # Append any turns since last compression
         if [ "$TURN_COUNT" -gt "$LAST_PROGRESSIVE_TURN" ]; then
@@ -215,7 +215,7 @@ ${new_turns}"
       fi
       ;;
     *)
-      echo "$CONVERSATION"
+      echo "$THINKING_SESSION"
       ;;
   esac
 }
@@ -225,7 +225,7 @@ ${new_turns}"
 extract_new_turns_since() {
   local since_turn="$1"
 
-  echo "$CONVERSATION" | python3 -c "
+  echo "$THINKING_SESSION" | python3 -c "
 import sys
 text = sys.stdin.read()
 parts = text.split('\n--- ')

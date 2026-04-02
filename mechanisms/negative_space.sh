@@ -4,7 +4,7 @@
 # Every lens response illuminates some ground. This mechanism maps
 # the dark patches between the lit areas and asks what is in there.
 # Returns structured decision in $NEGATIVE_SPACE_DECISION (JSON).
-# Expects globals: $CONVERSATION, $TRANSCRIPT_MD, $TRANSCRIPT_JSON,
+# Expects globals: $THINKING_SESSION, $TRANSCRIPT_MD, $TRANSCRIPT_JSON,
 #                  $TURN_COUNT, $UNIT_LABEL, $SEED_TOPIC
 # Depends on: lib/json.sh, lib/cap_check.sh
 
@@ -25,29 +25,29 @@ Think of it like this: every lens response illuminates some territory. Friction 
 
 The Hubble Deep Field was discovered by pointing the telescope at a patch of sky that appeared empty - no bright stars, no known galaxies. The absence of foreground noise was the condition for seeing further. That is your method.
 
-Read the conversation and the seed topic. Then:
+Read the thinking and the seed topic. Then:
 
-1. Map the territory the conversation HAS covered. What domains, scales, audiences, emotions, time horizons, and stakeholders have been addressed?
+1. Map the territory the thinking HAS covered. What domains, scales, audiences, emotions, time horizons, and stakeholders have been addressed?
 
-2. Now map what is missing. Not what is wrong - what is ABSENT. Do not work from a checklist. Read the conversation and feel the shape of the silence. What is conspicuously absent given this specific topic and where the conversation has gone? The voids should be emergent from the material, not from a generic list of categories. Think about scales, audiences, time horizons, emotions, adjacent domains, the uncomfortable question nobody has asked - but only the ones that matter for THIS conversation. Name 2-4 voids that would genuinely change the session's direction if explored.
+2. Now map what is missing. Not what is wrong - what is ABSENT. Do not work from a checklist. Read the thinking and feel the shape of the silence. What is conspicuously absent given this specific topic and where the thinking has gone? The voids should be emergent from the material, not from a generic list of categories. Think about scales, audiences, time horizons, emotions, adjacent domains, the uncomfortable question nobody has asked - but only the ones that matter for THIS thinking session. Name 2-4 voids that would genuinely change the session's direction if explored.
 
 3. For each void territory (2-4 territories), suggest which lens key is best equipped to explore it. A void in empathy calls for the empath. A void in scale calls for the scaler. A void in what is literally there calls for the observer.
 
-4. Use web search to check: is this territory genuinely unexplored in broader discourse, or has the conversation simply not reached it yet? The most interesting voids are the ones that are also absent from the existing conversation around this topic.
+4. Use web search to check: is this territory genuinely unexplored in broader discourse, or has the thinking simply not reached it yet? The most interesting voids are the ones that are also absent from the existing discourse around this topic.
 
-5. Name the pattern of avoidance. WHY is the conversation not going there? This pattern is itself a finding.
+5. Name the pattern of avoidance. WHY is the thinking not going there? This pattern is itself a finding.
 
 SEED TOPIC: ${SEED_TOPIC}
 ${ZEITGEIST_CONTEXT:+
 ${ZEITGEIST_CONTEXT}
-Use these sources as a baseline. If the conversation is only covering territory these articles already occupy, that is itself a void - the session has not yet gone beyond what is already known. The most valuable voids are the ones absent from BOTH the conversation AND the broader discourse.
+Use these sources as a baseline. If the thinking is only covering territory these articles already occupy, that is itself a void - the session has not yet gone beyond what is already known. The most valuable voids are the ones absent from BOTH the thinking AND the broader discourse.
 }
 Respond with a JSON object containing:
 - territories: array of 2-4 objects, each with name (short label), description (what could be found there), suggested_lens (lens key to explore it), and web_check (what you found searching for this territory in broader discourse - empty string if no search)
-- pattern_of_avoidance: single sentence naming why the conversation has avoided these areas
-- recommendation: one of 'redirect_to_void' (the unexplored territory is the most interesting place to go next), 'note_and_continue' (voids are noted but current direction is productive), or 'void_is_intentional' (the conversation has deliberately narrowed, which is appropriate for this stage)
+- pattern_of_avoidance: single sentence naming why the thinking has avoided these areas
+- recommendation: one of 'redirect_to_void' (the unexplored territory is the most interesting place to go next), 'note_and_continue' (voids are noted but current direction is productive), or 'void_is_intentional' (the thinking has deliberately narrowed, which is appropriate for this stage)
 ${mechanism_history}
-CONVERSATION:
+THINKING SESSION:
 $(get_conversation_for "mechanism")"
 
   local tmpfile
@@ -107,10 +107,10 @@ print('Pattern of avoidance: ' + d.get('pattern_of_avoidance', ''))
 
   stop_spinner "done"
 
-  CONVERSATION="${CONVERSATION}
+  THINKING_SESSION="${THINKING_SESSION}
 
 === NEGATIVE SPACE (${UNIT_LABEL} ${unit_num}) ===
-The conversation has illuminated some territory and left the rest dark. These are the patches where no lens has pointed yet - the darkness between the lit areas.
+The thinking has illuminated some territory and left the rest dark. These are the patches where no lens has pointed yet - the darkness between the lit areas.
 ${territories}"
 
   md_append_section 3 "🔭 Negative Space (${UNIT_LABEL} ${unit_num})"

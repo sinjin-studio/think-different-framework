@@ -3,7 +3,7 @@
 # Finds prediction errors between rounds - the signal is in the
 # contradiction, not the agreement.
 # Returns structured decision in $FRICTION_DECISION (JSON).
-# Expects globals: $CONVERSATION, $TRANSCRIPT_MD, $TRANSCRIPT_JSON,
+# Expects globals: $THINKING_SESSION, $TRANSCRIPT_MD, $TRANSCRIPT_JSON,
 #                  $TURN_COUNT, $UNIT_LABEL
 # Depends on: lib/json.sh, lib/cap_check.sh
 
@@ -18,16 +18,16 @@ detect_prediction_errors() {
   local mechanism_history
   mechanism_history=$(build_mechanism_history)
 
-  local error_prompt="You are reading a conversation between several thinkers working on a problem. Do not analyse it. React to it.
+  local error_prompt="You are reading a thinking session across multiple cognitive lenses. Do not analyse it. React to it.
 
-Read the conversation and notice where it SNAGS. Where something doesn't fit. Where two people said things that can't both be true but somehow both feel right. Where someone said something that changed the direction and nobody acknowledged it. Where everyone is standing on the same assumption like it's solid ground but it might be ice.
+Read the thinking and notice where it SNAGS. Where something doesn't fit. Where two lenses said things that can't both be true but somehow both feel right. Where a lens said something that changed the direction and nobody acknowledged it. Where everyone is standing on the same assumption like it's solid ground but it might be ice.
 
 Respond with a JSON object containing:
 - observations: an array of 3 short observation strings (one sentence each, things that felt like friction)
-- recommendation: one of 'deepen' (the friction needs more exploration), 'redirect' (the conversation is stuck, inject a new lens), or 'continue' (healthy friction, let it ride)
+- recommendation: one of 'deepen' (the friction needs more exploration), 'redirect' (the thinking is stuck, inject a new lens), or 'continue' (healthy friction, let it ride)
 - inject_lens: if recommendation is 'redirect', which lens key should be injected next (e.g. 'skeptic', 'observer', 'empath'). Empty string if not applicable.
 ${mechanism_history}
-CONVERSATION:
+THINKING SESSION:
 $(get_conversation_for "mechanism")"
 
   local tmpfile
@@ -73,10 +73,10 @@ for obs in d.get('observations', []):
 
   stop_spinner "done"
 
-  CONVERSATION="${CONVERSATION}
+  THINKING_SESSION="${THINKING_SESSION}
 
 === FRICTION (${UNIT_LABEL} ${unit_num}) ===
-These are the snags, the catches, the places where the conversation doesn't quite fit together. Follow the friction. Do not smooth it out.
+These are the snags, the catches, the places where the thinking doesn't quite fit together. Follow the friction. Do not smooth it out.
 ${errors}"
 
   md_append_section 3 "⚡ Friction (${UNIT_LABEL} ${unit_num})"
