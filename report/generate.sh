@@ -1027,8 +1027,8 @@ Write the manifesto. Open with the line in bold. Build conviction. End with a ca
   echo "$result"
 }
 
-# ── Generate dialogue (internal monologue) ──
-generate_dialogue() {
+# ── Generate monologue (internal monologue) ──
+generate_monologue() {
   local conversation_text="$1"
   local seed="$2"
   local words="${3:-1500}"
@@ -1036,7 +1036,7 @@ generate_dialogue() {
   local low=$((words - words / 10))
   local high=$((words + words / 10))
 
-read -r -d '' DIALOGUE_SYSTEM << DIALOGUESYS || true
+read -r -d '' MONOLOGUE_SYSTEM << MONOLOGUESYS || true
 You are rewriting a creative thinking session as your own internal monologue. One mind. First person. No characters, no named voices, no roles.
 
 Stay within ${low}-${high} words.
@@ -1052,7 +1052,7 @@ ${AUDIENCE_TEXT:+
 The thinking is ultimately about: ${AUDIENCE_TEXT}. Keep them human throughout.}
 
 ${STYLE_RULES}
-DIALOGUESYS
+MONOLOGUESYS
 
   local distil_block=""
   if [ -n "$distillation" ]; then
@@ -1064,7 +1064,7 @@ ${distillation}
 "
   fi
 
-  local dialogue_prompt="${distil_block}Read this thinking session transcript. Rewrite it as your own internal monologue. One mind wrestling with a problem, arriving at insight through contradiction.
+  local monologue_prompt="${distil_block}Read this thinking session transcript. Rewrite it as your own internal monologue. One mind wrestling with a problem, arriving at insight through contradiction.
 
 TOPIC: ${seed}
 
@@ -1077,16 +1077,16 @@ Rewrite this as your own thinking. First person. One mind. No characters. No att
 
   local tmpfile
   tmpfile=$(mktemp)
-  echo "$dialogue_prompt" > "$tmpfile"
+  echo "$monologue_prompt" > "$tmpfile"
 
   local result=""
-  VERBOSE_CALLER="report:dialogue"
-  if claude_call "$tmpfile" "$DIALOGUE_SYSTEM"; then
+  VERBOSE_CALLER="report:monologue"
+  if claude_call "$tmpfile" "$MONOLOGUE_SYSTEM"; then
     result="$CLAUDE_RESPONSE"
   else
     local err_detail=""
     [ -n "$LAST_CLAUDE_ERROR" ] && err_detail=" $(echo "$LAST_CLAUDE_ERROR" | head -c 200)"
-    result="[Dialogue generation failed (exit=${LAST_CLAUDE_EXIT_CODE}).${err_detail} The transcript is available for manual review.]"
+    result="[Monologue generation failed (exit=${LAST_CLAUDE_EXIT_CODE}).${err_detail} The transcript is available for manual review.]"
   fi
   rm -f "$tmpfile"
 
@@ -1243,13 +1243,13 @@ ${insight_content}"
     stop_spinner "done"
   fi
 
-  # Dialogue (separate file - opt-in via --dialogue)
-  local dialogue_content=""
-  if [ "${DIALOGUE_ENABLED:-false}" = "true" ]; then
-    local dialogue_budget=$((words * 40 / 100))
-    [ "$dialogue_budget" -lt 300 ] && dialogue_budget=300
-    start_spinner "💭 Writing dialogue (~${dialogue_budget}w)"
-    dialogue_content=$(generate_dialogue "$conversation_text" "$seed" "$dialogue_budget" "$distillation")
+  # Monologue (separate file - opt-in via --monologue)
+  local monologue_content=""
+  if [ "${MONOLOGUE_ENABLED:-false}" = "true" ]; then
+    local monologue_budget=$((words * 40 / 100))
+    [ "$monologue_budget" -lt 300 ] && monologue_budget=300
+    start_spinner "💭 Writing monologue (~${monologue_budget}w)"
+    monologue_content=$(generate_monologue "$conversation_text" "$seed" "$monologue_budget" "$distillation")
     stop_spinner "done"
   fi
 
@@ -1365,18 +1365,18 @@ PRESHEADER
     echo "" >> "$output_file"
   fi
 
-  # The Dialogue - written to separate file
-  if [ -n "$dialogue_content" ]; then
-    local dialogue_file="$(dirname "$output_file")/dialogue.md"
-    cat > "$dialogue_file" << DIALOGUEOF
-# The Dialogue
+  # The Monologue - written to separate file
+  if [ -n "$monologue_content" ]; then
+    local monologue_file="$(dirname "$output_file")/monologue.md"
+    cat > "$monologue_file" << MONOLOGUEOF
+# The Monologue
 
 ${seed_label}
 > **Date:** $(date '+%Y-%m-%d %H:%M')
 
-${dialogue_content}
-DIALOGUEOF
-    echo "  💭 Dialogue:     $dialogue_file" >&2
+${monologue_content}
+MONOLOGUEOF
+    echo "  💭 Monologue:    $monologue_file" >&2
   fi
 
   # Session Findings - distilled novel ideas for inspiration
@@ -1490,14 +1490,14 @@ THE ASSET:
 
 ${asset_content}"
   fi
-  if [ -n "$dialogue_content" ]; then
+  if [ -n "$monologue_content" ]; then
     combined="${combined}
 
 ---
 
-THE DIALOGUE (see dialogue.md):
+THE MONOLOGUE (see monologue.md):
 
-${dialogue_content}"
+${monologue_content}"
   fi
   echo "$combined"
 }

@@ -178,7 +178,7 @@ Control provocation character with `--tone` (default: `provocative`). See [Tones
 | `--pick` | Interactively select which provocations to run |
 | **Output** | |
 | `--sections LIST` | Presentation sections: `insight`, `brief`, `manifesto` (default: all three). Controls which sections appear in presentation.md |
-| `--dialogue` | Generate dialogue as separate file (dialogue.md) - first-person internal monologue |
+| `--monologue` | Generate monologue as separate file (monologue.md) - first-person internal monologue |
 | `--lines N` | Number of rallying lines to generate (default: 3, max: 7) |
 | `--practitioners LIST` | Comma-separated creative practitioners as quality bar for The Line |
 | `--html` | Enable HTML presentation generation (experimental, off by default) |
@@ -219,7 +219,7 @@ Control provocation character with `--tone` (default: `provocative`). See [Tones
 Each session produces:
 
 - **Presentation** (`presentation.md` / `.docx` / `.html`) - The Line (winning platform + expression), the experiment, the asset (sensory/tactile creative description), creative brief, manifesto, insight article, and session findings (novel ideas for inspiration). Sections controlled by `--sections`. The presentation pipeline distils session findings first, then all sections are anchored on the deepest material. HTML version features cinematic scroll effects with GSAP ScrollTrigger
-- **Dialogue** (`dialogue.md`) - Opt-in via `--dialogue`. Rewrites the session as continuous first-person internal monologue, stripping all lens attribution. Written as a separate file, not embedded in the presentation
+- **Monologue** (`monologue.md`) - Opt-in via `--monologue`. Rewrites the session as continuous first-person internal monologue, stripping all lens attribution. Written as a separate file, not embedded in the presentation
 - **Transcript** (`session_*.md`) - Full markdown transcript of the thinking session
 - **JSON** (`session_*.json`) - Machine-readable transcript for analysis
 - **Session diagram** (`diagram.html`) - D3 force-directed visualization of the session's thinking process. Shows lens dispatch order, conductor reasoning at each decision point, mechanism interventions, skips, and user questions. Hover nodes for detail. Auto-generated from `log.jsonl`

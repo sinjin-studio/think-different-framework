@@ -80,7 +80,7 @@ PROVOCATION_TONE="provocative"
 LENS_DEPTH="deep"
 OUTPUT_SECTIONS="insight,brief,manifesto"
 SECTIONS_EXPLICIT=""
-DIALOGUE_ENABLED="false"
+MONOLOGUE_ENABLED="false"
 LINE_COUNT=3
 LINE_PRACTITIONERS=""
 HTML_ENABLED="false"
@@ -125,7 +125,7 @@ show_help() {
   echo "                     absurd, daydream, mixed. Comma-separated for custom mix"
   echo "    --sections LIST  Presentation sections: insight,brief,manifesto (default: all three)"
   echo "                     Comma-separated. Controls which sections appear in presentation.md"
-  echo "    --dialogue       Generate dialogue as separate file (dialogue.md)"
+  echo "    --monologue      Generate monologue as separate file (monologue.md)"
   echo "    --lines N        Number of rallying lines to generate (default: 3, max: 7)"
   echo "    --practitioners  Comma-separated list of creative practitioners as quality bar"
   echo "                     (default: random 3 from built-in pool)"
@@ -368,8 +368,8 @@ while [ $# -gt 0 ]; do
       SECTIONS_EXPLICIT="true"
       shift
       ;;
-    --dialogue)
-      DIALOGUE_ENABLED="true"
+    --monologue)
+      MONOLOGUE_ENABLED="true"
       shift
       ;;
     --lines)
@@ -854,6 +854,19 @@ ${PRES_CONTENT}
   fi
   echo "  📄 Transcript:   $TRANSCRIPT_MD"
   echo "  📊 JSON:         $TRANSCRIPT_JSON"
+  # Generate session diagram and usage report if log exists
+  diagram_file="$SESSION_DIR/diagram.html"
+  usage_file="$SESSION_DIR/usage.html"
+  if [ -f "$SESSION_DIR/log.jsonl" ]; then
+    python3 "${SCRIPT_DIR}/report/session-diagram.py" "$SESSION_DIR/log.jsonl" "$diagram_file" 2>/dev/null || true
+    python3 "${SCRIPT_DIR}/report/session-usage.py" "$SESSION_DIR/log.jsonl" "$usage_file" 2>/dev/null || true
+  fi
+  if [ -f "$diagram_file" ]; then
+    echo "  🔀 Diagram:      $diagram_file"
+  fi
+  if [ -f "$usage_file" ]; then
+    echo "  📈 Usage:        $usage_file"
+  fi
   echo "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo ""
   exit 0
@@ -1360,6 +1373,20 @@ else
   fi
   for tf in "${TRANSCRIPT_FILES[@]}"; do
     echo "  📄 Transcript:  $tf"
+  done
+  # Generate session diagram and usage report for each seed session
+  for tf in "${TRANSCRIPT_FILES[@]}"; do
+    sd="$(dirname "$tf")"
+    if [ -f "$sd/log.jsonl" ]; then
+      python3 "${SCRIPT_DIR}/report/session-diagram.py" "$sd/log.jsonl" "$sd/diagram.html" 2>/dev/null || true
+      python3 "${SCRIPT_DIR}/report/session-usage.py" "$sd/log.jsonl" "$sd/usage.html" 2>/dev/null || true
+      if [ -f "$sd/diagram.html" ]; then
+        echo "  🔀 Diagram:     $sd/diagram.html"
+      fi
+      if [ -f "$sd/usage.html" ]; then
+        echo "  📈 Usage:       $sd/usage.html"
+      fi
+    fi
   done
   echo ""
   echo "  Re-run presentation at different length:"

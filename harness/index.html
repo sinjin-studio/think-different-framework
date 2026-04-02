@@ -402,6 +402,12 @@ input[type="range"] {
 .mechanism-card .mech-label-row .toggle-label {
   font-size: 0.85rem;
 }
+.mechanism-card .help {
+  margin-top: 0;
+}
+.mechanism-card .toggle {
+  margin-bottom: 0;
+}
 .mechanism-card.disabled {
   opacity: 0.5;
   border-color: var(--border);
@@ -747,7 +753,7 @@ input[type="range"] {
       <div class="field">
         <div class="chips" id="workflow-chips">
           <span class="chip active" data-value="session">Session</span>
-          <span class="chip" data-value="report-only">Report Only</span>
+          <span class="chip" data-value="report-only">Regenerate</span>
           <span class="chip" data-value="synthesise">Synthesise</span>
           <span class="chip" data-value="resume">Resume</span>
         </div>
@@ -1050,10 +1056,10 @@ const FIELDS = [
     info: 'Sections to include in presentation.md. Insight: long-form article exploring the session\'s findings. Brief: creative brief for a team to execute against. Manifesto: rallying declaration of the core idea. Low word budgets auto-drop sections unless --sections is explicitly set.',
   },
   {
-    key: 'dialogue', type: 'toggle', flag: '--dialogue',
-    label: 'Dialogue', section: 'output',
+    key: 'monologue', type: 'toggle', flag: '--monologue',
+    label: 'Monologue', section: 'output',
     default: false,
-    info: 'Generates a separate dialogue.md file - a first-person internal monologue exploring the idea\'s implications. A personal thinking artifact rather than a client deliverable. Gets its own word budget (40% of --words) independent of presentation sections.',
+    info: 'Generates a separate monologue.md file - a first-person internal monologue exploring the idea\'s implications. A personal thinking artifact rather than a client deliverable. Gets its own word budget (40% of --words) independent of presentation sections.',
   },
   {
     key: 'lines', type: 'range', flag: '--lines',
@@ -1072,7 +1078,7 @@ const FIELDS = [
     key: 'words', type: 'range', flag: '--words',
     label: 'Word Budget', section: 'output',
     default: 1500, min: 100, max: 5000, step: 100,
-    info: 'Total word budget distributed across all presentation sections. At low budgets (under ~800), sections are automatically dropped unless --sections is explicitly set. The budget shapes density and depth of each output section. Dialogue (if enabled) gets a separate allocation of 40% of this budget.',
+    info: 'Total word budget distributed across all presentation sections. At low budgets (under ~800), sections are automatically dropped unless --sections is explicitly set. The budget shapes density and depth of each output section. Monologue (if enabled) gets a separate allocation of 40% of this budget.',
   },
   {
     key: 'outputDir', type: 'text', flag: '--output',
@@ -1322,7 +1328,7 @@ const DEFAULTS = {
   tone: ['provocative'],
   audience: '',
   sections: ['insight', 'brief', 'manifesto'],
-  dialogue: false,
+  monologue: false,
   lines: 3,
   practitioners: pickRandom(PRACTITIONERS, 3),
   html: false,
@@ -2103,7 +2109,7 @@ function buildCommand() {
 
     const allSections = STATE.sections.length === 3 && ['insight', 'brief', 'manifesto'].every(t => STATE.sections.includes(t));
     if (!allSections) parts.push('--sections', STATE.sections.join(','));
-    if (STATE.dialogue) parts.push('--dialogue');
+    if (STATE.monologue) parts.push('--monologue');
 
     if (STATE.lines !== 3) parts.push('--lines', '' + STATE.lines);
     const practIsDefault = STATE.practitioners.length === PRACTITIONERS.length &&
@@ -2207,7 +2213,7 @@ function getCommandOneLine() {
     if (!defaultTone) parts.push('--tone', STATE.tone.join(','));
     const allSections = STATE.sections.length === 3 && ['insight', 'brief', 'manifesto'].every(t => STATE.sections.includes(t));
     if (!allSections) parts.push('--sections', STATE.sections.join(','));
-    if (STATE.dialogue) parts.push('--dialogue');
+    if (STATE.monologue) parts.push('--monologue');
     if (STATE.lines !== 3) parts.push('--lines', '' + STATE.lines);
     const practIsDefault = STATE.practitioners.length === PRACTITIONERS.length &&
       PRACTITIONERS.every(p => STATE.practitioners.includes(p)) &&
@@ -2453,7 +2459,7 @@ function loadLastState() {
       // Migrate legacy type to sections
       if (STATE.type && !STATE.sections) {
         STATE.sections = STATE.type.filter(t => t !== 'dialogue');
-        if (STATE.type.includes('dialogue')) STATE.dialogue = true;
+        if (STATE.type.includes('dialogue')) STATE.monologue = true;
         delete STATE.type;
       }
       applyStateToUI();

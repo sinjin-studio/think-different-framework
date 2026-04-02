@@ -51,7 +51,7 @@ A multi-lens structured divergence framework for Claude Code CLI. It runs creati
 - `--tone TONE` - Provocation tone: `provocative` (default), `generous`, `personal`, `absurd`, `daydream`, `mixed`. Comma-separated for custom mix (e.g. `--tone provocative,generous`)
 - `--depth LEVEL` - Lens depth: `deep` (default), `deeper`, `deepest`. Per-lens: `mortal:deepest,achala:deeper`. Controls how deep into fundamental human drivers the lenses go. Affects Mortal, Achala, Empath, Child, Provocateur, Mouth
 - `--sections LIST` - Presentation sections: `insight,brief,manifesto` (default: all three). Controls which sections appear in presentation.md. Comma-separated
-- `--dialogue` - Generate dialogue as separate file (dialogue.md) - first-person internal monologue
+- `--monologue` - Generate monologue as separate file (monologue.md) - first-person internal monologue
 - `--lines N` - Number of angles to generate (default: 3, max: 7). Each angle outputs two altitudes: Platform (strategic truth) and Expression (audience-facing punch)
 - `--practitioners LIST` - Comma-separated creative practitioners as quality bar for The Line (default: random 3 from built-in pool)
 - `--html` - Enable HTML presentation generation (experimental, off by default)
@@ -225,7 +225,7 @@ Every `claude_call*` invocation is logged to `$SESSION_DIR/log.jsonl` (JSONL for
 
 Sessions produce files in `./think-different-output/<slug>_<timestamp>/`:
 - `presentation.md` - Combined output: The Line (winning platform + expression), the experiment, the asset (sensory description), creative brief, manifesto, insight article (controlled by `--sections`), session findings (novel ideas for inspiration), runner-up lines (non-winning platform/expression pairs)
-- `dialogue.md` - First-person internal monologue (opt-in via `--dialogue`). Written as a separate file, not embedded in presentation.md
+- `monologue.md` - First-person internal monologue (opt-in via `--monologue`). Written as a separate file, not embedded in presentation.md
 - `presentation.docx` - Branded Word document (if python-docx available)
 - `presentation.html` - Cinematic scroll presentation with GSAP ScrollTrigger (enable with `--html`, experimental)
 - `session.md` / `session.json` - Full transcript (markdown + machine-readable)

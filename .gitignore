@@ -1,5 +1,6 @@
 think-different-output/
 .DS_Store
 .context/
+.playwright-mcp/
 node_modules/
 __pycache__/

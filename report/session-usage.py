@@ -48,7 +48,7 @@ def categorize_caller(caller):
         return "seed"
     elif caller.startswith("gather"):
         return "gather"
-    elif caller.startswith("report") or caller.startswith("generate") or caller.startswith("line") or caller.startswith("distil") or caller.startswith("asset") or caller.startswith("brief") or caller.startswith("manifesto") or caller.startswith("insight") or caller.startswith("dialogue"):
+    elif caller.startswith("report") or caller.startswith("generate") or caller.startswith("line") or caller.startswith("distil") or caller.startswith("asset") or caller.startswith("brief") or caller.startswith("manifesto") or caller.startswith("insight") or caller.startswith("monologue"):
         return "report"
     elif caller.startswith("review") or caller.startswith("prosecut") or caller.startswith("defense") or caller.startswith("verdict"):
         return "review"
